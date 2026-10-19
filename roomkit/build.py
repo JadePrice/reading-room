@@ -58,6 +58,7 @@ from .manifest import (
     IMAGE,
     PDF,
     READER,
+    TABLE,
     TEXT,
     Document,
     Manifest,
@@ -83,6 +84,8 @@ def _module(ext: str) -> str:
         return "rr-reader-pdf.js"
     if ext in IMAGE or ext in ("tiff", "tif"):
         return "rr-reader-image.js"
+    if ext in TABLE:
+        return "rr-reader-table.js"
     if ext in TEXT:
         return "rr-reader-text.js"
     raise ValueError(ext)  # manifest.parse already refused it

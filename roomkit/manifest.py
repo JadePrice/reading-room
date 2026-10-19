@@ -85,8 +85,9 @@ DATE = re.compile(r"^\d{4}(-\d{2}(-\d{2})?)?$")
 
 PDF = {"pdf"}
 IMAGE = {"jpg", "jpeg", "png", "gif", "webp"}
-TEXT = {"txt", "md", "csv", "json", "xml", "html"}
-READER = PDF | IMAGE | TEXT
+TABLE = {"csv", "tsv"}
+TEXT = {"txt", "md", "json", "xml", "html"}
+READER = PDF | IMAGE | TABLE | TEXT
 # No reader module: the page offers the download and the citation, nothing inline.
 DOWNLOAD_ONLY = {"zip", "xlsx", "xls", "docx", "doc", "pptx", "tiff", "tif"}
 EXTS = READER | DOWNLOAD_ONLY

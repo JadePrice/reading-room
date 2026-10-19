@@ -622,6 +622,39 @@ def test_scan_pages_json_serialization() -> None:
     assert "boxes" not in p2
 
 
+def test_table_csv_tsv_manifest_parses_cleanly() -> None:
+    data = _valid_manifest()
+    data["documents"][0]["file"]["ext"] = "csv"
+    data["documents"][0]["file"]["mime"] = "text/csv"
+    data["documents"][0]["file"]["url"] = "/reading-room/camera-contract/file.csv"
+    data["documents"][0]["file"]["download_url"] = "/reading-room/camera-contract/file.csv?download=1"
+
+    m = parse(data)
+    assert not m.refusals
+    assert m.documents[0].ext == "csv"
+
+    # Also TSV
+    data["documents"][0]["file"]["ext"] = "tsv"
+    data["documents"][0]["file"]["mime"] = "text/tab-separated-values"
+    data["documents"][0]["file"]["url"] = "/reading-room/camera-contract/file.tsv"
+    data["documents"][0]["file"]["download_url"] = "/reading-room/camera-contract/file.tsv?download=1"
+
+    m2 = parse(data)
+    assert not m2.refusals
+    assert m2.documents[0].ext == "tsv"
+
+
+def test_table_csv_tsv_module_resolution() -> None:
+    from roomkit import build as B
+    from roomkit.manifest import TABLE
+
+    assert "csv" in TABLE and "tsv" in TABLE
+    assert B._module("csv") == "rr-reader-table.js"
+    assert B._module("tsv") == "rr-reader-table.js"
+    assert B._module("pdf") == "rr-reader-pdf.js"
+    assert B._module("txt") == "rr-reader-text.js"
+
+
 
 
 
