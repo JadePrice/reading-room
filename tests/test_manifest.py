@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import copy
 import json
 
 import pytest
@@ -508,6 +509,117 @@ def test_mask_sensitive_ssn():
     assert mask_sensitive("Area 000-12-3456 invalid") == "Area 000-12-3456 invalid"
     assert mask_sensitive("Area 666-12-3456 invalid") == "Area 666-12-3456 invalid"
     assert mask_sensitive("") == ""
+
+
+def test_scan_page_images_and_boxes_parse_cleanly() -> None:
+    data = _valid_manifest()
+    data["documents"][0]["pages"] = [
+        {
+            "n": 1,
+            "text": "Page one transcript",
+            "provenance": "ocr",
+            "image_url": "/reading-room/camera-contract/pages/page-1.webp",
+            "boxes": [
+                {
+                    "text": "Page one",
+                    "box": [0.1, 0.2, 0.15, 0.4],
+                    "confidence": 0.95,
+                }
+            ],
+        },
+        {
+            "n": 2,
+            "text": "Page two transcript",
+            "provenance": "ocr",
+            "image_url": "https://example.test/pages/page-2.webp",
+        },
+    ]
+    m = parse(data)
+    assert not m.refusals
+    doc = m.documents[0]
+    assert len(doc.pages) == 2
+    assert doc.pages[0].image_url == "/reading-room/camera-contract/pages/page-1.webp"
+    assert len(doc.pages[0].boxes) == 1
+    assert doc.pages[0].boxes[0]["box"] == [0.1, 0.2, 0.15, 0.4]
+    assert doc.pages[0].boxes[0]["confidence"] == 0.95
+    assert doc.pages[1].image_url == "https://example.test/pages/page-2.webp"
+    assert doc.pages[1].boxes == ()
+
+
+def test_scan_page_image_url_refusal() -> None:
+    data = _valid_manifest()
+    data["documents"][0]["pages"][0]["image_url"] = "javascript:alert(1)"
+    m = parse(data)
+    assert len(m.refusals) == 1
+    assert "image_url 'javascript:alert(1)' is not https:// or a same-host path" in m.refusals[0][1]
+
+
+def test_scan_page_boxes_validation_refusals() -> None:
+    data = _valid_manifest()
+
+    # Boxes not a list
+    d1 = copy.deepcopy(data)
+    d1["documents"][0]["pages"][0]["boxes"] = "not-a-list"
+    assert "boxes is not a list" in parse(d1).refusals[0][1]
+
+    # Box not a dict
+    d2 = copy.deepcopy(data)
+    d2["documents"][0]["pages"][0]["boxes"] = ["not-a-dict"]
+    assert "box #0 is not an object" in parse(d2).refusals[0][1]
+
+    # Coord not 4 numbers
+    d3 = copy.deepcopy(data)
+    d3["documents"][0]["pages"][0]["boxes"] = [{"box": [0.1, 0.2, 0.3]}]
+    assert "coord must be 4 numbers" in parse(d3).refusals[0][1]
+
+    # Out of bounds (< 0.0)
+    d4 = copy.deepcopy(data)
+    d4["documents"][0]["pages"][0]["boxes"] = [{"box": [-0.1, 0.2, 0.5, 0.6]}]
+    assert "coord out of bounds or inverted" in parse(d4).refusals[0][1]
+
+    # Out of bounds (> 1.0)
+    d5 = copy.deepcopy(data)
+    d5["documents"][0]["pages"][0]["boxes"] = [{"box": [0.1, 0.2, 1.2, 0.6]}]
+    assert "coord out of bounds or inverted" in parse(d5).refusals[0][1]
+
+    # Inverted y (ymin >= ymax)
+    d6 = copy.deepcopy(data)
+    d6["documents"][0]["pages"][0]["boxes"] = [{"box": [0.5, 0.2, 0.4, 0.6]}]
+    assert "coord out of bounds or inverted" in parse(d6).refusals[0][1]
+
+    # Inverted x (xmin >= xmax)
+    d7 = copy.deepcopy(data)
+    d7["documents"][0]["pages"][0]["boxes"] = [{"box": [0.1, 0.8, 0.3, 0.7]}]
+    assert "coord out of bounds or inverted" in parse(d7).refusals[0][1]
+
+    # Confidence out of bounds
+    d8 = copy.deepcopy(data)
+    d8["documents"][0]["pages"][0]["boxes"] = [{"box": [0.1, 0.2, 0.3, 0.4], "confidence": 1.5}]
+    assert "confidence must be a number between 0 and 1 or null" in parse(d8).refusals[0][1]
+
+
+def test_scan_pages_json_serialization() -> None:
+    from roomkit import build as B
+    from tests.test_golden import ENGINE
+
+    data = _valid_manifest()
+    data["documents"][0]["pages"][0]["image_url"] = "/reading-room/camera-contract/pages/p1.webp"
+    data["documents"][0]["pages"][0]["boxes"] = [
+        {"text": "Sample", "box": [0.1, 0.2, 0.3, 0.4], "confidence": 0.99}
+    ]
+    m = parse(data)
+    files = B.render(m, engine=ENGINE)
+    # Find fingerprinted pages.json
+    pages_key = next(k for k in files if k.startswith("camera-contract/pages.") and k.endswith(".json"))
+    rendered_json = json.loads(files[pages_key].decode("utf-8"))
+    assert rendered_json["total"] == 2
+    p1 = rendered_json["pages"][0]
+    assert p1["n"] == 1
+    assert p1["image_url"] == "/reading-room/camera-contract/pages/p1.webp"
+    assert p1["boxes"] == [{"text": "Sample", "box": [0.1, 0.2, 0.3, 0.4], "confidence": 0.99}]
+    p2 = rendered_json["pages"][1]
+    assert "image_url" not in p2
+    assert "boxes" not in p2
 
 
 

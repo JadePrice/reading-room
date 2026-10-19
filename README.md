@@ -69,6 +69,12 @@ pytest tests/
 
 ---
 
+## Documentation
+
+- [Expanded Document-Type Architecture & Scope](docs/EXPANDED_FORMATS.md): Comprehensive roadmap and specification for multi-page scans, OCR-to-image verification, tabular data (CSV/TSV), audio/video evidence, and web captures.
+
+---
+
 ## License
 
 This project is licensed under the [GNU Affero General Public License v3.0 or later](LICENSE).

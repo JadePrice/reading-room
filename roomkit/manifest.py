@@ -88,7 +88,7 @@ IMAGE = {"jpg", "jpeg", "png", "gif", "webp"}
 TEXT = {"txt", "md", "csv", "json", "xml", "html"}
 READER = PDF | IMAGE | TEXT
 # No reader module: the page offers the download and the citation, nothing inline.
-DOWNLOAD_ONLY = {"zip", "xlsx", "xls", "docx", "doc", "pptx"}
+DOWNLOAD_ONLY = {"zip", "xlsx", "xls", "docx", "doc", "pptx", "tiff", "tif"}
 EXTS = READER | DOWNLOAD_ONLY
 
 
@@ -102,6 +102,8 @@ class Page:
     text: str
     provenance: str = ""
     cite: dict | None = field(default=None, compare=False)   # passages.py; the site's page citation
+    image_url: str = ""
+    boxes: tuple[dict, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -356,7 +358,32 @@ def _document(row: dict) -> tuple[Document | None, str]:
             return None, "a page is not {n: int, text: str}"
         if "cite" in p and PS.cite_problem(p["cite"]):
             return None, f"page {p['n']}: {PS.cite_problem(p['cite'])}"
-        pages.append(Page(p["n"], p.get("text", ""), _str(p, "provenance"), p.get("cite")))
+        img_url = _str(p, "image_url")
+        if img_url and not _url_ok(img_url):
+            return None, f"page {p['n']} image_url {img_url!r} is not https:// or a same-host path"
+        boxes_raw = p.get("boxes")
+        boxes: list[dict] = []
+        if boxes_raw is not None:
+            if not isinstance(boxes_raw, list):
+                return None, f"page {p['n']} boxes is not a list"
+            for b_idx, b in enumerate(boxes_raw):
+                if not isinstance(b, dict):
+                    return None, f"page {p['n']} box #{b_idx} is not an object"
+                coord = b.get("box")
+                if not (isinstance(coord, (list, tuple)) and len(coord) == 4
+                        and all(isinstance(c, (int, float)) and not isinstance(c, bool) for c in coord)):
+                    return None, f"page {p['n']} box #{b_idx} coord must be 4 numbers [ymin, xmin, ymax, xmax]"
+                ymin, xmin, ymax, xmax = [float(c) for c in coord]
+                if not (0.0 <= ymin < ymax <= 1.0 and 0.0 <= xmin < xmax <= 1.0):
+                    return None, f"page {p['n']} box #{b_idx} coord out of bounds or inverted: {coord}"
+                b_text = b.get("text", "")
+                if not isinstance(b_text, str):
+                    return None, f"page {p['n']} box #{b_idx} text is not a string"
+                b_conf = b.get("confidence")
+                if b_conf is not None and not (isinstance(b_conf, (int, float)) and not isinstance(b_conf, bool) and 0.0 <= float(b_conf) <= 1.0):
+                    return None, f"page {p['n']} box #{b_idx} confidence must be a number between 0 and 1 or null"
+                boxes.append(b)
+        pages.append(Page(p["n"], p.get("text", ""), _str(p, "provenance"), p.get("cite"), img_url, tuple(boxes)))
     if [p.n for p in pages] != list(range(1, len(pages) + 1)):
         return None, "page numbers are not 1..N in order"
     search_text = row.get("search_text", "")

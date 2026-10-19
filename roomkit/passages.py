@@ -159,8 +159,16 @@ def parse(raw: object, docs: dict, excluded: dict | None = None) -> tuple[dict |
         if key in out:
             problems.append(f"{where}: two rows with one key")
             continue
+        bb = row.get("bounding_box")
+        bb_ok = (bb is None) or (
+            isinstance(bb, (list, tuple))
+            and len(bb) == 4
+            and all(isinstance(c, (int, float)) and not isinstance(c, bool) and 0.0 <= float(c) <= 1.0 for c in bb)
+            and float(bb[0]) < float(bb[2])
+            and float(bb[1]) < float(bb[3])
+        )
         if not (isinstance(row["text"], str) and isinstance(row["provenance_level"], str)
-                and _number_or_null(row["ocr_confidence"]) and row["bounding_box"] is None
+                and _number_or_null(row["ocr_confidence"]) and bb_ok
                 and (row["citation_type"] is None or isinstance(row["citation_type"], str))):
             problems.append(f"{where}: text, provenance_level, ocr_confidence, citation_type or bounding_box has the wrong type")
             continue

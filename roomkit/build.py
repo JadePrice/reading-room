@@ -47,38 +47,27 @@ import json
 import re
 from pathlib import Path
 
-from roomkit import css as CSS
-from roomkit import entities as E
-from roomkit import pack as P
-from roomkit import passages as PS
-from roomkit import room as R
-from roomkit import search as S
+from . import css as CSS
+from . import entities as E
+from . import pack as P
+from . import passages as PS
+from . import room as R
+from . import search as S
+from . import view as V
+from .manifest import (
+    IMAGE,
+    PDF,
+    READER,
+    TEXT,
+    Document,
+    Manifest,
+    ManifestError,
+    validate_room_path,
+)
 
-try:
-    from roomkit import view as V
-    from roomkit.manifest import (
-        IMAGE,
-        PDF,
-        READER,
-        TEXT,
-        Document,
-        Manifest,
-        ManifestError,
-        validate_room_path,
-    )
-except ImportError:
-    from scripts.roomkit import view as V
-    from scripts.roomkit.manifest import (
-        IMAGE,
-        PDF,
-        READER,
-        TEXT,
-        Document,
-        Manifest,
-        ManifestError,
-        validate_room_path,
-    )
-REPO_ROOT = Path(__file__).resolve().parents[1]
+REPO_ROOT = Path(__file__).resolve().parent.parent
+if not (REPO_ROOT / "reading-room-reader").is_dir() and (REPO_ROOT.parent / "reading-room-reader").is_dir():
+    REPO_ROOT = REPO_ROOT.parent
 ENGINE = REPO_ROOT / "reading-room-reader"
 LOCK = "room.lock.json"
 ROOMKIT_VERSION = "0.3.0"
@@ -92,7 +81,7 @@ FINGERPRINT = re.compile(r"\.[0-9a-f]{12}\.[a-z0-9]+$")
 def _module(ext: str) -> str:
     if ext in PDF:
         return "rr-reader-pdf.js"
-    if ext in IMAGE:
+    if ext in IMAGE or ext in ("tiff", "tif"):
         return "rr-reader-image.js"
     if ext in TEXT:
         return "rr-reader-text.js"
@@ -292,9 +281,17 @@ def render(m: Manifest, engine: Path = ENGINE, mount: str | None = None, noindex
     for d in m.documents:
         files[f"{d.slug}/index.html"] = _doc_page(d, m, at, noindex, pack).encode()
         if d.pages:
-            pages = {"slug": d.slug, "total": len(d.pages),
-                     "pages": [{"n": p.n, "provenance": p.provenance, "text": p.text,
-                                **({"cite": p.cite} if m.passages and p.cite else {})} for p in d.pages]}
+            pages_list = []
+            for p in d.pages:
+                p_dict = {"n": p.n, "provenance": p.provenance, "text": p.text}
+                if p.image_url:
+                    p_dict["image_url"] = p.image_url
+                if p.boxes:
+                    p_dict["boxes"] = list(p.boxes)
+                if m.passages and p.cite:
+                    p_dict["cite"] = p.cite
+                pages_list.append(p_dict)
+            pages = {"slug": d.slug, "total": len(d.pages), "pages": pages_list}
             files[f"{d.slug}/pages.json"] = (json.dumps(pages, ensure_ascii=False, sort_keys=True) + "\n").encode()
     if m.passages:
         files["citations.json"] = (json.dumps(PS.citations_json(m.passages), ensure_ascii=False,

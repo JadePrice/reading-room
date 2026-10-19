@@ -25,7 +25,17 @@
             "stable_key": { "type": ["string", "null"] },
             "provenance_level": { "type": "string" },
             "ocr_confidence": { "type": ["number", "null"] },
-            "bounding_box": { "type": "null" },
+            "bounding_box": {
+              "oneOf": [
+                { "type": "null" },
+                {
+                  "type": "array",
+                  "items": { "type": "number", "minimum": 0, "maximum": 1 },
+                  "minItems": 4,
+                  "maxItems": 4
+                }
+              ]
+            },
             "text": { "type": "string" },
             "minted": { "type": "boolean" }
           }
