@@ -1,0 +1,73 @@
+{
+  "identity": {
+    "site": "default",
+    "name": "Reading Room"
+  },
+  "tokens": {
+    "page-bg": "#fbfaf7",
+    "page-ink": "#1d1b18",
+    "page-ink-soft": "#5b5650",
+    "page-link": "#1f4e8c",
+    "surface": "#ffffff",
+    "surface-sunk": "#f4f2ee",
+    "ink": "#1d1b18",
+    "ink-soft": "#57524b",
+    "rule": "#d9d4cc",
+    "link": "#1f4e8c",
+    "accent": "#1d1b18",
+    "on-accent": "#ffffff",
+    "focus": "#b3541e",
+    "font-body": "system-ui,-apple-system,\"Segoe UI\",sans-serif",
+    "font-display": "inherit"
+  },
+  "tokens_dark": {
+    "page-bg": "#161513",
+    "page-ink": "#ece8e1",
+    "page-ink-soft": "#b4ada3",
+    "page-link": "#9cc0ef",
+    "surface": "#1f1d1a",
+    "surface-sunk": "#26231f",
+    "ink": "#ece8e1",
+    "ink-soft": "#b4ada3",
+    "rule": "#3a3631",
+    "link": "#9cc0ef",
+    "accent": "#ece8e1",
+    "on-accent": "#161513",
+    "focus": "#f0a36e"
+  },
+  "labels": {
+    "room": "Reading Room",
+    "group": "Group",
+    "group_singular": "group",
+    "groups_plural": "groups",
+    "jump": "Jump to group",
+    "record_singular": "record",
+    "record_plural": "records"
+  },
+  "layout": {
+    "style": "rows",
+    "show_empty_groups": false,
+    "toggle": ""
+  },
+  "features": {},
+  "chrome": {
+    "home": {
+      "label": "Reading Room",
+      "url": "/"
+    },
+    "skip_text": "Skip to the content",
+    "nav_label": "Site",
+    "menu_label": "Menu",
+    "inline_from": "17em",
+    "nav": [
+      {
+        "label": "Home",
+        "url": "/"
+      }
+    ],
+    "footer_text": [
+      "Public records, as released. Every record links to its original file."
+    ]
+  },
+  "extra_css": "body.room-plain{margin:0;background:#fbfaf7;color-scheme:light dark}@media (prefers-color-scheme:dark){body.room-plain{background:#161513}}\n"
+}

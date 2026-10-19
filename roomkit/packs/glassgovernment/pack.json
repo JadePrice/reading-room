@@ -1,0 +1,146 @@
+{
+  "identity": {
+    "site": "glassgovernment",
+    "name": "Glass Government",
+    "base_url": "https://glassgovernment.org"
+  },
+  "tokens": {
+    "accent": "oklch(25% 0.02 60)",
+    "focus": "oklch(48% 0.13 25)",
+    "font-body": "\"Spectral\",Georgia,\"Times New Roman\",serif",
+    "font-display": "\"Atkinson Hyperlegible\",system-ui,sans-serif",
+    "font-mono": "ui-monospace,\"SF Mono\",SFMono-Regular,Menlo,Consolas,monospace",
+    "ink": "oklch(25% 0.02 60)",
+    "ink-soft": "oklch(43% 0.02 65)",
+    "link": "oklch(48% 0.13 25)",
+    "on-accent": "oklch(99% 0.004 85)",
+    "page-bg": "#F1ECDD",
+    "page-ink": "oklch(25% 0.02 60)",
+    "page-ink-soft": "oklch(43% 0.02 65)",
+    "page-link": "oklch(48% 0.13 25)",
+    "radius": "6px",
+    "radius-pill": "4px",
+    "rule": "oklch(25% 0.02 60 / 0.32)",
+    "surface": "#FBF7EB",
+    "surface-sunk": "#EEE7D7"
+  },
+  "tokens_dark": {
+    "accent": "oklch(92% 0.01 85)",
+    "focus": "oklch(72% 0.13 28)",
+    "ink": "oklch(92% 0.01 85)",
+    "ink-soft": "oklch(76% 0.012 80)",
+    "link": "oklch(72% 0.13 28)",
+    "on-accent": "oklch(20% 0.01 70)",
+    "page-bg": "oklch(20% 0.01 70)",
+    "page-ink": "oklch(92% 0.01 85)",
+    "page-ink-soft": "oklch(76% 0.012 80)",
+    "page-link": "oklch(72% 0.13 28)",
+    "rule": "oklch(92% 0.01 85 / 0.30)",
+    "surface": "oklch(24% 0.012 70)",
+    "surface-sunk": "oklch(17% 0.01 70)"
+  },
+  "labels": {
+    "room": "Reading Room",
+    "group": "Collection",
+    "group_singular": "collection",
+    "groups_plural": "collections",
+    "jump": "Jump to collection",
+    "other_group": "Other records",
+    "search_placeholder": "Title, agency, collection, vendor...",
+    "record_singular": "record",
+    "record_plural": "records"
+  },
+  "layout": {
+    "style": "rows",
+    "show_empty_groups": false,
+    "toggle": "ggrr-theme"
+  },
+  "features": {},
+  "chrome": {
+    "home": {
+      "label": "Glass Government",
+      "url": "https://glassgovernment.org/"
+    },
+    "skip_text": "Skip to content",
+    "nav_label": "Primary",
+    "menu_label": "Menu",
+    "inline_from": "81em",
+    "nav": [
+      {
+        "label": "Home",
+        "url": "https://glassgovernment.org/"
+      },
+      {
+        "label": "Records Reading Room",
+        "url": "https://glassgovernment.org/library/"
+      },
+      {
+        "label": "Browse Topics",
+        "url": "https://glassgovernment.org/library/topics/"
+      },
+      {
+        "label": "Browse Entities",
+        "url": "https://glassgovernment.org/library/entities/"
+      },
+      {
+        "label": "Local Meetings",
+        "url": "https://glassgovernment.org/local-meetings/"
+      },
+      {
+        "label": "FOIA Friend",
+        "url": "https://foiafriend.glassgovernment.org/"
+      },
+      {
+        "label": "US Police Data Table",
+        "url": "https://glassgovernment.org/police-data-table/"
+      },
+      {
+        "label": "WI Gov RSS Feeds",
+        "url": "https://glassgovernment.org/wi-news-feeds/"
+      }
+    ],
+    "footer_text": [
+      "Creative Commons 2026 Glass Government",
+      "Glass Government is an independent media monitor and public resource. GG is not affiliated with any government."
+    ],
+    "source": {
+      "url": "https://glassgovernment.org/library/",
+      "date": "2026-10-14",
+      "note": "Header menu (#site-navigation), logo alt and footer HTML block, read from the public page. Local Meetings is a relative link there (/local-meetings/), made absolute here."
+    }
+  },
+  "extra_css": "#room-content .room__badge--government{color:var(--room-ink-soft)}#room-content .room__badge--third-party{background:oklch(45% 0.15 275);border-color:oklch(36% 0.15 275);color:#fff}#room-content .room__btn{box-shadow:0 3px 0 var(--room-accent);font-family:var(--room-font-mono);font-size:.9rem;letter-spacing:.02em}#room-content .room__eyebrow,#room-content .room__dl dt{font-family:var(--room-font-mono)}\n",
+  "token_notes": {
+    "tokens.accent": "gg-reading-room plugin token (assets/css/ggrr-reading-room-v2.css); the site theme file has no reading-room palette, and the room keeps the WordPress room's look for parity (user, 2026-10-13)",
+    "tokens.focus": "gg-reading-room plugin token (assets/css/ggrr-reading-room-v2.css); the site theme file has no reading-room palette, and the room keeps the WordPress room's look for parity (user, 2026-10-13)",
+    "tokens.font-body": "gg-reading-room plugin token (assets/css/ggrr-reading-room-v2.css); the site theme file has no reading-room palette, and the room keeps the WordPress room's look for parity (user, 2026-10-13)",
+    "tokens.font-display": "gg-reading-room plugin token (assets/css/ggrr-reading-room-v2.css); the site theme file has no reading-room palette, and the room keeps the WordPress room's look for parity (user, 2026-10-13)",
+    "tokens.font-mono": "gg-reading-room plugin token (assets/css/ggrr-reading-room-v2.css); the site theme file has no reading-room palette, and the room keeps the WordPress room's look for parity (user, 2026-10-13)",
+    "tokens.ink": "gg-reading-room plugin token (assets/css/ggrr-reading-room-v2.css); the site theme file has no reading-room palette, and the room keeps the WordPress room's look for parity (user, 2026-10-13)",
+    "tokens.ink-soft": "gg-reading-room plugin token (assets/css/ggrr-reading-room-v2.css); the site theme file has no reading-room palette, and the room keeps the WordPress room's look for parity (user, 2026-10-13)",
+    "tokens.link": "gg-reading-room plugin token (assets/css/ggrr-reading-room-v2.css); the site theme file has no reading-room palette, and the room keeps the WordPress room's look for parity (user, 2026-10-13)",
+    "tokens.on-accent": "gg-reading-room plugin token (assets/css/ggrr-reading-room-v2.css); the site theme file has no reading-room palette, and the room keeps the WordPress room's look for parity (user, 2026-10-13)",
+    "tokens.page-bg": "the site's yellowed archival paper, not the reading-room plugin's near-white oklch(97% 0.008 85) (user approved 2026-10-15)",
+    "tokens.page-ink": "gg-reading-room plugin token (assets/css/ggrr-reading-room-v2.css); the site theme file has no reading-room palette, and the room keeps the WordPress room's look for parity (user, 2026-10-13)",
+    "tokens.page-ink-soft": "gg-reading-room plugin token (assets/css/ggrr-reading-room-v2.css); the site theme file has no reading-room palette, and the room keeps the WordPress room's look for parity (user, 2026-10-13)",
+    "tokens.page-link": "gg-reading-room plugin token (assets/css/ggrr-reading-room-v2.css); the site theme file has no reading-room palette, and the room keeps the WordPress room's look for parity (user, 2026-10-13)",
+    "tokens.radius": "gg-reading-room plugin token (assets/css/ggrr-reading-room-v2.css); the site theme file has no reading-room palette, and the room keeps the WordPress room's look for parity (user, 2026-10-13)",
+    "tokens.radius-pill": "gg-reading-room plugin token (assets/css/ggrr-reading-room-v2.css); the site theme file has no reading-room palette, and the room keeps the WordPress room's look for parity (user, 2026-10-13)",
+    "tokens.rule": "gg-reading-room plugin token (assets/css/ggrr-reading-room-v2.css); the site theme file has no reading-room palette, and the room keeps the WordPress room's look for parity (user, 2026-10-13)",
+    "tokens.surface": "the site's raised paper, not the plugin's oklch(99% 0.004 85) (user approved 2026-10-15)",
+    "tokens.surface-sunk": "the site's catalog hover shade, one step down the same paper; was the plugin's oklch(94% 0.010 85) (user approved 2026-10-15)",
+    "tokens_dark.accent": "gg-reading-room plugin token (assets/css/ggrr-reading-room-v2.css); the site theme file has no reading-room palette, and the room keeps the WordPress room's look for parity (user, 2026-10-13)",
+    "tokens_dark.focus": "gg-reading-room plugin token (assets/css/ggrr-reading-room-v2.css); the site theme file has no reading-room palette, and the room keeps the WordPress room's look for parity (user, 2026-10-13)",
+    "tokens_dark.ink": "gg-reading-room plugin token (assets/css/ggrr-reading-room-v2.css); the site theme file has no reading-room palette, and the room keeps the WordPress room's look for parity (user, 2026-10-13)",
+    "tokens_dark.ink-soft": "gg-reading-room plugin token (assets/css/ggrr-reading-room-v2.css); the site theme file has no reading-room palette, and the room keeps the WordPress room's look for parity (user, 2026-10-13)",
+    "tokens_dark.link": "gg-reading-room plugin token (assets/css/ggrr-reading-room-v2.css); the site theme file has no reading-room palette, and the room keeps the WordPress room's look for parity (user, 2026-10-13)",
+    "tokens_dark.on-accent": "gg-reading-room plugin token (assets/css/ggrr-reading-room-v2.css); the site theme file has no reading-room palette, and the room keeps the WordPress room's look for parity (user, 2026-10-13)",
+    "tokens_dark.page-bg": "gg-reading-room plugin token (assets/css/ggrr-reading-room-v2.css); the site theme file has no reading-room palette, and the room keeps the WordPress room's look for parity (user, 2026-10-13)",
+    "tokens_dark.page-ink": "gg-reading-room plugin token (assets/css/ggrr-reading-room-v2.css); the site theme file has no reading-room palette, and the room keeps the WordPress room's look for parity (user, 2026-10-13)",
+    "tokens_dark.page-ink-soft": "gg-reading-room plugin token (assets/css/ggrr-reading-room-v2.css); the site theme file has no reading-room palette, and the room keeps the WordPress room's look for parity (user, 2026-10-13)",
+    "tokens_dark.page-link": "gg-reading-room plugin token (assets/css/ggrr-reading-room-v2.css); the site theme file has no reading-room palette, and the room keeps the WordPress room's look for parity (user, 2026-10-13)",
+    "tokens_dark.rule": "gg-reading-room plugin token (assets/css/ggrr-reading-room-v2.css); the site theme file has no reading-room palette, and the room keeps the WordPress room's look for parity (user, 2026-10-13)",
+    "tokens_dark.surface": "gg-reading-room plugin token (assets/css/ggrr-reading-room-v2.css); the site theme file has no reading-room palette, and the room keeps the WordPress room's look for parity (user, 2026-10-13)",
+    "tokens_dark.surface-sunk": "gg-reading-room plugin token (assets/css/ggrr-reading-room-v2.css); the site theme file has no reading-room palette, and the room keeps the WordPress room's look for parity (user, 2026-10-13)"
+  }
+}

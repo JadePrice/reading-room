@@ -1,0 +1,478 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://glassgovernment.org/schemas/roomkit/pack.schema.json",
+  "title": "Reading-room site pack",
+  "description": "Everything a site may change about the shared reading room. Anything not in a pack is the same for every site. roomkit validates packs with this schema plus the checks a schema cannot state (scripts/roomkit/pack.py: contrast, CSS scoping, the parity matrix, font files). Civica validates tenant packs against this same file.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "identity",
+    "tokens",
+    "layout",
+    "labels"
+  ],
+  "properties": {
+    "identity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "site",
+        "name"
+      ],
+      "properties": {
+        "site": {
+          "$ref": "#/$defs/slug",
+          "description": "The pack's site; a manifest's site.template names it."
+        },
+        "name": {
+          "$ref": "#/$defs/text"
+        },
+        "base_url": {
+          "type": "string",
+          "pattern": "^(https://[^/]+)?$",
+          "description": "https://host with no path or trailing slash; empty for a site-agnostic pack."
+        },
+        "logo": {
+          "type": [
+            "object",
+            "null"
+          ],
+          "additionalProperties": false,
+          "required": [
+            "src",
+            "alt"
+          ],
+          "properties": {
+            "src": {
+              "$ref": "#/$defs/pack_file"
+            },
+            "alt": {
+              "type": "string"
+            }
+          }
+        },
+        "favicon": {
+          "anyOf": [
+            {
+              "const": ""
+            },
+            {
+              "$ref": "#/$defs/pack_file"
+            }
+          ]
+        },
+        "backdrop": {
+          "type": "string",
+          "pattern": "^[^;{}<>]*$",
+          "description": "What shows through a transparent page-bg (the site's page color). The contrast check measures against it, and the page paints its body with it."
+        }
+      }
+    },
+    "tokens": {
+      "$ref": "#/$defs/tokens",
+      "description": "--room-* values, light (or the only) scheme."
+    },
+    "tokens_dark": {
+      "$ref": "#/$defs/tokens",
+      "description": "Dark scheme overrides; when present, every color token."
+    },
+    "reader": {
+      "$ref": "#/$defs/reader_tokens"
+    },
+    "reader_dark": {
+      "$ref": "#/$defs/reader_tokens"
+    },
+    "token_notes": {
+      "type": "object",
+      "description": "Why a token's value is what it is, when it is not simply the site's (pack_import.py writes these from the map).",
+      "propertyNames": {
+        "pattern": "^tokens(_dark)?\\.[a-z]+(-[a-z]+)*$"
+      },
+      "additionalProperties": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "fonts": {
+      "type": "array",
+      "description": "Self-hosted font files in the pack. No CDN.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "family",
+          "src"
+        ],
+        "properties": {
+          "family": {
+            "$ref": "#/$defs/text"
+          },
+          "src": {
+            "$ref": "#/$defs/pack_file"
+          },
+          "weight": {
+            "type": "string",
+            "pattern": "^[0-9]{3}( [0-9]{3})?$"
+          },
+          "style": {
+            "enum": [
+              "normal",
+              "italic"
+            ]
+          }
+        }
+      }
+    },
+    "chrome": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "home",
+        "skip_text",
+        "nav_label",
+        "menu_label",
+        "inline_from"
+      ],
+      "description": "The room's own header, navigation and footer (plan Task 5). Text and links only: the look comes from the tokens.",
+      "properties": {
+        "home": {
+          "$ref": "#/$defs/link",
+          "description": "The site's name in the header, linking to its home page."
+        },
+        "tagline": {
+          "$ref": "#/$defs/text",
+          "description": "A line under the site's name."
+        },
+        "skip_text": {
+          "$ref": "#/$defs/text",
+          "description": "The skip link, the page's first focusable element; it targets #room-content."
+        },
+        "nav_label": {
+          "$ref": "#/$defs/text",
+          "description": "The accessible name of the site navigation (nav aria-label)."
+        },
+        "menu_label": {
+          "$ref": "#/$defs/text",
+          "description": "The summary that opens the navigation on narrow screens (details/summary, no JavaScript)."
+        },
+        "inline_from": {
+          "type": "string",
+          "pattern": "^[0-9]{1,3}(\\.[0-9]{1,2})?em$",
+          "description": "The viewport width (em) from which the nav's links sit in one row beside the site's name; below it, the Menu button. Measured per site in a browser: the narrowest width where name, gap and the whole link row fit, with margin for font differences."
+        },
+        "nav": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/nav_item"
+          },
+          "description": "Links, or labelled groups of links (a submenu)."
+        },
+        "notice": {
+          "type": [
+            "object",
+            "null"
+          ],
+          "additionalProperties": false,
+          "required": [
+            "text"
+          ],
+          "properties": {
+            "text": {
+              "$ref": "#/$defs/text"
+            },
+            "url": {
+              "$ref": "#/$defs/url"
+            }
+          },
+          "description": "A site-wide line under the header."
+        },
+        "footer": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "links"
+            ],
+            "properties": {
+              "heading": {
+                "$ref": "#/$defs/text"
+              },
+              "links": {
+                "type": "array",
+                "minItems": 1,
+                "items": {
+                  "$ref": "#/$defs/link"
+                }
+              }
+            }
+          },
+          "description": "Columns of footer links, each with an optional heading."
+        },
+        "footer_text": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/text"
+          },
+          "description": "Footer paragraphs (license, disclaimers), verbatim from the site."
+        },
+        "source": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "url",
+            "date"
+          ],
+          "description": "Where the chrome was taken from. Not rendered.",
+          "properties": {
+            "url": {
+              "type": "string",
+              "pattern": "^https://"
+            },
+            "date": {
+              "type": "string",
+              "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"
+            },
+            "note": {
+              "$ref": "#/$defs/text"
+            }
+          }
+        }
+      }
+    },
+    "labels": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "room": {
+          "$ref": "#/$defs/text"
+        },
+        "group": {
+          "$ref": "#/$defs/text",
+          "description": "The group as a label (finder select, jump list), as the site writes it, e.g. \"Category\"."
+        },
+        "group_singular": {
+          "$ref": "#/$defs/text",
+          "description": "Count noun for one group (\"1 category\")."
+        },
+        "groups_plural": {
+          "$ref": "#/$defs/text",
+          "description": "Count noun for any other number of groups (\"4 categories\")."
+        },
+        "record_singular": {
+          "$ref": "#/$defs/text",
+          "description": "Count noun for one record (\"1 record\")."
+        },
+        "record_plural": {
+          "$ref": "#/$defs/text",
+          "description": "Count noun for any other number of records (\"5 records\")."
+        },
+        "other_group": {
+          "$ref": "#/$defs/text"
+        },
+        "jump": {
+          "$ref": "#/$defs/text",
+          "description": "The jump list's visible label (\"Jump to jurisdiction:\"). The nav's accessible name is this text minus trailing punctuation."
+        },
+        "search_placeholder": {
+          "$ref": "#/$defs/text"
+        },
+        "fulltext_placeholder": {
+         "$ref": "#/$defs/text",
+         "description": "The search box placeholder when features.corpus-search is on (it searches record text, not only titles)."
+        },
+        "released": {
+          "$ref": "#/$defs/text"
+        }
+      },
+      "required": [
+        "group",
+        "group_singular",
+        "groups_plural",
+        "record_singular",
+        "record_plural",
+        "jump"
+      ],
+      "description": "Words the room shows. The count nouns are required: the room never builds a plural (no +\"s\"), it picks singular or plural by the count."
+    },
+    "layout": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "style",
+        "show_empty_groups",
+        "toggle"
+      ],
+      "properties": {
+        "style": {
+          "enum": [
+            "cards",
+            "rows"
+          ]
+        },
+        "show_empty_groups": {
+          "type": "boolean"
+        },
+        "toggle": {
+          "type": "string",
+          "pattern": "^([a-z0-9]+(-[a-z0-9]+)*)?$",
+          "description": "localStorage key of a light/dark toggle shared with the site, or empty for none."
+        }
+      }
+    },
+    "features": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Surfaces the pack turns on. The template renders a surface only when the pack enables it and the manifest supports it.",
+      "properties": {
+        "collections": {
+          "type": "boolean"
+        },
+        "topics": {
+          "type": "boolean"
+        },
+        "entities": {
+          "type": "boolean",
+          "description": "The site's entity index and entity pages at their live paths, built from the manifest's `entities` block (entities.py). Every heading, label, count and list comes from the export; nothing is composed. Off: no entity page, no link into one, no entities.css."
+        },
+        "power-maps": {
+          "type": "boolean"
+        },
+        "records-requests": {
+          "type": "boolean"
+        },
+        "translation": {
+          "type": "boolean"
+        },
+        "read-aloud": {
+          "type": "boolean"
+        },
+        "passage-cite": {
+          "type": "boolean",
+          "description": "GG's passage citations (passages.py): the reader's Cite page shows each page's exported citation from pages.json with no request; per-hit Cite asks the site's passage route (manifest passages.api) and falls back to the page citation when that fails; curated citations ship as citations.json."
+        },
+        "corpus-search": {
+          "type": "boolean",
+          "description": "A Pagefind index over every record's title, summary, citation, agency, group and page text, built into the room (pagefind/); the finder searches it and suggests from it. Needs the pinned Pagefind (search.py)."
+        }
+      }
+    },
+    "extra_css": {
+      "type": "string",
+      "description": "An escape hatch, scoped under #room-content (or the page's body.room-plain)."
+    }
+  },
+  "$defs": {
+    "slug": {
+      "type": "string",
+      "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$"
+    },
+    "text": {
+      "type": "string",
+      "minLength": 1
+    },
+    "url": {
+      "type": "string",
+      "pattern": "^(https://|/(?!/))",
+      "description": "https://, or a path on the same host."
+    },
+    "pack_file": {
+      "type": "string",
+      "pattern": "^(?!/)(?!.*\\.\\.)[A-Za-z0-9._/-]+$",
+      "description": "A path inside the pack directory."
+    },
+    "link": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "label",
+        "url"
+      ],
+      "properties": {
+        "label": {
+          "$ref": "#/$defs/text"
+        },
+        "url": {
+          "$ref": "#/$defs/url"
+        }
+      }
+    },
+    "nav_item": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "label"
+      ],
+      "description": "A link (label, url) or a labelled group of links (label, links), never both.",
+      "properties": {
+        "label": {
+          "$ref": "#/$defs/text"
+        },
+        "url": {
+          "$ref": "#/$defs/url"
+        },
+        "links": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/link"
+          }
+        }
+      },
+      "oneOf": [
+        {
+          "required": [
+            "url"
+          ]
+        },
+        {
+          "required": [
+            "links"
+          ]
+        }
+      ]
+    },
+    "tokens": {
+      "type": "object",
+      "propertyNames": {
+        "enum": [
+          "page-bg",
+          "page-ink",
+          "page-ink-soft",
+          "page-link",
+          "surface",
+          "surface-sunk",
+          "ink",
+          "ink-soft",
+          "rule",
+          "link",
+          "accent",
+          "on-accent",
+          "focus",
+          "font-body",
+          "font-display",
+          "font-mono",
+          "radius",
+          "radius-pill",
+          "measure"
+        ]
+      },
+      "additionalProperties": {
+        "type": "string",
+        "minLength": 1,
+        "pattern": "^[^;{}<>]*$"
+      }
+    },
+    "reader_tokens": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "string",
+        "minLength": 1,
+        "pattern": "^[^;{}<>]*$"
+      },
+      "propertyNames": {
+        "pattern": "^[a-z]+(-[a-z]+)*$"
+      }
+    }
+  }
+}

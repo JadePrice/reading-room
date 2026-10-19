@@ -1,0 +1,68 @@
+{
+  "site": "glassgovernment",
+  "fetched": "2026-10-15T00:35:53Z",
+  "source": "titles from the GG manifest export of 2026-10-14 (roomkit exporters/glassgovernment.php); no live read: the expected hit is the record itself",
+  "notes": "Exact-title check: each query is a record's own title and its only expected hit is that record; run with --top 3. Picked every 30th record with page text and every 10th without, in manifest order.",
+  "queries": {
+    "UW Health Public Records Response: Pediatric Gender-Affirming Care": [
+      "uwhealth-gac-public-records-response-letter"
+    ],
+    "MA Special Commission on Facial Recognition Hearing Clearview AI": [
+      "ma-special-commission-on-facial-recognition-hearing-clearview-ai"
+    ],
+    "DIOG fbi-domestic-investigations-and-operations-guide-diog-2008-version Part 4": [
+      "diog-part-04"
+    ],
+    "FBI Security Index, Part 20": [
+      "fbi-security-index-part-20"
+    ],
+    "COINTELPRO \"White Hate Groups\" 13": [
+      "cointelpro-white-hate-groups-13"
+    ],
+    "COINTELPRO \"New Left\" San Antonio 01 (pages 250-349)": [
+      "cointelpro-new-left-san-antonio-01-pages-250-349"
+    ],
+    "COINTELPRO \"New Left\" Houston 01": [
+      "cointelpro-new-left-houston-01"
+    ],
+    "COINTELPRO \"Black Extremists\" 18": [
+      "cointelpro-black-extremists-18"
+    ],
+    "COINTELPRO \"White Hate Groups\" 02": [
+      "cointelpro-white-hate-groups-02"
+    ],
+    "Executive Sessions of the Senate Permanent Subcommittee on Investigations — Volume 5 (July–December 1954)": [
+      "mccarthy-executive-sessions-vol-5"
+    ],
+    "Wisconsin Department of Administration (DOA) — Axon Contract Utilization (FY22 Q1 – FY26 Q3)": [
+      "wisconsin-doa-axon-contract-utilization"
+    ],
+    "WSIC-Wisconsin Emergency Management HSGP Funding Acknowledgement (FY2020)": [
+      "wsic-wem-hsgp-funding-ack-2020"
+    ],
+    "DIOG fbi-domestic-investigations-and-operations-guide-diog-2021-version Part 2": [
+      "diog-part-18"
+    ],
+    "Russell Means Part 39": [
+      "russell-means-aim-part-39"
+    ],
+    "Russell Means Part 28": [
+      "russell-means-aim-part-28"
+    ],
+    "Russell Means Part 17": [
+      "russell-means-aim-part-17"
+    ],
+    "Russell Means Part 06": [
+      "russell-means-aim-part-06"
+    ],
+    "Black Panther Party Part 28": [
+      "black-panther-party-part-28"
+    ],
+    "Black Panther Party Part 17": [
+      "black-panther-party-part-17"
+    ],
+    "Black Panther Party Part 02": [
+      "black-panther-party-part-02"
+    ]
+  }
+}

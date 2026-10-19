@@ -1,0 +1,20 @@
+{#- The top of an entity page or the entity index: the way back, the toggle, the
+    heading block. Every word is the export's (entities.py). -#}
+{% from "room/partials/macros.html" import link, crumbs, toggle %}
+<div class="room__topline">{{ crumbs(e.crumbs) }}
+{%- if e.back %}<p class="room__back">{{ link(e.back.label, e.back.url) }}</p>{% endif %}{{ toggle(toggle_on) }}</div>
+<header class="room__head">
+{% if e.eyebrow %}
+<p class="room__eyebrow">{{ e.eyebrow }}</p>
+{% endif %}
+<h1 class="room__title">{{ e.title }}</h1>
+{% if e.stats %}
+<ul class="room__stats">{% for s in e.stats %}<li><span class="room__stat">{{ s.figure }}</span> {{ s.label }}</li>{% endfor %}</ul>
+{% endif %}
+{% if e.lede %}
+<p class="room__lede">{{ e.lede }}</p>
+{% endif %}
+{% if e.note %}
+<p class="room__fine">{{ e.note }}</p>
+{% endif %}
+</header>

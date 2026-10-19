@@ -1,0 +1,263 @@
+{
+  "site": "deflockdane",
+  "fetched": "2026-10-19T00:04:18Z",
+  "source": "GET https://deflockdane.org/reading-room/?rr_search=<query> (public HTML search form on /reading-room/, read via origin 145.223.72.89 to avoid Cloudflare edge rate-limiting)",
+  "notes": "30 queries (15 verbatim record titles from /reading-room/ and 15 topic/vendor/agency terms) fetched against origin at 2026-10-19T00:04:18Z. Deflock_Reading_Room_Storage::get_docs caps results at 200 public documents and uses MySQL FULLTEXT boolean prefix matching (+token* for alphanumeric tokens >= 3 chars, capped at first 8 unique tokens) and groups results by agency section on the rendered page.",
+  "queries": {
+    "Wisconsin State Capitol Police Response Letter": [
+      "wi-doa-capitol-police-response-letter"
+    ],
+    "Wisconsin State Capitol Police PO 17864 Year 2": [
+      "wi-doa-capitol-police-po-17864-year-2"
+    ],
+    "Wisconsin State Capitol Police Requisition 17360": [
+      "wi-doa-capitol-police-requisition-17360"
+    ],
+    "UW-Madison Police Flock Contract Response": [
+      "wi-doa-capitol-police-response-letter",
+      "uw-madison-police-flock-contract-response",
+      "dane-county-sheriff-flock-contract-response"
+    ],
+    "Maple Bluff Police Flock Services Agreement": [
+      "maple-bluff-police-flock-services-agreement"
+    ],
+    "Dane County Sheriff Flock Contract & Response": [
+      "dane-county-sheriff-flock-contract-response"
+    ],
+    "Waunakee PD — Flock Invoice INV-85906": [
+      "waunakee-police-flock-invoice-inv-85906"
+    ],
+    "Green Bay PD - Policy 424 ALPR, drafted revision (September 2026)": [
+      "green-bay-pd-policy-424-draft-2026-09"
+    ],
+    "Green Bay PD - Monthly ALPR Report (August 2026)": [
+      "green-bay-pd-monthly-alpr-report-2026-08"
+    ],
+    "Green Bay PD - 2025 ALPR Annual Audit (May 2026)": [
+      "green-bay-pd-alpr-annual-audit-2025"
+    ],
+    "Green Bay PD - Flock DFR Law Enforcement Agreement ($1.39M, 2025)": [
+      "green-bay-pd-flock-dfr-law-enforcement-agreement-2025"
+    ],
+    "Wisconsin DOA Axon Master Procurement & Utilization Dataset (1,393 Line Items, FY22-FY26)": [
+      "wisconsin-doa-axon-master-dataset-fy22-fy26"
+    ],
+    "City of Madison 2026 Annual Surveillance Technology Report": [
+      "city-of-madison-2026-surveillance-technology-report"
+    ],
+    "Flock Contract Termination & LPR Vendor-Search Email Production": [
+      "middleton-police-flock-termination-lpr-vendor-search"
+    ],
+    "Sun Prairie PD - Flock Order Form and Sole-Source Justification": [
+      "sun-prairie-pd-flock-order-and-sole-source",
+      "sun-prairie-pd-flock-law-enforcement-agreement-2023"
+    ],
+    "Flock": [
+      "wi-doa-capitol-police-updated-quote",
+      "wi-doa-capitol-police-response-letter",
+      "wi-doa-capitol-police-po-17864-year-2",
+      "wi-doa-capitol-police-requisition-17360",
+      "wi-doa-capitol-police-po-16989-flock-cameras",
+      "wi-doa-capitol-police-license-plate-reader",
+      "uw-madison-police-flock-contract-response",
+      "maple-bluff-police-flock-services-agreement",
+      "dane-county-sheriff-flock-contract-response",
+      "dane-row-1577-dane-county-so-deployment-plan",
+      "dane-row-22u130-dane-county-so-deployment-plan",
+      "dane-row-1577-dane-county-so-permit",
+      "dane-row-22u130-dane-county-so-permit",
+      "waunakee-police-flock-law-enforcement-agreement-2025",
+      "waunakee-police-flock-invoice-inv-85906",
+      "waunakee-police-flock-invoice-inv-85289",
+      "waunakee-police-flock-invoice-inv-57031",
+      "waunakee-police-flock-invoice-inv-27918",
+      "sun-prairie-pd-flock-order-and-sole-source",
+      "sun-prairie-pd-flock-law-enforcement-agreement-2023",
+      "sun-prairie-pd-flock-law-enforcement-agreement-addendum-2023",
+      "sun-prairie-pd-flock-invoice-year-2",
+      "green-bay-pd-flock-master-services-agreement",
+      "green-bay-pd-flock-agreement-2022",
+      "green-bay-pd-flock-dfr-law-enforcement-agreement-2025",
+      "green-bay-pd-flock-quote-current-deployment",
+      "green-bay-pd-flock-quote-q148840-20-falcons",
+      "green-bay-pd-flock-billing-2024-05-16",
+      "green-bay-pd-flock-quote-q149796-10-falcons",
+      "green-bay-pd-flock-billing-correspondence-2023-09-25",
+      "green-bay-pd-flock-invoice-inv-58067",
+      "green-bay-pd-flock-billing-2023-12-27",
+      "green-bay-pd-flock-billing-2024-01-24",
+      "green-bay-pd-alpr-annual-audit-2025",
+      "green-bay-pd-flock-invoice-inv-35398",
+      "green-bay-pd-flock-po-2200131-flock-copy",
+      "green-bay-pd-flock-po-2200131",
+      "green-bay-pd-flock-billing-2022-11-29",
+      "green-bay-pd-flock-innovation-grant-addendum",
+      "green-bay-pd-alpr-summary",
+      "dane-row-1576-verona-pd-deployment-plan",
+      "dane-row-1576-verona-pd-permit",
+      "dane-row-3678-marshall-pd-deployment-plan",
+      "dane-row-3678-marshall-pd-permit",
+      "dane-row-3911-monona-pd-deployment-plan",
+      "dane-row-3911-monona-pd-permit",
+      "dane-row-4307-cottage-grove-pd-deployment-plan",
+      "dane-row-4307-cottage-grove-pd-permit",
+      "middleton-police-flock-termination-lpr-vendor-search",
+      "joliet-police-flock-invoice-inv-71530",
+      "joliet-police-flock-service-agreement",
+      "uw-oshkosh-pd-flock-safety-partial-1",
+      "dane-row-22u066-dane-pd-deployment-plan",
+      "dane-row-22u066-dane-pd-permit"
+    ],
+    "Axon": [
+      "dane-county-sheriff-flock-contract-response",
+      "wi-doa-axon-response-letter-terms",
+      "wisconsin-doa-axon-cloud-terms-exhibit-f",
+      "wi-doa-axon-exhibit-f-cloud-terms",
+      "wisconsin-doa-axon-quality-services-agreement-exhibit-g",
+      "wisconsin-doa-axon-participating-addendum-master-contract",
+      "wi-doa-axon-participating-addendum",
+      "wi-doa-axon-exhibit-g-qso-agreement",
+      "wi-doa-axon-exhibit-d-quarterly-activity-report",
+      "wisconsin-doa-axon-contract-utilization",
+      "wisconsin-doa-axon-quarterly-reports-raw-archive",
+      "wisconsin-doa-axon-master-dataset-fy22-fy26",
+      "middleton-police-flock-termination-lpr-vendor-search",
+      "green-bay-pd-alpr-annual-audit-2025"
+    ],
+    "ALPR": [
+      "wi-doa-capitol-police-po-16989-flock-cameras",
+      "wi-doa-capitol-police-updated-quote",
+      "dane-row-22u130-dane-county-so-deployment-plan",
+      "dane-county-sheriff-flock-contract-response",
+      "dane-row-1577-dane-county-so-deployment-plan",
+      "green-bay-pd-policy-424-draft-2026-09",
+      "green-bay-pd-alpr-summary",
+      "green-bay-pd-alpr-annual-audit-2025",
+      "green-bay-pd-monthly-alpr-report-2026-08",
+      "green-bay-pd-flock-quote-current-deployment",
+      "green-bay-pd-flock-quote-q148840-20-falcons",
+      "green-bay-pd-flock-quote-q149796-10-falcons",
+      "dane-row-22u066-dane-pd-deployment-plan",
+      "uw-oshkosh-pd-flock-safety-partial-1",
+      "wisconsin-doa-axon-contract-utilization",
+      "wi-doa-axon-participating-addendum",
+      "wi-doa-axon-exhibit-f-cloud-terms",
+      "middleton-police-flock-termination-lpr-vendor-search",
+      "sun-prairie-pd-flock-law-enforcement-agreement-2023",
+      "sun-prairie-pd-flock-law-enforcement-agreement-addendum-2023",
+      "sun-prairie-pd-flock-order-and-sole-source",
+      "dane-row-1576-verona-pd-deployment-plan",
+      "dane-row-3678-marshall-pd-permit",
+      "dane-row-3678-marshall-pd-deployment-plan",
+      "dane-row-3911-monona-pd-permit",
+      "dane-row-3911-monona-pd-deployment-plan",
+      "dane-row-4307-cottage-grove-pd-deployment-plan"
+    ],
+    "Capitol Police": [
+      "wi-doa-capitol-police-response-letter",
+      "wi-doa-capitol-police-updated-quote",
+      "wi-doa-capitol-police-license-plate-reader",
+      "wi-doa-capitol-police-po-17864-year-2",
+      "wi-doa-capitol-police-requisition-17360",
+      "wi-doa-capitol-police-po-16989-flock-cameras",
+      "city-of-madison-2026-surveillance-technology-report"
+    ],
+    "Waunakee": [
+      "dane-county-sheriff-flock-contract-response",
+      "waunakee-police-flock-invoice-inv-85906",
+      "waunakee-police-flock-invoice-inv-57031",
+      "waunakee-police-flock-invoice-inv-85289",
+      "waunakee-police-flock-law-enforcement-agreement-2025",
+      "waunakee-police-flock-invoice-inv-27918",
+      "middleton-police-flock-termination-lpr-vendor-search"
+    ],
+    "Green Bay": [
+      "wi-doa-capitol-police-license-plate-reader",
+      "city-of-madison-2026-surveillance-technology-report",
+      "green-bay-pd-policy-424-draft-2026-09",
+      "green-bay-pd-flock-master-services-agreement",
+      "green-bay-pd-flock-agreement-2022",
+      "green-bay-pd-alpr-summary",
+      "green-bay-pd-flock-billing-correspondence-2023-09-25",
+      "green-bay-pd-flock-po-2200131",
+      "green-bay-pd-flock-po-2200131-flock-copy",
+      "green-bay-pd-flock-dfr-law-enforcement-agreement-2025",
+      "green-bay-pd-alpr-annual-audit-2025",
+      "green-bay-pd-flock-invoice-inv-58067",
+      "green-bay-pd-flock-billing-2024-05-16",
+      "green-bay-pd-flock-billing-2023-12-27",
+      "green-bay-pd-flock-billing-2024-01-24",
+      "green-bay-pd-flock-innovation-grant-addendum",
+      "green-bay-pd-flock-quote-current-deployment",
+      "green-bay-pd-monthly-alpr-report-2026-08",
+      "green-bay-pd-flock-quote-q148840-20-falcons",
+      "green-bay-pd-flock-quote-q149796-10-falcons",
+      "green-bay-pd-flock-billing-2022-11-29",
+      "green-bay-pd-flock-invoice-inv-35398"
+    ],
+    "Maple Bluff": [
+      "maple-bluff-police-flock-services-agreement"
+    ],
+    "Sun Prairie": [
+      "sun-prairie-pd-flock-invoice-year-2",
+      "sun-prairie-pd-flock-law-enforcement-agreement-addendum-2023",
+      "sun-prairie-pd-flock-law-enforcement-agreement-2023",
+      "sun-prairie-pd-flock-order-and-sole-source",
+      "middleton-police-flock-termination-lpr-vendor-search"
+    ],
+    "Joliet": [
+      "joliet-police-flock-invoice-inv-71530",
+      "joliet-police-flock-service-agreement"
+    ],
+    "Verona": [
+      "dane-row-1576-verona-pd-deployment-plan",
+      "dane-row-1576-verona-pd-permit",
+      "city-of-madison-2026-surveillance-technology-report",
+      "middleton-police-flock-termination-lpr-vendor-search"
+    ],
+    "Monona": [
+      "city-of-madison-2026-surveillance-technology-report",
+      "dane-row-3911-monona-pd-deployment-plan",
+      "dane-row-3911-monona-pd-permit",
+      "middleton-police-flock-termination-lpr-vendor-search"
+    ],
+    "Cottage Grove": [
+      "city-of-madison-2026-surveillance-technology-report",
+      "dane-row-4307-cottage-grove-pd-deployment-plan",
+      "dane-row-4307-cottage-grove-pd-permit"
+    ],
+    "Surveillance": [
+      "city-of-madison-2026-surveillance-technology-report",
+      "green-bay-pd-flock-innovation-grant-addendum"
+    ],
+    "Deployment Plan": [
+      "wi-doa-capitol-police-updated-quote",
+      "maple-bluff-police-flock-services-agreement",
+      "dane-county-sheriff-flock-contract-response",
+      "dane-row-22u130-dane-county-so-deployment-plan",
+      "dane-row-1577-dane-county-so-deployment-plan",
+      "sun-prairie-pd-flock-order-and-sole-source",
+      "sun-prairie-pd-flock-law-enforcement-agreement-2023",
+      "green-bay-pd-flock-dfr-law-enforcement-agreement-2025",
+      "green-bay-pd-flock-master-services-agreement",
+      "green-bay-pd-flock-agreement-2022",
+      "dane-row-22u066-dane-pd-deployment-plan",
+      "dane-row-1576-verona-pd-deployment-plan",
+      "dane-row-3678-marshall-pd-deployment-plan",
+      "dane-row-3911-monona-pd-deployment-plan",
+      "dane-row-4307-cottage-grove-pd-deployment-plan",
+      "middleton-police-flock-termination-lpr-vendor-search"
+    ],
+    "Participating Addendum": [
+      "wi-doa-capitol-police-license-plate-reader",
+      "wi-doa-axon-participating-addendum",
+      "wisconsin-doa-axon-participating-addendum-master-contract",
+      "wisconsin-doa-axon-cloud-terms-exhibit-f",
+      "wi-doa-axon-exhibit-f-cloud-terms",
+      "wi-doa-axon-response-letter-terms",
+      "wisconsin-doa-axon-quality-services-agreement-exhibit-g",
+      "wi-doa-axon-exhibit-g-qso-agreement",
+      "wi-doa-axon-exhibit-d-quarterly-activity-report"
+    ]
+  }
+}

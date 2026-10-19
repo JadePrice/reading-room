@@ -1,0 +1,26 @@
+{#- One page: the room owns <body> and draws its own header, navigation and
+    footer from the site pack (partials/chrome-header.html, chrome-footer.html).
+    `main` names the content template. -#}
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+{% include "room/partials/head.html" %}
+<link rel="stylesheet" href="{{ at }}assets/room.css">
+</head>
+<body class="room-plain">
+<a class="room__skip" href="#room-content">{{ chrome.skip_text }}</a>
+{% if chrome.header %}
+{% include "room/partials/chrome-header.html" %}
+{% endif %}
+{% include main %}
+{% if chrome.footer %}
+{% include "room/partials/chrome-footer.html" %}
+{% endif %}
+{% for src in scripts %}
+<script src="{{ src }}"></script>
+{% endfor %}
+<script src="{{ at }}assets/room.js"></script>
+</body>
+</html>

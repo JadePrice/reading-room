@@ -1,0 +1,17 @@
+{#- The room's own footer: link columns, then the site's
+    footer text verbatim. -#}
+<footer class="room-chrome room-chrome--foot">
+<div class="room-chrome__bar">
+{% for col in chrome.footer.columns %}
+<div class="room-chrome__col">
+{% if col.heading %}
+<h2 class="room-chrome__col-h">{{ col.heading }}</h2>
+{% endif %}
+<ul>{% for ln in col.links %}<li><a href="{{ ln.url }}">{{ ln.label }}</a></li>{% endfor %}</ul>
+</div>
+{% endfor %}
+{% for t in chrome.footer.text %}
+<p class="room-chrome__text">{{ t }}</p>
+{% endfor %}
+</div>
+</footer>

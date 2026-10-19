@@ -1,0 +1,42 @@
+{#- The content element of one entity page: who appears alongside it, then its
+    documents in the site's groups (pack features.entities). Heading levels follow
+    the data: with a documents heading the groups sit under it as h3. -#}
+{% from "room/partials/macros.html" import root %}
+{{ root("entity", theme_key) }}
+<div class="room__shell" data-room-entity-page="{{ entity.key }}">
+{% with e = entity %}{% include "room/partials/entity-head.html" %}{% endwith %}
+{% if entity.alongside %}
+<section class="room__panel room__alongside">
+<h2 id="room-alongside-h">{{ entity.alongside.heading }}</h2>
+{% if entity.alongside.note %}
+<p class="room__blurb">{{ entity.alongside.note }}</p>
+{% endif %}
+<ul class="room__chips" aria-labelledby="room-alongside-h">
+{% for it in entity.alongside["items"] %}
+<li><a class="room__item" href="{{ it.url }}" data-room-entity="{{ it.key }}"><span class="room__item-label">{{ it.label }}</span>
+{%- if it.kind %}<span class="room__item-kind">{{ it.kind }}</span>{% endif %}
+{%- if it.count %}<span class="room__item-meta">{{ it.count }}{% if entity.alongside.count_sr %}<span class="room__sr">{{ entity.alongside.count_sr }}</span>{% endif %}</span>{% endif %}</a></li>
+{% endfor %}
+</ul></section>
+{% endif %}
+<div class="room__edocs">
+{% if entity.documents_heading %}
+<h2 id="room-edocs-h"{% if entity.documents_heading_hidden %} class="room__sr"{% endif %}>{{ entity.documents_heading }}</h2>
+{% endif %}
+{% if not entity.groups %}
+<p class="room__section-empty">{{ entity.empty_text }}</p>
+{% endif %}
+{% for g in entity.groups %}
+<section class="room__panel room__egroup">
+<h{{ entity.group_level }} id="{{ g.id }}">{{ g.heading }}</h{{ entity.group_level }}>
+<ul class="room__links" aria-labelledby="{{ g.id }}">
+{% for d in g.documents %}
+<li><a class="room__item" href="{{ d.url }}" data-room-doc="{{ d.slug }}"><span class="room__item-label">{{ d.title }}</span>
+{%- if d.badge %} <span class="room__badge{% if d.badge_kind %} room__badge--{{ d.badge_kind }}{% endif %}">{% if d.badge_sr %}<span class="room__sr">{{ d.badge_sr }}</span>{% endif %}{{ d.badge }}</span>{% endif %}
+{%- if d.meta %}<span class="room__item-meta">{{ d.meta }}</span>{% endif %}</a></li>
+{% endfor %}
+</ul></section>
+{% endfor %}
+</div>
+</div>
+</main>

@@ -1,0 +1,88 @@
+{#- The content element of one document page. -#}
+{% from "room/partials/macros.html" import link, crumbs, toggle, root %}
+{{ root("doc", theme_key) }}
+<div class="room__shell">
+<div class="room__topline">{{ crumbs(doc.crumbs) }}{{ toggle(toggle_on) }}</div>
+<header class="room__head">
+{% if doc.eyebrow %}
+<p class="room__eyebrow">{{ link(doc.eyebrow.label, doc.eyebrow.url) }}</p>
+{% endif %}
+<h1 class="room__title">{{ doc.title }}{% if doc.badge %} <span class="room__badge{% if doc.badge_kind %} room__badge--{{ doc.badge_kind }}{% endif %}">{{ doc.badge }}</span>{% endif %}</h1>
+{% if doc.released %}
+<p class="room__released">{{ doc.released_label }} {{ doc.released }}</p>
+{% endif %}
+{% if doc.summary %}
+<p class="room__lede">{{ doc.summary }}</p>
+{% endif %}
+</header>
+{% if doc.notice %}
+<aside class="room__notice" aria-labelledby="room-notice-h">
+<h2 id="room-notice-h">{{ doc.notice.heading }}</h2>
+<p>{{ doc.notice.body }}</p>
+{% if doc.notice.report %}
+<p class="room__notice-report">{{ doc.notice.report }}</p>
+{% endif %}
+</aside>
+{% endif %}
+<nav class="room__jump" aria-label="On this page"><ul>
+<li><a href="#room-reader">{{ doc.reader_label }}</a></li>
+<li><a href="#room-details">Details</a></li>
+<li><a href="#room-cite">Cite</a></li>
+</ul></nav>
+<div class="room__body">
+<section class="room__reader" id="room-reader" aria-labelledby="room-reader-h">
+<h2 id="room-reader-h" class="room__reader-h">{{ doc.reader_label }}</h2>
+{% with r = doc.reader %}{% include "room/partials/reader.html" %}{% endwith %}
+</section>
+<div class="room__rail">
+<section class="room__panel" id="room-details" aria-labelledby="room-details-h">
+<h2 id="room-details-h">Details</h2>
+<dl class="room__dl">
+{% for row in doc.details %}
+<div><dt>{{ row.label }}</dt><dd>
+{%- if row.code %}<code class="room__hash">{{ row.value }}</code>
+{%- elif row.url %}{{ link(row.value, row.url, external=row.external) }}
+{%- else %}{{ row.value }}{% endif %}
+{%- if row.note %}<span class="room__note">{{ row.note }}</span>{% endif %}</dd></div>
+{% endfor %}
+</dl>
+<p class="room__actions">
+<a class="room__btn" href="{{ doc.file_url }}" target="_blank" rel="noopener">Open the {{ doc.file_kind }}<span class="room__sr"> in a new tab</span></a>
+<a class="room__btn room__btn--ghost" href="{{ doc.download_url }}">Download</a>
+</p>
+{% if doc.archive_url %}
+<p class="room__archive"><a href="{{ doc.archive_url }}">Permanent copy at the Internet Archive</a></p>
+{% endif %}
+</section>
+<section class="room__panel" id="room-cite" aria-labelledby="room-cite-h">
+<h2 id="room-cite-h">Cite this document</h2>
+<p class="room__cite-text">{{ doc.citation }}</p>
+<button type="button" class="room__btn room__btn--ghost room__cite-copy" data-rr-cite-copy data-cite="{{ doc.citation }}" data-cite-copied-label="Copied" hidden>Copy citation</button>
+</section>
+{% for g in doc.groups %}
+<section class="room__panel room__group" aria-labelledby="room-group-{{ loop.index }}">
+<h2 id="room-group-{{ loop.index }}">{{ g.heading }}</h2>
+{% if g.blurb %}
+<p class="room__blurb">{{ g.blurb }}</p>
+{% endif %}
+<ul class="room__{{ g.list }}">
+{% for it in g["items"] %}
+<li>{% if it.url %}<a class="room__item" href="{{ it.url }}"{% if it.external %} target="_blank" rel="noopener"{% endif %}>{% else %}<span class="room__item">{% endif %}<span class="room__item-label">{{ it.label }}</span>
+{%- if it.kind %}<span class="room__item-kind">{{ it.kind }}</span>{% endif %}
+{%- if it.quote %}<span class="room__item-quote">&ldquo;{{ it.quote }}&rdquo;</span>{% endif %}
+{%- if it.meta %}<span class="room__item-meta">{{ it.meta }}</span>{% endif %}
+{%- if it.url %}{% if it.external %}<span class="room__sr"> (opens in a new tab)</span>{% endif %}</a>{% else %}</span>{% endif %}</li>
+{% endfor %}
+</ul></section>
+{% endfor %}
+{% if doc.notes_lines %}
+<section class="room__panel" aria-labelledby="room-notes-h">
+<h2 id="room-notes-h">Notes</h2>
+<p class="room__notes">{% for line in doc.notes_lines %}{{ line }}{% if not loop.last %}<br>
+{% endif %}{% endfor %}</p>
+</section>
+{% endif %}
+</div>
+</div>
+</div>
+</main>

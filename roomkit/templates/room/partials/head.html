@@ -1,0 +1,24 @@
+{% if head.robots %}
+<meta name="robots" content="noindex, nofollow">
+{% endif %}
+<title>{{ head.title }}</title>
+{% if head.canonical %}
+<link rel="canonical" href="{{ head.canonical }}">
+{% endif %}
+{% if head.social %}
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="{{ head.social.site_title }}">
+<meta property="og:title" content="{{ head.social.title }}">
+<meta property="og:url" content="{{ head.social.url }}">
+{% if head.social.description %}
+<meta name="description" content="{{ head.social.description }}">
+<meta property="og:description" content="{{ head.social.description }}">
+{% endif %}
+{% if head.social.image %}
+<meta property="og:image" content="{{ head.social.image }}">
+{% endif %}
+<meta name="twitter:card" content="{% if head.social.image %}summary_large_image{% else %}summary{% endif %}">
+{% endif %}
+{% if head.jsonld %}
+<script type="application/ld+json">{{ head.jsonld|safe }}</script>
+{% endif %}

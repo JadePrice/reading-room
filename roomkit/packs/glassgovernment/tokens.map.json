@@ -1,0 +1,133 @@
+{
+  "source": "design-tokens/glassgovernment.tokens.css",
+  "tokens": {
+    "page-bg": {
+      "var": "--paper-0",
+      "why": "the site's yellowed archival paper, not the reading-room plugin's near-white oklch(97% 0.008 85) (user approved 2026-10-15)"
+    },
+    "surface": {
+      "var": "--paper-1",
+      "why": "the site's raised paper, not the plugin's oklch(99% 0.004 85) (user approved 2026-10-15)"
+    },
+    "surface-sunk": {
+      "var": "--catalog-hover-bg",
+      "why": "the site's catalog hover shade, one step down the same paper; was the plugin's oklch(94% 0.010 85) (user approved 2026-10-15)"
+    }
+  },
+  "literal": {
+    "page-ink": {
+      "value": "oklch(25% 0.02 60)",
+      "why": "gg-reading-room plugin token (assets/css/ggrr-reading-room-v2.css); the site theme file has no reading-room palette, and the room keeps the WordPress room's look for parity (user, 2026-10-13)"
+    },
+    "page-ink-soft": {
+      "value": "oklch(43% 0.02 65)",
+      "why": "gg-reading-room plugin token (assets/css/ggrr-reading-room-v2.css); the site theme file has no reading-room palette, and the room keeps the WordPress room's look for parity (user, 2026-10-13)"
+    },
+    "page-link": {
+      "value": "oklch(48% 0.13 25)",
+      "why": "gg-reading-room plugin token (assets/css/ggrr-reading-room-v2.css); the site theme file has no reading-room palette, and the room keeps the WordPress room's look for parity (user, 2026-10-13)"
+    },
+    "ink": {
+      "value": "oklch(25% 0.02 60)",
+      "why": "gg-reading-room plugin token (assets/css/ggrr-reading-room-v2.css); the site theme file has no reading-room palette, and the room keeps the WordPress room's look for parity (user, 2026-10-13)"
+    },
+    "ink-soft": {
+      "value": "oklch(43% 0.02 65)",
+      "why": "gg-reading-room plugin token (assets/css/ggrr-reading-room-v2.css); the site theme file has no reading-room palette, and the room keeps the WordPress room's look for parity (user, 2026-10-13)"
+    },
+    "rule": {
+      "value": "oklch(25% 0.02 60 / 0.32)",
+      "why": "gg-reading-room plugin token (assets/css/ggrr-reading-room-v2.css); the site theme file has no reading-room palette, and the room keeps the WordPress room's look for parity (user, 2026-10-13)"
+    },
+    "link": {
+      "value": "oklch(48% 0.13 25)",
+      "why": "gg-reading-room plugin token (assets/css/ggrr-reading-room-v2.css); the site theme file has no reading-room palette, and the room keeps the WordPress room's look for parity (user, 2026-10-13)"
+    },
+    "accent": {
+      "value": "oklch(25% 0.02 60)",
+      "why": "gg-reading-room plugin token (assets/css/ggrr-reading-room-v2.css); the site theme file has no reading-room palette, and the room keeps the WordPress room's look for parity (user, 2026-10-13)"
+    },
+    "on-accent": {
+      "value": "oklch(99% 0.004 85)",
+      "why": "gg-reading-room plugin token (assets/css/ggrr-reading-room-v2.css); the site theme file has no reading-room palette, and the room keeps the WordPress room's look for parity (user, 2026-10-13)"
+    },
+    "focus": {
+      "value": "oklch(48% 0.13 25)",
+      "why": "gg-reading-room plugin token (assets/css/ggrr-reading-room-v2.css); the site theme file has no reading-room palette, and the room keeps the WordPress room's look for parity (user, 2026-10-13)"
+    },
+    "font-body": {
+      "value": "\"Spectral\",Georgia,\"Times New Roman\",serif",
+      "why": "gg-reading-room plugin token (assets/css/ggrr-reading-room-v2.css); the site theme file has no reading-room palette, and the room keeps the WordPress room's look for parity (user, 2026-10-13)"
+    },
+    "font-display": {
+      "value": "\"Atkinson Hyperlegible\",system-ui,sans-serif",
+      "why": "gg-reading-room plugin token (assets/css/ggrr-reading-room-v2.css); the site theme file has no reading-room palette, and the room keeps the WordPress room's look for parity (user, 2026-10-13)"
+    },
+    "font-mono": {
+      "value": "ui-monospace,\"SF Mono\",SFMono-Regular,Menlo,Consolas,monospace",
+      "why": "gg-reading-room plugin token (assets/css/ggrr-reading-room-v2.css); the site theme file has no reading-room palette, and the room keeps the WordPress room's look for parity (user, 2026-10-13)"
+    },
+    "radius": {
+      "value": "6px",
+      "why": "gg-reading-room plugin token (assets/css/ggrr-reading-room-v2.css); the site theme file has no reading-room palette, and the room keeps the WordPress room's look for parity (user, 2026-10-13)"
+    },
+    "radius-pill": {
+      "value": "4px",
+      "why": "gg-reading-room plugin token (assets/css/ggrr-reading-room-v2.css); the site theme file has no reading-room palette, and the room keeps the WordPress room's look for parity (user, 2026-10-13)"
+    }
+  },
+  "literal_dark": {
+    "page-bg": {
+      "value": "oklch(20% 0.01 70)",
+      "why": "gg-reading-room plugin token (assets/css/ggrr-reading-room-v2.css); the site theme file has no reading-room palette, and the room keeps the WordPress room's look for parity (user, 2026-10-13)"
+    },
+    "page-ink": {
+      "value": "oklch(92% 0.01 85)",
+      "why": "gg-reading-room plugin token (assets/css/ggrr-reading-room-v2.css); the site theme file has no reading-room palette, and the room keeps the WordPress room's look for parity (user, 2026-10-13)"
+    },
+    "page-ink-soft": {
+      "value": "oklch(76% 0.012 80)",
+      "why": "gg-reading-room plugin token (assets/css/ggrr-reading-room-v2.css); the site theme file has no reading-room palette, and the room keeps the WordPress room's look for parity (user, 2026-10-13)"
+    },
+    "page-link": {
+      "value": "oklch(72% 0.13 28)",
+      "why": "gg-reading-room plugin token (assets/css/ggrr-reading-room-v2.css); the site theme file has no reading-room palette, and the room keeps the WordPress room's look for parity (user, 2026-10-13)"
+    },
+    "surface": {
+      "value": "oklch(24% 0.012 70)",
+      "why": "gg-reading-room plugin token (assets/css/ggrr-reading-room-v2.css); the site theme file has no reading-room palette, and the room keeps the WordPress room's look for parity (user, 2026-10-13)"
+    },
+    "surface-sunk": {
+      "value": "oklch(17% 0.01 70)",
+      "why": "gg-reading-room plugin token (assets/css/ggrr-reading-room-v2.css); the site theme file has no reading-room palette, and the room keeps the WordPress room's look for parity (user, 2026-10-13)"
+    },
+    "ink": {
+      "value": "oklch(92% 0.01 85)",
+      "why": "gg-reading-room plugin token (assets/css/ggrr-reading-room-v2.css); the site theme file has no reading-room palette, and the room keeps the WordPress room's look for parity (user, 2026-10-13)"
+    },
+    "ink-soft": {
+      "value": "oklch(76% 0.012 80)",
+      "why": "gg-reading-room plugin token (assets/css/ggrr-reading-room-v2.css); the site theme file has no reading-room palette, and the room keeps the WordPress room's look for parity (user, 2026-10-13)"
+    },
+    "rule": {
+      "value": "oklch(92% 0.01 85 / 0.30)",
+      "why": "gg-reading-room plugin token (assets/css/ggrr-reading-room-v2.css); the site theme file has no reading-room palette, and the room keeps the WordPress room's look for parity (user, 2026-10-13)"
+    },
+    "link": {
+      "value": "oklch(72% 0.13 28)",
+      "why": "gg-reading-room plugin token (assets/css/ggrr-reading-room-v2.css); the site theme file has no reading-room palette, and the room keeps the WordPress room's look for parity (user, 2026-10-13)"
+    },
+    "accent": {
+      "value": "oklch(92% 0.01 85)",
+      "why": "gg-reading-room plugin token (assets/css/ggrr-reading-room-v2.css); the site theme file has no reading-room palette, and the room keeps the WordPress room's look for parity (user, 2026-10-13)"
+    },
+    "on-accent": {
+      "value": "oklch(20% 0.01 70)",
+      "why": "gg-reading-room plugin token (assets/css/ggrr-reading-room-v2.css); the site theme file has no reading-room palette, and the room keeps the WordPress room's look for parity (user, 2026-10-13)"
+    },
+    "focus": {
+      "value": "oklch(72% 0.13 28)",
+      "why": "gg-reading-room plugin token (assets/css/ggrr-reading-room-v2.css); the site theme file has no reading-room palette, and the room keeps the WordPress room's look for parity (user, 2026-10-13)"
+    }
+  }
+}

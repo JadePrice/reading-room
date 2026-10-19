@@ -1,0 +1,58 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://llm-wiki.local/reading-room-reader/contract/passage.schema.json",
+  "title": "Reading room citable passage response",
+  "description": "Response of ggrr/v1/passage (GG class-ggrr-rest.php passage; passage shape from GGRR_Citations::resolve_passage). GG only. DD has no passage route and must not claim this contract. Success nests the excerpt under passage. Errors are found=false with an error code; REST-level codes are bad_slug/not_found/incomplete_span, and WP_Error codes from resolve_passage are ggrr_passage_* and are returned with HTTP 400.",
+  "oneOf": [
+    {
+      "type": "object",
+      "required": ["found", "slug", "permalink", "reference", "passage"],
+      "additionalProperties": false,
+      "properties": {
+        "found": { "const": true },
+        "slug": { "type": "string", "pattern": "^[a-z0-9][a-z0-9-]*$" },
+        "permalink": { "type": "string" },
+        "reference": { "type": "string" },
+        "passage": {
+          "type": "object",
+          "required": ["document_id", "page_number", "offset_start", "offset_end", "stable_key", "provenance_level", "ocr_confidence", "bounding_box", "text", "minted"],
+          "additionalProperties": false,
+          "properties": {
+            "document_id": { "type": "integer", "minimum": 1 },
+            "page_number": { "type": ["integer", "null"], "minimum": 1 },
+            "offset_start": { "type": ["integer", "null"], "minimum": 0 },
+            "offset_end": { "type": ["integer", "null"], "minimum": 0 },
+            "stable_key": { "type": ["string", "null"] },
+            "provenance_level": { "type": "string" },
+            "ocr_confidence": { "type": ["number", "null"] },
+            "bounding_box": { "type": "null" },
+            "text": { "type": "string" },
+            "minted": { "type": "boolean" }
+          }
+        }
+      }
+    },
+    {
+      "type": "object",
+      "required": ["found", "error"],
+      "additionalProperties": false,
+      "properties": {
+        "found": { "const": false },
+        "error": {
+          "type": "string",
+          "enum": [
+            "bad_slug",
+            "not_found",
+            "incomplete_span",
+            "ggrr_passage_no_document",
+            "ggrr_passage_page_missing",
+            "ggrr_passage_bad_range",
+            "ggrr_passage_out_of_range",
+            "ggrr_passage_too_long"
+          ]
+        },
+        "message": { "type": "string" }
+      }
+    }
+  ]
+}

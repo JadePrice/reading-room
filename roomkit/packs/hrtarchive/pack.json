@@ -1,0 +1,97 @@
+{
+  "identity": {
+    "site": "hrtarchive",
+    "name": "HRT Archive",
+    "base_url": "https://hrtarchive.org"
+  },
+  "tokens": {
+    "accent": "#5BCEFA",
+    "focus": "#F5A9B8",
+    "font-body": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, Oxygen, Ubuntu, sans-serif",
+    "font-display": "Georgia, \"Times New Roman\", Times, serif",
+    "font-mono": "\"SF Mono\", \"Cascadia Code\", \"Fira Code\", Consolas, monospace",
+    "ink": "#F8F4FF",
+    "ink-soft": "#C9B8D9",
+    "link": "#5BCEFA",
+    "on-accent": "#0D0815",
+    "page-bg": "#12091F",
+    "page-ink": "#F8F4FF",
+    "page-ink-soft": "#C9B8D9",
+    "page-link": "#5BCEFA",
+    "rule": "rgba(91, 206, 250, 0.4)",
+    "surface": "rgba(25, 15, 40, 0.9)",
+    "surface-sunk": "rgba(9, 6, 18, 0.92)"
+  },
+  "labels": {
+    "room": "Archive",
+    "group": "Agency",
+    "group_singular": "agency",
+    "groups_plural": "agencies",
+    "jump": "Jump to agency",
+    "other_group": "Other pages",
+    "search_placeholder": "Title, agency, summary...",
+    "record_singular": "record",
+    "record_plural": "records"
+  },
+  "layout": {
+    "style": "cards",
+    "show_empty_groups": false,
+    "toggle": ""
+  },
+  "features": {},
+  "chrome": {
+    "home": {
+      "label": "HRT & Equity Archive",
+      "url": "https://hrtarchive.org/"
+    },
+    "skip_text": "Skip to main content",
+    "nav_label": "Primary",
+    "menu_label": "Menu",
+    "inline_from": "47em",
+    "nav": [
+      {
+        "label": "Home",
+        "url": "https://hrtarchive.org/"
+      },
+      {
+        "label": "Public Records",
+        "url": "https://hrtarchive.org/public-records/"
+      },
+      {
+        "label": "HRT Cafe",
+        "url": "https://hrt.hrtarchive.org/hrtcafe.net/"
+      },
+      {
+        "label": "Rollback History",
+        "url": "https://hrtarchive.org/rollback/"
+      },
+      {
+        "label": "About",
+        "url": "https://hrtarchive.org/about/"
+      }
+    ],
+    "footer": [
+      {
+        "links": [
+          {
+            "label": "About & Privacy",
+            "url": "https://hrtarchive.org/about/"
+          },
+          {
+            "label": "Accessibility",
+            "url": "https://hrtarchive.org/accessibility/"
+          }
+        ]
+      }
+    ],
+    "footer_text": [
+      "This archive is not medical advice. Content is historical documentation. Medication guidance, vendor listings, and dosing information may be stale or incorrect. Verify against maintained sources before acting.",
+      "hrtarchive.org · Historical mirrors · Snapshot 2024–2026"
+    ],
+    "source": {
+      "url": "https://hrtarchive.org/",
+      "date": "2026-10-14",
+      "note": "Header nav (.site-nav), footer disclaimer and footer meta, read from the public home page. Its relative links are made absolute here. The footer meta's three plain spans are joined into one line."
+    }
+  }
+}

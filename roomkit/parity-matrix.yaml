@@ -1,0 +1,533 @@
+# Reading-room parity matrix: what the unified room must do before any cutover.
+#
+# Plan: conductor/plans/2026-10-13-unified-reading-room-frontend.md (Task 1).
+# Wiki: wiki/reading-room-parity.md.
+#
+# Inventory read 2026-10-13 from plugin source on gg-core:
+#   glassgovernment-site 56f30dc  wp-content/plugins/gg-reading-room
+#   deflockdane-site     a5357f4  wp-content/plugins/deflock-reading-room
+# and compared against roomkit 0.3.0 (53fcce4b).
+#
+# Fields
+#   id           stable key; `roomkit parity --matrix` reports by it
+#   surface      document | index | collections | topics | entities | power-maps |
+#                requests | translation | read-aloud | sitemaps | machine-text |
+#                files | chrome | admin
+#   live         what the WordPress room does today, with its source
+#   disposition  static        the unified room builds it
+#                static-later  the unified room builds it, after cutover (not blocking)
+#                dynamic-api   the room calls an existing endpoint, same origin
+#                stays-wordpress  the URL keeps going to WordPress after cutover
+#                deferred      on hold by user decision 2026-10-13 (power maps,
+#                              records requests, translation); the room links to
+#                              the WordPress URL meanwhile
+#                dropped       not carried over; needs `signoff` (user, dated)
+#   sites        per site: need (required | optional | n/a) and status
+#                (done | partial | missing). `done` only when a check proves it.
+#   acceptance   what "same as live" means for this row
+#   check        the check that proves it (parity.<name> = automated, every row;
+#                browser = named sample in a browser)
+#
+# Cutover rule: every row whose disposition is static and whose need is
+# `required` must be `done` for that site. `deferred`, `stays-wordpress` and
+# signed-off `dropped` rows do not block.
+
+rows:
+
+# --- document page -----------------------------------------------------------
+
+- id: doc-citation
+  surface: document
+  live: "GG GGRR_Citations::format_reference (single-ggrr-document.php); dd inline formula (single-reading-room.php)"
+  disposition: static
+  sites:
+    deflockdane: {need: required, status: done}       # parity 67/67, 2026-10-08
+    glassgovernment: {need: required, status: done}   # verified parity on live pages, 2026-10-19
+  acceptance: "citation text byte-equal to the live page, every document"
+  check: parity.citation
+
+- id: doc-file-links
+  surface: document
+  live: "Open / Download links to the /file/ route; reader loads inline URL or verified viewing copy"
+  disposition: static
+  sites:
+    deflockdane: {need: required, status: done}
+    glassgovernment: {need: required, status: partial}
+  acceptance: "file, download and reader URLs equal to live, every document"
+  check: parity.file_urls
+
+- id: doc-reader
+  surface: document
+  live: "rr-reader mount, data-features spread,lightbox,fullscreen,search; poster when page 1 thumb exists"
+  disposition: static
+  sites:
+    deflockdane: {need: required, status: done}
+    glassgovernment: {need: required, status: partial}
+  acceptance: "same features enabled, same poster, page 1 renders"
+  check: browser
+
+- id: doc-nojs-fallback
+  surface: document
+  live: "data-reader-fallback block with Open/Download, noscript <object> for PDFs (driftkit contract)"
+  disposition: static
+  sites:
+    deflockdane: {need: required, status: done}
+    glassgovernment: {need: required, status: done}
+  acceptance: "driftkit no-JS probe passes on the static page"
+  check: parity.nojs
+
+- id: doc-in-document-search
+  surface: document
+  live: "REST doc-search on both sites"
+  disposition: static
+  sites:
+    deflockdane: {need: required, status: done}       # 70/70 vs dd's route, 2026-10-08
+    glassgovernment: {need: required, status: partial} # pages.json shipped; never compared with GG's doc-search
+  acceptance: "same page list and snippets as the live doc-search for a fixed query set"
+  check: parity.doc_search
+
+- id: doc-viewing-copy
+  surface: document
+  live: "dd get_view_copy: verified faster copy loaded by the reader, originals on every link"
+  disposition: static
+  sites:
+    deflockdane: {need: required, status: done}
+    glassgovernment: {need: n/a, status: missing}
+  acceptance: "view_url equal to live; the note under the reader shown"
+  check: parity.file_urls
+
+- id: doc-provenance-details
+  surface: document
+  live: "GG Provenance rail: collection, agency, record type, date, pages, reading time, language, rights, license (+note), source, permanent copy (IA status), SHA-256. dd Document details: agency, document date, contract start/end, source, SHA-256"
+  disposition: static
+  sites:
+    deflockdane: {need: required, status: partial}
+    glassgovernment: {need: required, status: partial}
+  acceptance: "same rows, same labels, same values, same order"
+  check: parity.details
+
+- id: doc-header-actions
+  surface: document
+  live: "GG header: file-meta line (agency, collection title, collection year span), 'Open original file' (?original=1), Internet Archive stamp or 'backup pending' badge"
+  disposition: static
+  sites:
+    deflockdane: {need: n/a, status: missing}
+    glassgovernment: {need: required, status: missing}
+  acceptance: "same line, same links, same IA state as live"
+  check: browser
+
+- id: doc-badges-notice
+  surface: document
+  live: "GG provenance badge (government / third-party), collection sensitivity notice"
+  disposition: static
+  sites:
+    deflockdane: {need: n/a, status: missing}
+    glassgovernment: {need: required, status: partial}
+  acceptance: "badge kind and notice text equal to live"
+  check: parity.display
+
+- id: doc-link-groups
+  surface: document
+  live: "GG: topics, entities under 'Attributed to' / 'Named in this document' with verbatim spans, 'Quoted in a power map', related documents. dd: vendors (approved_by_doc)"
+  disposition: static
+  sites:
+    deflockdane: {need: required, status: partial}
+    glassgovernment: {need: required, status: partial}
+  acceptance: "same groups, same items and URLs, same order; spans never truncated in HTML"
+  check: parity.display
+
+- id: doc-notes
+  surface: document
+  live: "GG notes_public; dd public_notes (OCR-looking notes suppressed by looks_like_ocr)"
+  disposition: static
+  sites:
+    deflockdane: {need: required, status: partial}
+    glassgovernment: {need: required, status: partial}
+  acceptance: "same notes text, same suppression"
+  check: parity.display
+
+- id: doc-copy-citation
+  surface: document
+  live: "Copy citation button, progressive enhancement, hidden without JS"
+  disposition: static
+  sites:
+    deflockdane: {need: required, status: partial}
+    glassgovernment: {need: required, status: partial}
+  acceptance: "copies the same text as the visible citation"
+  check: browser
+
+- id: doc-jsonld
+  surface: document
+  live: "schema.org DigitalDocument/CreativeWork; author omitted when agency unknown"
+  disposition: static
+  sites:
+    deflockdane: {need: required, status: partial}
+    glassgovernment: {need: required, status: partial}
+  acceptance: "JSON-LD object equal to live (key for key)"
+  check: parity.jsonld
+
+- id: doc-text-only
+  surface: document
+  live: "GG text-only records (65 CFR rows: full text, no file) render a page with 'No file is attached' and their text"
+  disposition: static
+  sites:
+    deflockdane: {need: n/a, status: missing}
+    glassgovernment: {need: required, status: missing}  # exporter excludes them today
+  acceptance: "every public GG record has a page; text-only ones show their text"
+  check: parity.slugs
+
+- id: doc-not-found
+  surface: document
+  live: "'Document not found' with 404 status"
+  disposition: static
+  sites:
+    deflockdane: {need: required, status: done}
+    glassgovernment: {need: required, status: done}
+  acceptance: "missing slug answers 404 with the room's page, never WordPress"
+  check: browser
+
+# --- room index --------------------------------------------------------------
+
+- id: index-grouped-browse
+  surface: index
+  live: "GG records list + collections; dd categories by jurisdiction with jump links, empty groups said out loud"
+  disposition: static
+  sites:
+    deflockdane: {need: required, status: done}
+    glassgovernment: {need: required, status: done}
+  acceptance: "every public record reachable from the index without JS; group order equal to live"
+  check: parity.slugs
+
+- id: index-stats
+  surface: index
+  live: "GG ggrr_holdings_summary: documents, collections, year span"
+  disposition: static
+  sites:
+    deflockdane: {need: optional, status: done}
+    glassgovernment: {need: required, status: partial}  # roomkit counts 390 exported; live counts all 451 incl. text-only
+  acceptance: "same figures as live"
+  check: parity.index
+
+- id: index-facets
+  surface: index
+  live: "GG: collection (optgroups), record type, source, agency, vendor, year from/to, sort (default, date new/old, title), clear. dd: suggest-driven, no selects"
+  disposition: static
+  sites:
+    deflockdane: {need: optional, status: done}
+    glassgovernment: {need: required, status: partial}  # missing vendor, year range, sort, collection optgroups
+  acceptance: "same facets and sort orders; filter state in the URL"
+  check: browser
+
+- id: index-collections-grid
+  surface: index
+  live: "GG 'Collections' table with its own sort (grouped, name, year new/old) and sources per collection"
+  disposition: static
+  sites:
+    deflockdane: {need: n/a, status: missing}
+    glassgovernment: {need: required, status: missing}
+  acceptance: "same collections, sources and order"
+  check: parity.index
+
+- id: index-suggest
+  surface: index
+  live: "GG combobox suggest (REST suggest). dd suggest panel from embedded data: top matches, agencies, vendors, document types, years, recent documents, recent searches (localStorage), 'Try searching'"
+  disposition: static
+  sites:
+    deflockdane: {need: required, status: partial}
+    glassgovernment: {need: required, status: partial}
+  # 2026-10-14 (room-search): built from the room's Pagefind index (pack features.corpus-search),
+  # no server call. Implemented: top matches, one group per facet the room holds (agency or
+  # category, year, and any other facet the manifest carries: vendors and document types only where
+  # the exporter puts them in facets), recent documents (newest first), recent searches
+  # (localStorage). Not implemented: "Try searching" (no curated list in the manifest or pack to
+  # draw it from; it would have to be invented) and per-group counts beyond the facet's. The packs
+  # ship with the switch off until the live comparison is done.
+  acceptance: "same suggestion groups; data embedded at build, no server call"
+  check: browser
+
+- id: index-fulltext-search
+  surface: index
+  live: "GG REST search over document text ('Searching document text...', local-metadata fallback). dd ?rr_search server search"
+  disposition: static
+  sites:
+    deflockdane: {need: required, status: partial}
+    glassgovernment: {need: required, status: partial}
+  # 2026-10-14 (room-search): Pagefind 1.5.2 index over title, summary, citation, agency, group and
+  # page text, behind pack features.corpus-search; `roomkit parity --search LIVE.json --out ROOM`
+  # is the check (search_parity.py; GG's query set is search-queries/glassgovernment-2026-10-14.json).
+  # Was 74.1% at N=100: every miss was a record with no page text (95 of 390). Since
+  # 2026-10-14 those carry search_text (indexed, never shown): 99.1% at N=100 on the 12-query
+  # set, 91.0% on the 25-query -wide set, 80% of 20 exact titles in the top 3 (see wiki/roomkit.md).
+  # The wide misses are ranking (55 live hits ranked 101-289 on broad queries) or live's loose
+  # matching (13: 287(g), malcolm x); title misses are numbered series parts outranking each other.
+  # Partial: ranking on broad queries and title-of-a-part lookups, and dd's live results have not
+  # been fed in (Cloudflare 429s; the Mac supplies them).
+  acceptance: "for a fixed query set, every live hit appears in the room's top N (Pagefind)"
+  check: parity.search
+
+# No-JS search (user decision 2026-10-13): nothing dropped. A static page cannot
+# answer ?q= by itself, so no-JS readers get two things: filter pages built at
+# build time, and a search form that submits to a server that still runs.
+
+- id: index-facet-pages
+  surface: index
+  live: "GG facets and dd suggest groups narrow the list; without JS only GG's ?q= form narrows it"
+  disposition: static
+  sites:
+    deflockdane: {need: required, status: missing}
+    glassgovernment: {need: required, status: missing}
+  acceptance: "a built page per facet value (agency, year, vendor, record type; GG also collection), e.g. <room>/agency/<slug>/, linked from the index without JS; members equal to filtering live by that value"
+  check: parity.facet_pages
+
+- id: index-nojs-search
+  surface: index
+  live: "GG GET form ?q= with ?pg= pages of 50; dd GET form ?rr_search="
+  disposition: dynamic-api
+  sites:
+    deflockdane: {need: required, status: missing}
+    glassgovernment: {need: required, status: missing}
+  acceptance: "without JS the search form submits to a same-origin endpoint that stays dynamic after cutover (WordPress search now, Civica's Meilisearch later) and returns results linking to the room's pages; old ?q= / ?rr_search= links reach results with or without JS (with JS the finder prefills from the URL)"
+  check: browser
+
+- id: index-thumbnails
+  surface: index
+  live: "dd cards with page-one thumbnails from the /thumb/ route"
+  disposition: static
+  sites:
+    deflockdane: {need: required, status: partial}  # thumb_url from the origin; decide copy-into-build vs origin
+    glassgovernment: {need: optional, status: missing}
+  acceptance: "every card that shows a thumbnail live shows the same one"
+  check: parity.index
+
+# --- other public surfaces ---------------------------------------------------
+
+- id: collections-index
+  surface: collections
+  live: "GG /library/collections/: categories, groups with icons, filter tags, documents per collection"
+  disposition: static
+  sites:
+    deflockdane: {need: n/a, status: missing}
+    glassgovernment: {need: required, status: missing}
+  acceptance: "same categories, groups, collections, counts and order"
+  check: parity.collections
+
+- id: collection-page
+  surface: collections
+  live: "GG /library/collection/<c>/: description, year span, sensitivity notice, search within collection, file sizes, JSON-LD"
+  disposition: static
+  sites:
+    deflockdane: {need: n/a, status: missing}
+    glassgovernment: {need: required, status: missing}
+  acceptance: "same members and order, same description and notice, JSON-LD equal"
+  check: parity.collections
+
+- id: topics
+  surface: topics
+  live: "GG /library/topics/ (counts) and /library/topics/<t>/ with ?s= search, snippets, /page/N/ paging, JSON-LD"
+  disposition: static
+  sites:
+    deflockdane: {need: n/a, status: missing}
+    glassgovernment: {need: required, status: missing}
+  acceptance: "same topics, members, order and paging URLs; in-topic search answers from the static index"
+  check: parity.topics
+
+- id: entities-index
+  surface: entities
+  live: "GG /library/entities/: approved entities grouped by type"
+  disposition: static
+  sites:
+    deflockdane: {need: n/a, status: missing}
+    glassgovernment: {need: required, status: done}    # parity.entities, 2026-10-15
+  # 2026-10-15 (room-entities): built behind pack features.entities (off in every committed
+  # pack) from the manifest's `entities` block, which exporters/glassgovernment.php now emits
+  # (index-ggrr-entities.php's words, list_approved's order). Live: the Mac's export from
+  # 1f6df71 (76 entities) built with features.entities on; parity.entities against the live
+  # index, read 2026-10-15 with paced public GETs: same 76 entities, same four groups in the
+  # same order (vendor 5, agency 55, org 10, program 6), no misses.
+  acceptance: "same entity set and grouping"
+  check: parity.entities
+
+- id: entity-page
+  surface: entities
+  live: "GG /library/entity/<type>/<slug>/: documents by collection, 'Appears alongside' (co_occurring), JSON-LD. dd /reading-room/entity/<type>/<slug>/: documents by category"
+  disposition: static
+  sites:
+    deflockdane: {need: required, status: done}        # parity.entities 16/16, 2026-10-15
+    glassgovernment: {need: required, status: done}    # parity.entities 76/76, 2026-10-15
+  # 2026-10-15 (room-entities): built behind pack features.entities at the live paths, every
+  # word, list and order from the export (both exporters now emit `entities`; dd: every
+  # approved type, grouped by agency as entity-reading-room.php groups them; dd's site has
+  # no claim headings and no entity JSON-LD, so neither is shown). Checked on fixtures, a
+  # stub-WordPress run of both exporters, and, for GG, parity.entities against three live
+  # pages with a preview-only stand-in block. GG done: the Mac's export from 1f6df71 against
+  # all 76 live entity pages (paced public GETs, 2026-10-15): every page's documents and
+  # order and its "Appears alongside" list equal, no misses. dd done: the Mac's export from
+  # 1f6df71 (16 entity pages) against the live sitemap and all 16 live entity pages, fetched
+  # by the Mac with fetch-entity-pages.sh --origin (17 x 200, 2026-10-15T15:12:42Z):
+  # 16 live / 16 room, every page's documents and order equal, no misses.
+  acceptance: "same documents per entity and order; GG co-occurring list equal"
+  check: parity.entities
+
+- id: power-maps
+  surface: power-maps
+  live: "index + page on both sites, 5 REST routes each; doc page 'Quoted in a power map' links"
+  disposition: deferred
+  sites:
+    deflockdane: {need: required, status: missing}
+    glassgovernment: {need: required, status: missing}
+  acceptance: "every link to a map from the room answers 200 at its WordPress URL"
+  check: parity.links
+
+- id: records-requests
+  surface: requests
+  live: "GG [gg_reading_room] shortcode + REST requests"
+  disposition: deferred
+  sites:
+    deflockdane: {need: n/a, status: missing}
+    glassgovernment: {need: required, status: missing}
+  acceptance: "links from the room to the requests page answer 200"
+  check: parity.links
+
+- id: translation
+  surface: translation
+  live: "GG REST translate-page (engine pilot: local OPUS-MT; Google to unregister). dd: Polylang site-wide"
+  disposition: deferred
+  sites:
+    deflockdane: {need: optional, status: missing}
+    glassgovernment: {need: required, status: missing}
+  acceptance: "n/a while deferred"
+  check: browser
+
+- id: read-aloud
+  surface: read-aloud
+  live: "engine pilot (reading-room-reader/read-aloud), not a plugin feature"
+  disposition: deferred
+  sites:
+    deflockdane: {need: optional, status: missing}
+    glassgovernment: {need: optional, status: missing}
+  acceptance: "pack flag on once the engine ships it"
+  check: browser
+
+- id: passage-citations
+  surface: document
+  live: "GG REST passage + citation: Cite page and per-hit Cite in the reader (citation UI tiers 1+2)"
+  disposition: dynamic-api
+  sites:
+    deflockdane: {need: n/a, status: missing}
+    glassgovernment: {need: required, status: done}    # parity.passages 30/30, 2026-10-15
+  # 2026-10-15 (room-passages, plan Task 12, the hybrid the user approved): pack
+  # features.passage-cite (off in every committed pack). Cite page is static: each page's
+  # exported citation in pages.json (the reference ggrr/v1/passage answers for the page).
+  # A hit's Cite asks the live ggrr/v1/passage with the hit's span (engine 0.7.0 gives
+  # static hits GG's locate span), falling back to the page citation when the route fails.
+  # Curated citations ship as citations.json. A span can't be pre-exported (any span up
+  # to 1,200 chars), so the row is dynamic-api. Done on the Mac's export from 138ec9d
+  # (390 records with document_id, 32,744 page citations, 65 curated, 0 excluded; source
+  # hashes equal to the c81ba37 copies), built with passage-cite on, 0 refusals:
+  # parity.passages on a paced public sample (2026-10-15T19:48:01Z, 30 GETs 2 s apart,
+  # all 200): pages 10/10 (reference, provenance, ocr_confidence byte-equal), spans 10/10
+  # (quote = the room's page text, key = the formula, reference = the page citation),
+  # curated 10/10 from citations.json (2 document-scope, held to citations.json; one of
+  # them, axon-body-cameras-master-contract-bend-or 102-106, resolves to empty text live).
+  acceptance: "page citations byte-equal to the live page-scoped answer; live span quotes and keys resolve to the room's page text; curated citations equal to live"
+  check: parity.passages
+
+- id: sitemaps
+  surface: sitemaps
+  live: "GG providers: document, entity, collection, topic, power-map. dd: document, entity"
+  disposition: static
+  sites:
+    deflockdane: {need: required, status: missing}
+    glassgovernment: {need: required, status: missing}
+  acceptance: "URL sets equal to the live providers for every surface the room serves"
+  check: parity.sitemaps
+
+- id: machine-text
+  surface: machine-text
+  live: "GG /library/documents.txt and /llms-full.txt"
+  disposition: static
+  sites:
+    deflockdane: {need: n/a, status: missing}
+    glassgovernment: {need: required, status: missing}
+  acceptance: "same records and fields as live"
+  check: parity.machine_text
+
+# --- served elsewhere or not public ------------------------------------------
+
+- id: file-routes
+  surface: files
+  live: "/file/ and /thumb/ routes stream originals and thumbnails"
+  disposition: stays-wordpress
+  sites:
+    deflockdane: {need: required, status: done}
+    glassgovernment: {need: required, status: done}
+  acceptance: "unchanged; moves to R2 in plan 2026-10-08 step 4"
+  check: parity.file_urls
+
+- id: preview-routes
+  surface: admin
+  live: "dd /reading-room-preview/ for logged-in editors"
+  disposition: stays-wordpress
+  sites:
+    deflockdane: {need: n/a, status: done}
+    glassgovernment: {need: n/a, status: done}
+  acceptance: "keeps answering at WordPress"
+  check: browser
+
+- id: civic-events-browser
+  surface: admin
+  live: "GG [gg_records]: Legistar/civic events from wp_lc_events. Not reading-room documents"
+  disposition: stays-wordpress
+  sites:
+    deflockdane: {need: n/a, status: done}
+    glassgovernment: {need: n/a, status: done}
+  acceptance: "out of the room's scope"
+  check: browser
+
+- id: ui-health
+  surface: admin
+  live: "GG REST ui-health"
+  disposition: stays-wordpress
+  sites:
+    deflockdane: {need: n/a, status: done}
+    glassgovernment: {need: n/a, status: done}
+  acceptance: "the room's own health is roomkit check + driftkit"
+  check: browser
+
+# --- the room's own chrome and accessibility ---------------------------------
+
+- id: site-chrome
+  surface: chrome
+  live: "site header, menus, footer, skip link ('Skip to reading room content' on dd)"
+  disposition: static
+  sites:
+    deflockdane: {need: required, status: done}       # pack chrome, plan Task 5; design review approved on 7ee4aed, 2026-10-14
+    glassgovernment: {need: required, status: done}
+  acceptance: "room-owned header/nav/footer from the site pack; skip link; works without JS; design review approved"
+  # browser = tests/roomkit/test_chrome.py, Playwright Chromium:
+  #   test_in_a_browser_the_menu_is_inline_wide_and_folded_narrow
+  #   test_in_a_browser_the_header_is_the_menu_or_one_row_and_stays_compact (every pack, 320-1440)
+  #   test_in_a_browser_open_dropdowns_stay_inside_the_header_content_box
+  #   test_in_a_browser_the_jump_nav_accessible_name_matches_its_heading
+  # with the static landmark, skip-link and menu tests in the same file.
+  check: browser
+
+- id: theme-toggle
+  surface: chrome
+  live: "GG light/dark toggle sharing localStorage 'ggrr-theme'; dd dark only"
+  disposition: static
+  sites:
+    deflockdane: {need: n/a, status: done}
+    glassgovernment: {need: required, status: done}
+  acceptance: "choice shared with the WordPress room while both exist"
+  check: browser
+
+- id: accessibility
+  surface: chrome
+  live: "WCAG 2.2 AA target on both sites"
+  disposition: static
+  sites:
+    deflockdane: {need: required, status: partial}
+    glassgovernment: {need: required, status: partial}
+  acceptance: "axe zero serious/critical on every surface; contrast >= 4.5:1 text, 3:1 UI, light and dark; keyboard-only and 375px pass"
+  check: browser

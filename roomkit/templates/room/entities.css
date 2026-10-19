@@ -1,0 +1,15 @@
+/* Entity index and entity pages (pack features.entities; scripts/roomkit/entities.py).
+   Shipped only when the pack turns entities on. Every rule is under #room-content and
+   every color is a token pair pack.PAIRS already gates: page-* on the page, ink/ink-soft/
+   link on a panel (surface) or a chip (surface-sunk). */
+#room-content .room__back{font-size:.9rem}
+#room-content .room__back a{color:var(--room-page-link)}
+#room-content .room__fine{font-size:.9rem;color:var(--room-page-ink-soft);margin-top:8px}
+#room-content .room__egroup,#room-content .room__alongside{margin-bottom:24px}
+#room-content .room__egroup h2,#room-content .room__egroup h3{font-size:1.15rem;margin-bottom:12px;color:var(--room-ink)}
+#room-content .room__egroup .room__section-n{color:var(--room-ink-soft)}
+#room-content .room__egroup .room__chips .room__item-meta,#room-content .room__alongside .room__item-meta{flex-basis:auto}
+#room-content .room__edocs .room__links .room__item{display:flex;flex-wrap:wrap;align-items:baseline;gap:2px 10px}
+/* :where() keeps this at .room__badge's own weight, so a pack's badge styling (extra_css) still wins. */
+#room-content :where(.room__edocs) .room__badge{color:var(--room-ink-soft);font-size:.68rem;padding:1px 6px}
+#room-content .room__edocs .room__item-meta{flex-basis:auto;margin-left:auto}

@@ -1,0 +1,21 @@
+{#- The content element of the entity index: the site's groups of entities, in its
+    order, each entity linking to its page (pack features.entities). -#}
+{% from "room/partials/macros.html" import root %}
+{{ root("entities", theme_key) }}
+<div class="room__shell">
+{% with e = entities %}{% include "room/partials/entity-head.html" %}{% endwith %}
+{% if not entities.groups %}
+<p class="room__section-empty">{{ entities.empty_text }}</p>
+{% endif %}
+{% for g in entities.groups %}
+<section class="room__panel room__egroup" data-room-entity-group="{{ g.type }}">
+<h2 id="{{ g.id }}">{{ g.heading }}{% if g.count %} <span class="room__section-n">{{ g.count }}</span>{% endif %}</h2>
+<ul class="room__chips" aria-labelledby="{{ g.id }}">
+{% for it in g.entities %}
+<li><a class="room__item" href="{{ it.url }}" data-room-entity="{{ it.key }}"><span class="room__item-label">{{ it.label }}</span>
+{%- if it.count %}<span class="room__item-meta">{{ it.count }}</span>{% endif %}</a></li>
+{% endfor %}
+</ul></section>
+{% endfor %}
+</div>
+</main>

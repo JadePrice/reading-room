@@ -1,0 +1,136 @@
+{
+  "identity": {
+    "site": "deflockdane",
+    "name": "DeFlock Dane",
+    "base_url": "https://deflockdane.org",
+    "backdrop": "#08090b"
+  },
+  "tokens": {
+    "accent": "#f59e0b",
+    "focus": "#f59e0b",
+    "font-body": "system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+    "font-display": "Georgia, \"Times New Roman\", \"Book Antiqua\", Palatino, serif",
+    "font-mono": "\"Courier New\", Courier, \"Lucida Console\", monospace",
+    "ink": "#dce3ed",
+    "ink-soft": "#7a8799",
+    "link": "#60a5fa",
+    "on-accent": "#0b0a06",
+    "page-bg": "transparent",
+    "page-ink": "#dce3ed",
+    "page-ink-soft": "#7a8799",
+    "page-link": "#60a5fa",
+    "radius": "6px",
+    "rule": "#3a4455",
+    "surface": "#10131a",
+    "surface-sunk": "#181d26"
+  },
+  "labels": {
+    "room": "Reading Room",
+    "group": "Category",
+    "group_singular": "category",
+    "groups_plural": "categories",
+    "other_group": "Other records",
+    "jump": "Jump to jurisdiction:",
+    "record_singular": "record",
+    "record_plural": "records"
+  },
+  "layout": {
+    "style": "cards",
+    "show_empty_groups": true,
+    "toggle": ""
+  },
+  "features": {},
+  "chrome": {
+    "home": {
+      "label": "Deflock Dane",
+      "url": "https://deflockdane.org/"
+    },
+    "tagline": "Community Safety over Corporate Surveillance",
+    "skip_text": "Skip to content",
+    "nav_label": "Primary Site Navigation",
+    "menu_label": "Menu",
+    "inline_from": "55em",
+    "nav": [
+      {
+        "label": "End Flock Contracts",
+        "url": "https://deflockdane.org/"
+      },
+      {
+        "label": "Maps",
+        "links": [
+          {
+            "label": "ALPR Map Dane County",
+            "url": "https://deflockdane.org/alpr-map-dane-county/"
+          },
+          {
+            "label": "Dane County Right-of-Way Permits",
+            "url": "https://deflockdane.org/dane-county-row-permits/"
+          },
+          {
+            "label": "Statewide ALPR Map",
+            "url": "https://deflockdane.org/wisdot-alpr-map/"
+          },
+          {
+            "label": "Shared Networks",
+            "url": "https://deflockdane.org/shared-networks/"
+          }
+        ]
+      },
+      {
+        "label": "Open Records",
+        "links": [
+          {
+            "label": "Records Requests",
+            "url": "https://deflockdane.org/records-requests/"
+          },
+          {
+            "label": "Open Records Drafting Tool",
+            "url": "https://deflockdane.org/wisconsin-open-records-request-tool/"
+          },
+          {
+            "label": "Request Tracker",
+            "url": "https://deflockdane.org/request-tracker/"
+          },
+          {
+            "label": "Reading Room",
+            "url": "https://deflockdane.org/reading-room/"
+          },
+          {
+            "label": "Directory",
+            "url": "https://deflockdane.org/directory/"
+          },
+          {
+            "label": "WI Axon Contract",
+            "url": "https://deflockdane.org/wisconsin-axon-contract/"
+          }
+        ]
+      },
+      {
+        "label": "Deflock.me",
+        "url": "https://deflock.me"
+      }
+    ],
+    "footer_text": [
+      "Deflock Dane (CC) Creative Commons 2026 unless otherwise noted"
+    ],
+    "source": {
+      "url": "https://deflockdane.org/reading-room/",
+      "date": "2026-10-14",
+      "note": "Header menu (#primary-site-navigation-desktop), site description and footer copyright, read from the public page. The menu's two parent items (Maps, Open Records) link to their first child on the live site; here they are group labels."
+    }
+  },
+  "token_notes": {
+    "tokens.accent": "was #fbbf24, the site's prefers-contrast:more amber; now its default amber",
+    "tokens.focus": "was #fbbf24 (the high-contrast amber); now the site's own focus ring color",
+    "tokens.font-body": "was var(--dl-font-b,...), which needed the captured site CSS; now the stack itself, so the room needs no site stylesheet",
+    "tokens.font-display": "as font-body: the resolved site stack",
+    "tokens.font-mono": "as font-body: the resolved site stack",
+    "tokens.ink-soft": "was #a3b1c4, hand-picked; now the site's muted text",
+    "tokens.link": "was #7cb8fb, hand-picked; now the site's link blue",
+    "tokens.on-accent": "text on amber buttons; the site file has no on-amber color (9.22:1 on --dl-amber)",
+    "tokens.page-bg": "the room sits on dd's own page (--dl-bg); identity.backdrop gives that color for the contrast check",
+    "tokens.page-ink-soft": "was #a3b1c4, hand-picked and not in dd's palette; now the site's muted text (5.46:1 on the page, 4.63:1 on inputs)",
+    "tokens.page-link": "was #7cb8fb, hand-picked; now the site's link blue (7.31:1 on panels)",
+    "tokens.radius": "was 10px, between the site's two radii; now its standard --r"
+  }
+}

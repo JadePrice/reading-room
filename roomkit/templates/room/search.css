@@ -1,0 +1,22 @@
+/* corpus search (pack features.corpus-search): the suggestion list and the text results. Tokens only. */
+#room-content .room__combo{position:relative}
+#room-content .room__combo input{width:100%}
+#room-content .room__suggest{position:absolute;z-index:20;left:0;right:0;top:calc(100% + 4px);max-height:min(60vh,26rem);overflow-y:auto;padding:6px 0;background:var(--room-surface);color:var(--room-ink);border:1px solid var(--room-ink-soft);border-radius:8px;box-shadow:0 6px 20px rgba(0,0,0,.18)}
+#room-content .room__suggest-group+.room__suggest-group{border-top:1px solid var(--room-rule);margin-top:4px;padding-top:4px}
+#room-content .room__suggest-h{padding:6px 14px 2px;font-size:.75rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--room-ink-soft)}
+#room-content .room__suggest-opt{display:flex;flex-wrap:wrap;align-items:baseline;gap:0 .3em;min-height:44px;padding:10px 14px;cursor:pointer;color:var(--room-ink);overflow-wrap:anywhere;border-left:3px solid transparent}
+#room-content .room__suggest-opt:hover{background:var(--room-surface-sunk)}
+#room-content .room__suggest-opt[aria-selected="true"]{background:var(--room-surface-sunk);border-left-color:var(--room-focus);outline:2px solid var(--room-focus);outline-offset:-2px}
+#room-content .room__suggest-note{color:var(--room-ink-soft);font-size:.85rem}
+#room-content .room__results{margin-bottom:24px}
+#room-content .room__results-list{display:grid;gap:12px}
+#room-content .room__result{background:var(--room-surface);color:var(--room-ink);border:1px solid var(--room-rule);border-radius:var(--room-radius);padding:16px;display:grid;gap:6px;overflow-wrap:anywhere}
+#room-content .room__result a{color:var(--room-link)}
+#room-content .room__result-title{font-family:var(--room-font-body);font-size:1.05rem;font-weight:700}
+#room-content .room__result-meta{font-size:.85rem;color:var(--room-ink-soft)}
+#room-content .room__result-excerpt,#room-content .room__result-pages{font-size:.92rem;color:var(--room-ink)}
+#room-content .room__result mark{background:var(--room-surface-sunk);color:var(--room-ink);font-weight:700;text-decoration:underline;text-decoration-color:var(--room-focus);text-underline-offset:.15em}
+#room-content .room__result-pages{display:grid;gap:4px;padding-left:12px;border-left:3px solid var(--room-rule)}
+#room-content .room__result-pages a{font-weight:700}
+#room-content .room__result-page-ex{color:var(--room-ink-soft)}
+#room-content .room__more{margin-top:12px}

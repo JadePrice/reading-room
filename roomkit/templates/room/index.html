@@ -1,0 +1,75 @@
+{#- The content element of the index: the finder (JavaScript only) and the
+    grouped list, which is the way in without JavaScript. -#}
+{% from "room/partials/macros.html" import crumbs, toggle, root %}
+{% from "room/partials/card.html" import card %}
+{{ root("index", theme_key) }}
+<div class="room__shell">
+<div class="room__topline">{{ crumbs(index.crumbs) }}{{ toggle(toggle_on) }}</div>
+<header class="room__head">
+{% if index.eyebrow %}
+<p class="room__eyebrow">{{ index.eyebrow }}</p>
+{% endif %}
+<h1 class="room__title">{{ index.title }}</h1>
+{% if index.lede %}
+<p class="room__lede">{{ index.lede }}</p>
+{% endif %}
+<ul class="room__stats"><li><span class="room__stat">{{ index.count }}</span> {{ index.records_noun }}</li><li><span class="room__stat">{{ index.group_count }}</span> {{ index.groups_noun }}</li>
+{%- if index.years %}<li><span class="room__stat">{{ index.years[0] }}{% if index.years[1] != index.years[0] %}&ndash;{{ index.years[1] }}{% endif %}</span></li>{% endif %}</ul>
+{% for ln in index.links %}
+<p class="room__head-link"><a href="{{ ln.url }}">{{ ln.label }}</a>{% if ln.text %}: {{ ln.text }}{% endif %}</p>
+{% endfor %}
+</header>
+{# With corpus search (index.search), room-search.js owns the finder: text search
+    over the room's Pagefind index, suggestions as a combobox. Without it, room.js. #}
+<section class="room__finder" aria-label="Find a record"{% if index.search %} data-room-search data-room-pagefind="{{ index.search.pagefind_url }}" data-room-recent-key="{{ index.search.recent_key }}"{% else %} data-room-finder{% endif %} hidden>
+<form class="room__search" role="search" action="{{ at }}" method="get">
+<div class="room__field room__field--q"><label for="room-q">Search records</label>
+{% if index.search %}
+<div class="room__combo"><input type="search" id="room-q" name="q" autocomplete="off" placeholder="{{ index.search.placeholder }}" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="room-suggest" aria-describedby="room-q-hint">
+<div class="room__suggest" id="room-suggest" role="listbox" aria-label="Suggestions" hidden></div></div>
+<p class="room__sr" id="room-q-hint">Searches the text of every record. Suggestions appear as you type: arrow keys move through them, Enter chooses, Escape closes.</p></div>
+{% else %}
+<input type="search" id="room-q" name="q" autocomplete="off" placeholder="{{ index.search_placeholder }}"></div>
+{% endif %}
+{% for s in index.selects %}
+<div class="room__field"><label for="room-f-{{ s.name }}">{{ s.label }}</label><select id="room-f-{{ s.name }}" name="{{ s.name }}" data-room-facet="{{ s.name }}"><option value="">All</option>
+{%- for v in s["values"] %}<option value="{{ v }}">{{ v }}</option>{% endfor %}</select></div>
+{% endfor %}
+<div class="room__field room__field--buttons">
+<button type="submit" class="room__btn">Search</button>
+<button type="reset" class="room__btn room__btn--ghost" data-room-clear>Clear</button></div>
+</form>
+<p class="room__count" role="status" aria-live="polite" data-room-count{% if index.count_nouns %} data-room-one="{{ index.count_nouns.one }}" data-room-other="{{ index.count_nouns.other }}"{% endif %}>{{ index.count }} {{ index.records_noun }}</p>
+</section>
+{% if index.search %}
+<section class="room__results" aria-label="Search results" data-room-results hidden>
+<ol class="room__results-list" data-room-results-list></ol>
+<button type="button" class="room__btn room__btn--ghost room__more" data-room-more hidden>Show more results</button>
+</section>
+{% endif %}
+{% if index.jump %}
+<nav class="room__jump room__jump--groups" aria-label="{{ index.jump.name }}" data-room-jump>
+{# A long list folds away, so the records are not a screen below it. #}
+{% if index.jump.folded %}
+<details><summary>{{ index.jump.name }} ({{ index.jump.groups|length }})</summary><ul>
+{%- else %}
+<p class="room__jump-label">{{ index.jump.label }}</p><ul>
+{%- endif %}
+{%- for g in index.jump.groups %}<li><a href="#{{ g.id }}">{{ g.label }}</a></li>{% endfor %}</ul>
+{%- if index.jump.folded %}</details>{% endif %}</nav>
+{% endif %}
+<div class="room__groups room__groups--{{ layout }}">
+{% for sec in index.sections %}
+<section class="room__section" id="{{ sec.id }}" aria-labelledby="{{ sec.id }}-h" data-room-section>
+<h2 id="{{ sec.id }}-h" class="room__section-h">{{ sec.label }} <span class="room__section-n">{{ sec.cards|length }}</span></h2>
+{% if not sec.cards %}
+<p class="room__section-empty">{{ index.empty_group_text }}</p>
+{% else %}
+<ul class="room__cards room__cards--{{ layout }}">{% for c in sec.cards %}{{ card(c, layout) }}{% endfor %}</ul>
+{% endif %}
+</section>
+{% endfor %}
+</div>
+<p class="room__empty" data-room-empty hidden>No records match. Try fewer words, or clear the filters.</p>
+</div>
+</main>

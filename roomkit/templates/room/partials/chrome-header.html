@@ -1,0 +1,29 @@
+{#- The room's own header and site navigation. One nav
+    landmark; on narrow screens its links fold into a details/summary menu,
+    which needs no JavaScript. A group of links is a nested disclosure. -#}
+{% set h = chrome.header %}
+<header class="room-chrome room-chrome--head">
+<div class="room-chrome__bar">
+<p class="room-chrome__brand"><a class="room-chrome__home" href="{{ h.home.url }}">{{ h.home.label }}</a>
+{%- if h.tagline %}<span class="room-chrome__tagline">{{ h.tagline }}</span>{% endif %}</p>
+{% if h.nav %}
+<nav class="room-chrome__nav" aria-label="{{ h.nav_label }}">
+<details class="room-chrome__menu"><summary class="room-chrome__menu-label">{{ h.menu_label }}</summary>
+<ul class="room-chrome__links">
+{% for it in h.nav %}
+{% if it.group %}
+<li class="room-chrome__group"><details><summary>{{ it.label }}</summary><ul>
+{%- for ln in it.links %}<li><a href="{{ ln.url }}">{{ ln.label }}</a></li>{% endfor %}</ul></details></li>
+{% else %}
+<li><a href="{{ it.url }}">{{ it.label }}</a></li>
+{% endif %}
+{% endfor %}
+</ul>
+</details>
+</nav>
+{% endif %}
+</div>
+{% if h.notice %}
+<p class="room-chrome__notice">{% if h.notice.url %}<a href="{{ h.notice.url }}">{{ h.notice.text }}</a>{% else %}{{ h.notice.text }}{% endif %}</p>
+{% endif %}
+</header>

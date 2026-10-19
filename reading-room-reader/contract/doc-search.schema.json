@@ -1,0 +1,32 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://llm-wiki.local/reading-room-reader/contract/doc-search.schema.json",
+  "title": "Reading room document search response",
+  "description": "Response of a per-document page search. Served by GG ggrr/v1/doc-search (class-ggrr-rest.php doc_search) and DD deflock-rr/v1/doc-search (class-deflock-reading-room-rest.php doc_search). GG fields offset_start, offset_end, provenance_level are optional because DD does not emit them. No ocr_text or full_text is ever included.",
+  "type": "object",
+  "required": ["slug", "q", "count", "pages"],
+  "additionalProperties": false,
+  "properties": {
+    "slug": { "type": "string", "pattern": "^[a-z0-9][a-z0-9-]*$" },
+    "q": { "type": "string" },
+    "count": { "type": "integer", "minimum": 0 },
+    "pages": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/page_hit" }
+    }
+  },
+  "$defs": {
+    "page_hit": {
+      "type": "object",
+      "required": ["page_number", "snippet"],
+      "additionalProperties": false,
+      "properties": {
+        "page_number": { "type": ["integer", "null"], "minimum": 1 },
+        "snippet": { "type": "string", "maxLength": 1000 },
+        "offset_start": { "type": ["integer", "null"], "minimum": 0 },
+        "offset_end": { "type": ["integer", "null"], "minimum": 0 },
+        "provenance_level": { "type": "string" }
+      }
+    }
+  }
+}

@@ -1,0 +1,21 @@
+{
+  "source": "design-tokens/hrtarchive.tokens.css",
+  "tokens": {
+    "page-bg": "--bg-main",
+    "page-ink": "--text-primary",
+    "page-ink-soft": "--text-secondary",
+    "page-link": "--trans-blue",
+    "surface": "--bg-elevated",
+    "surface-sunk": "--surface-strong",
+    "ink": "--text-primary",
+    "ink-soft": "--text-secondary",
+    "rule": "--border-strong",
+    "link": "--trans-blue",
+    "accent": "--trans-blue",
+    "on-accent": "--bg-deep",
+    "focus": "--trans-pink",
+    "font-body": "--font-body",
+    "font-display": "--font-display",
+    "font-mono": "--font-mono"
+  }
+}

@@ -1,0 +1,22 @@
+{#- One record on the index, on one line. -#}
+{% macro card(c, layout) -%}
+<li class="room__card" data-room-text="{{ c.text }}" data-room-group="{{ c.group }}"
+{%- for f in c.facets %} data-room-f-{{ f.name }}="{{ f.value }}"{% endfor %}>
+{%- if layout == "cards" and c.thumb_url -%}
+<a class="room__thumb" href="{{ c.url }}" tabindex="-1" aria-hidden="true"><img src="{{ c.thumb_url }}" alt="" loading="lazy" decoding="async" width="116" height="150"></a>
+{%- endif -%}
+<div class="room__card-body">
+{%- if c.card_date and c.date -%}
+<p class="room__card-date"><time datetime="{{ c.date }}">{{ c.card_date }}</time></p>
+{%- elif layout == "cards" -%}
+<p class="room__card-date">Date pending</p>
+{%- endif -%}
+<h3 class="room__card-title"><a href="{{ c.url }}">{{ c.title }}</a></h3>
+{%- if c.meta -%}
+<p class="room__card-meta">{% for x in c.meta %}{% if not loop.first %} &middot; {% endif %}{{ x }}{% endfor %}</p>
+{%- endif -%}
+{%- if c.summary -%}
+<p class="room__card-summary">{{ c.summary }}</p>
+{%- endif -%}
+</div></li>
+{%- endmacro %}

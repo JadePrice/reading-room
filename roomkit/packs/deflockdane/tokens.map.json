@@ -1,0 +1,60 @@
+{
+  "source": "design-tokens/deflockdane.tokens.css",
+  "tokens": {
+    "page-ink": "--dl-text",
+    "page-ink-soft": {
+      "var": "--dl-text-muted",
+      "why": "was #a3b1c4, hand-picked and not in dd's palette; now the site's muted text (5.46:1 on the page, 4.63:1 on inputs)"
+    },
+    "page-link": {
+      "var": "--dl-blue",
+      "why": "was #7cb8fb, hand-picked; now the site's link blue (7.31:1 on panels)"
+    },
+    "surface": "--dl-bg-2",
+    "surface-sunk": "--dl-bg-3",
+    "ink": "--dl-text",
+    "ink-soft": {
+      "var": "--dl-text-muted",
+      "why": "was #a3b1c4, hand-picked; now the site's muted text"
+    },
+    "rule": "--dl-border-hi",
+    "link": {
+      "var": "--dl-blue",
+      "why": "was #7cb8fb, hand-picked; now the site's link blue"
+    },
+    "accent": {
+      "var": "--dl-amber",
+      "why": "was #fbbf24, the site's prefers-contrast:more amber; now its default amber"
+    },
+    "focus": {
+      "var": "--dl-amber",
+      "why": "was #fbbf24 (the high-contrast amber); now the site's own focus ring color"
+    },
+    "font-body": {
+      "var": "--dl-font-b",
+      "why": "was var(--dl-font-b,...), which needed the captured site CSS; now the stack itself, so the room needs no site stylesheet"
+    },
+    "font-display": {
+      "var": "--dl-font-d",
+      "why": "as font-body: the resolved site stack"
+    },
+    "font-mono": {
+      "var": "--dl-font-u",
+      "why": "as font-body: the resolved site stack"
+    },
+    "radius": {
+      "var": "--r",
+      "why": "was 10px, between the site's two radii; now its standard --r"
+    }
+  },
+  "literal": {
+    "page-bg": {
+      "value": "transparent",
+      "why": "the room sits on dd's own page (--dl-bg); identity.backdrop gives that color for the contrast check"
+    },
+    "on-accent": {
+      "value": "#0b0a06",
+      "why": "text on amber buttons; the site file has no on-amber color (9.22:1 on --dl-amber)"
+    }
+  }
+}
