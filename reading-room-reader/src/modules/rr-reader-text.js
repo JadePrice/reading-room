@@ -47,10 +47,35 @@
                 if (!r.ok) { throw new Error('HTTP ' + r.status); }
                 var cl = r.headers.get('content-length');
                 if (cl && parseInt(cl, 10) > MAX_TEXT_SIZE) { throw new Error('too-large'); }
-                return r.text();
+                if (!r.body || !r.body.getReader) {
+                    return r.text().then(function (t) {
+                        if (t.length > MAX_TEXT_SIZE) { throw new Error('too-large'); }
+                        return t;
+                    });
+                }
+                var reader = r.body.getReader();
+                var decoder = new TextDecoder();
+                var text = '';
+                var bytesRead = 0;
+                function readChunk() {
+                    return reader.read().then(function (result) {
+                        if (result.done) {
+                            return text;
+                        }
+                        bytesRead += result.value.byteLength;
+                        if (bytesRead > MAX_TEXT_SIZE) {
+                            reader.cancel();
+                            throw new Error('too-large');
+                        }
+                        text += decoder.decode(result.value, { stream: true });
+                        return readChunk();
+                    });
+                }
+                return readChunk().then(function (finalText) {
+                    return finalText + decoder.decode();
+                });
             })
             .then(function (text) {
-                if (text.length > MAX_TEXT_SIZE) { tooBig(); return; }
                 var pre = document.createElement('pre');
                 pre.className = 'rr-reader__text';
                 // Scrollable region: focusable so keyboard users can scroll it.

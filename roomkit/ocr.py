@@ -82,8 +82,13 @@ def run_ocrmypdf(
     if proc.returncode != 0:
         raise OcrError(f"ocrmypdf failed with exit {proc.returncode}: {proc.stderr.strip()}")
 
+    if not output_pdf.is_file() or output_pdf.stat().st_size == 0:
+        raise OcrError(f"ocrmypdf exited 0 but output PDF is missing or empty: {output_pdf}")
+    if sidecar_txt is not None and not sidecar_txt.is_file():
+        raise OcrError(f"ocrmypdf exited 0 but sidecar text is missing: {sidecar_txt}")
+
     in_size = input_pdf.stat().st_size
-    out_size = output_pdf.stat().st_size if output_pdf.exists() else 0
+    out_size = output_pdf.stat().st_size
     ratio = (out_size / in_size) if in_size > 0 else 1.0
 
     return {

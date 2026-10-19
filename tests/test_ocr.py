@@ -59,3 +59,22 @@ def test_process_pdf_bytes(tmp_path: Path) -> None:
     assert len(out_bytes) > 0
     assert len(sidecar_text) > 50
     assert stats["output_bytes"] == len(out_bytes)
+
+
+def test_run_ocrmypdf_fails_when_output_missing(tmp_path: Path, monkeypatch) -> None:
+    import subprocess
+    from roomkit.ocr import OcrError
+
+    dummy_in = tmp_path / "in.pdf"
+    dummy_in.write_bytes(b"%PDF-1.4 dummy")
+    dummy_out = tmp_path / "out.pdf"
+
+    class DummyProc:
+        returncode = 0
+        stderr = ""
+
+    monkeypatch.setattr(subprocess, "run", lambda *a, **kw: DummyProc())
+
+    with pytest.raises(OcrError, match="output PDF is missing or empty"):
+        run_ocrmypdf(dummy_in, dummy_out)
+

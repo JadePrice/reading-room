@@ -170,3 +170,40 @@ def test_badges_and_notice_parity():
         "notice report 'Wrong report' not in page",
     ]
 
+
+@pytest.mark.parametrize("bad_path", [
+    "//other-host/",
+    "/path\\with\\backslash/",
+    "/path?query=1/",
+    "/path#fragment/",
+    "/path/../relative/",
+    "/path/./current/",
+    "no-leading-slash/",
+    "/no-trailing-slash",
+])
+def test_room_path_validation(bad_path: str):
+    data = _valid_manifest()
+    data["site"]["room_path"] = bad_path
+    with pytest.raises(ManifestError):
+        parse(data)
+
+
+def test_numeric_validation_rejects_booleans():
+    # file.bytes = True
+    d1 = _valid_manifest()
+    d1["documents"][0]["file"]["bytes"] = True
+    m1 = parse(d1)
+    assert any("file.bytes is not a non-negative integer" in prob for _, prob in m1.refusals)
+
+    # page.n = True
+    d2 = _valid_manifest()
+    d2["documents"][0]["pages"][0]["n"] = True
+    m2 = parse(d2)
+    assert any("a page is not {n: int, text: str}" in prob for _, prob in m2.refusals)
+
+    # document_id = True
+    d3 = _valid_manifest()
+    d3["documents"][0]["document_id"] = True
+    m3 = parse(d3)
+    assert any("document_id is not a positive integer" in prob for _, prob in m3.refusals)
+

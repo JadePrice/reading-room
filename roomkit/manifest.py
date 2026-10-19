@@ -159,6 +159,31 @@ def _str(row: dict, key: str) -> str:
     return v.strip() if isinstance(v, str) else ""
 
 
+def _is_int(v: object) -> bool:
+    """Return True if v is an int and strictly not a boolean."""
+    return isinstance(v, int) and not isinstance(v, bool)
+
+
+def validate_room_path(path: str, field_name: str = "site.room_path") -> str:
+    """Validate that a room path or mount is a safe absolute web path.
+
+    Rejects protocol-relative URLs (//host/), backslashes, query strings,
+    hash fragments, and relative dot segments.
+    """
+    if not (isinstance(path, str) and path.startswith("/") and path.endswith("/")):
+        raise ManifestError(f"{field_name} must start and end with '/': {path!r}")
+    if path.startswith("//"):
+        raise ManifestError(f"{field_name} cannot start with '//' (protocol-relative URL): {path!r}")
+    if "\\" in path:
+        raise ManifestError(f"{field_name} cannot contain backslashes: {path!r}")
+    if "?" in path or "#" in path:
+        raise ManifestError(f"{field_name} cannot contain query parameters or fragments: {path!r}")
+    parts = path.strip("/").split("/")
+    if any(p in (".", "..") for p in parts):
+        raise ManifestError(f"{field_name} cannot contain dot segments ('.' or '..'): {path!r}")
+    return path
+
+
 def _site(raw: object) -> Site:
     if not isinstance(raw, dict):
         raise ManifestError("manifest has no 'site' object")
@@ -167,8 +192,7 @@ def _site(raw: object) -> Site:
         raise ManifestError("site needs name, title, base_url and room_path")
     if not base.startswith("https://") or base.endswith("/"):
         raise ManifestError(f"site.base_url must be https:// with no trailing slash: {base!r}")
-    if not (path.startswith("/") and path.endswith("/")):
-        raise ManifestError(f"site.room_path must start and end with '/': {path!r}")
+    path = validate_room_path(path, "site.room_path")
     template = _str(raw, "template")
     if template and not SLUG.match(template):
         raise ManifestError(f"site.template {template!r} is not a slug")
@@ -315,7 +339,7 @@ def _document(row: dict) -> tuple[Document | None, str]:
     if not mime:
         return None, "file.mime is empty"
     size = f.get("bytes")
-    if size is not None and (not isinstance(size, int) or size < 0):
+    if size is not None and (not _is_int(size) or size < 0):
         return None, "file.bytes is not a non-negative integer"
     date = _str(row, "date")
     if date and not DATE.match(date):
@@ -328,7 +352,7 @@ def _document(row: dict) -> tuple[Document | None, str]:
         return None, "pages is not a list"
     pages = []
     for p in pages_raw:
-        if not isinstance(p, dict) or not isinstance(p.get("n"), int) or not isinstance(p.get("text", ""), str):
+        if not isinstance(p, dict) or not _is_int(p.get("n")) or not isinstance(p.get("text", ""), str):
             return None, "a page is not {n: int, text: str}"
         if "cite" in p and PS.cite_problem(p["cite"]):
             return None, f"page {p['n']}: {PS.cite_problem(p['cite'])}"
@@ -341,7 +365,7 @@ def _document(row: dict) -> tuple[Document | None, str]:
     if search_text and pages:
         return None, "search_text is only for a record with no pages"
     doc_id = row.get("document_id")
-    if doc_id is not None and not (isinstance(doc_id, int) and not isinstance(doc_id, bool) and doc_id >= 1):
+    if doc_id is not None and not (_is_int(doc_id) and doc_id >= 1):
         return None, "document_id is not a positive integer"
     if view and ext not in PDF:
         return None, "file.view_url is only for PDFs"

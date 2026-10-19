@@ -53,9 +53,16 @@ from roomkit import pack as P
 from roomkit import passages as PS
 from roomkit import room as R
 from roomkit import search as S
-from roomkit import view as V
-from roomkit.manifest import IMAGE, PDF, READER, TEXT, Document, Manifest
-
+try:
+    from roomkit import view as V
+    from roomkit.manifest import (
+        IMAGE, PDF, READER, TEXT, Document, Manifest, ManifestError, validate_room_path
+    )
+except ImportError:
+    from scripts.roomkit import view as V
+    from scripts.roomkit.manifest import (
+        IMAGE, PDF, READER, TEXT, Document, Manifest, ManifestError, validate_room_path
+    )
 REPO_ROOT = Path(__file__).resolve().parents[1]
 ENGINE = REPO_ROOT / "reading-room-reader"
 LOCK = "room.lock.json"
@@ -236,8 +243,10 @@ def render(m: Manifest, engine: Path = ENGINE, mount: str | None = None, noindex
     on (default: the pinned Pagefind; tests pass search.stand_in).
     """
     at = mount or m.site.room_path
-    if not (at.startswith("/") and at.endswith("/")):
-        raise ValueError(f"mount must start and end with '/': {at!r}")
+    try:
+        at = validate_room_path(at, "mount")
+    except ManifestError as exc:
+        raise ValueError(str(exc)) from exc
     if m.refusals:
         raise ValueError("render() called on a manifest with refusals")
     pack = _pack(m, pack)
