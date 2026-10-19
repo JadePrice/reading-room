@@ -151,8 +151,8 @@ rows:
   live: "Copy citation button, progressive enhancement, hidden without JS"
   disposition: static
   sites:
-    deflockdane: {need: required, status: partial}
-    glassgovernment: {need: required, status: partial}
+    deflockdane: {need: required, status: done}
+    glassgovernment: {need: required, status: done}
   acceptance: "copies the same text as the visible citation"
   check: browser
 

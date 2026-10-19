@@ -368,4 +368,52 @@ def test_check_notes_parity():
     assert P.check_notes(None, html_dd) == ["unexpected notes block in page"]
 
 
+def test_check_copy_citation_parity():
+    from roomkit import parity as P
+
+    cite = "Agency, Camera Contract (2026). https://example.test/reading-room/camera-contract/"
+    # Live GG markup
+    html_gg = f"""
+    <div class="ggrr-doc__cite">
+      <p class="ggrr-doc__cite-text" id="ggrr-cite-text">{cite}</p>
+      <button type="button" class="ggrr-doc__btn ggrr-doc__btn--ghost ggrr-doc__cite-copy" data-ggrr-cite-copy data-cite="{cite}" hidden>Copy citation</button>
+    </div>
+    """
+    assert P.check_copy_citation(cite, html_gg) == []
+
+    # Live DD markup
+    html_dd = f"""
+    <section class="deflock-reading-room__cite">
+      <p class="deflock-reading-room__cite-text">{cite}</p>
+      <button type="button" class="deflock-reading-room__button deflock-reading-room__button--secondary deflock-reading-room__cite-copy" data-rr-cite-copy data-cite="{cite}" data-cite-copied-label="Copied" hidden>Copy citation</button>
+    </section>
+    """
+    assert P.check_copy_citation(cite, html_dd) == []
+
+    # Roomkit static markup
+    html_static = f"""
+    <p class="room__cite-text">{cite}</p>
+    <button type="button" class="room__btn room__btn--ghost room__cite-copy" data-rr-cite-copy data-cite="{cite}" data-cite-copied-label="Copied" hidden>Copy citation</button>
+    """
+    assert P.check_copy_citation(cite, html_static) == []
+
+    # Mismatches
+    assert P.check_copy_citation(cite, "<main><p>No button here</p></main>") == [
+        "no copy citation button"
+    ]
+    html_unhidden = f'<button type="button" data-rr-cite-copy data-cite="{cite}">Copy</button>'
+    assert P.check_copy_citation(cite, html_unhidden) == [
+        "copy citation button not hidden for no-JS"
+    ]
+    html_missing_cite = '<button type="button" data-rr-cite-copy hidden>Copy</button>'
+    assert P.check_copy_citation(cite, html_missing_cite) == [
+        "copy citation button missing data-cite"
+    ]
+    html_wrong_cite = '<button type="button" data-rr-cite-copy data-cite="Different citation" hidden>Copy</button>'
+    assert P.check_copy_citation(cite, html_wrong_cite) == [
+        f"copy citation data-cite 'Different citation' != {cite!r}"
+    ]
+
+
+
 

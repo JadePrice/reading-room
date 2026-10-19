@@ -307,8 +307,14 @@ Everything from the manifest is HTML-escaped. Files left over from an earlier bu
 
 ## Tests
 
-`tests/roomkit/test_roomkit.py` covers:
-- the themed room: the pack's chrome on every page, nothing from WordPress, the shared template filled from `display` (badge, notice, notes, chips with kind and quote), room links following the mount while site pages stay on the site, JSON-LD escaping, groups in the site's order, the finder and facets;
+In this repository, hermetic unit and regression tests are located in `tests/`:
+- `tests/test_manifest.py`: manifest parsing, path/mount validation, boolean integer bypass rejection, and parity checks (`check_details`, `check_header_actions`, `check_badges_notice`, `check_link_groups`, `check_notes`);
+- `tests/test_golden.py`: byte-for-byte rendered tree regressions against `tests/golden/*.txt`;
+- `tests/test_pack.py`: site pack schemas, token mapping, WCAG AAA contrast, and refusal rules;
+- `tests/test_ocr.py`: OCR execution, output file existence and non-empty output verification;
+- `tests/test_router.py`: URL routing and mount resolution.
+
+In the upstream monorepo (`llm-wiki`), the full extended test suite under `tests/roomkit/` additionally covers:
 - the template's invariants: every `room.css` rule scoped under `#room-content`, unknown theme tokens refused, the GG toggle sharing `ggrr-theme`, the long jump list folding;
 - malformed `display`/`index` blocks refused (group style, badge kind, notice, facets, meta, unsafe group URLs);
 - fingerprinting, cache headers and `diff` (a retraction removed now, old assets later);

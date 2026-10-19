@@ -273,6 +273,35 @@ def check_page(doc, html: str) -> list[str]:
         problems.extend(check_link_groups(doc.display["groups"], html))
     notes = doc.display.get("notes") if doc.display else None
     problems.extend(check_notes(notes, html))
+    if "data-rr-cite-copy" in html or "data-ggrr-cite-copy" in html or "room__cite-copy" in html:
+        problems.extend(check_copy_citation(doc.citation, html))
+    return problems
+
+
+CITE_BTN_RE = re.compile(
+    r'<button[^>]*?\b(?:data-rr-cite-copy|data-ggrr-cite-copy)\b[^>]*>',
+    re.IGNORECASE | re.DOTALL,
+)
+CITE_ATTR_RE = re.compile(r'data-cite=["\'](.*?)["\']', re.IGNORECASE | re.DOTALL)
+
+
+def check_copy_citation(citation: str, html: str) -> list[str]:
+    """Check that the copy citation button is present, hidden for no-JS, and carries citation."""
+    problems = []
+    m = CITE_BTN_RE.search(html)
+    if not m:
+        problems.append("no copy citation button")
+        return problems
+    btn_tag = m.group(0)
+    if "hidden" not in btn_tag:
+        problems.append("copy citation button not hidden for no-JS")
+    cite_m = CITE_ATTR_RE.search(btn_tag)
+    if not cite_m:
+        problems.append("copy citation button missing data-cite")
+    else:
+        cite_val = unescape(cite_m.group(1))
+        if cite_val != citation:
+            problems.append(f"copy citation data-cite {cite_val!r} != {citation!r}")
     return problems
 
 
