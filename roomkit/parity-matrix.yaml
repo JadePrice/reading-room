@@ -161,8 +161,8 @@ rows:
   live: "schema.org DigitalDocument/CreativeWork; author omitted when agency unknown"
   disposition: static
   sites:
-    deflockdane: {need: required, status: partial}
-    glassgovernment: {need: required, status: partial}
+    deflockdane: {need: required, status: done}
+    glassgovernment: {need: required, status: done}
   acceptance: "JSON-LD object equal to live (key for key)"
   check: parity.jsonld
 

@@ -21,6 +21,7 @@ which features the room must match before cutover, and how far it has got.
 
 from __future__ import annotations
 
+import json
 import re
 import time
 import urllib.error
@@ -275,7 +276,66 @@ def check_page(doc, html: str) -> list[str]:
     problems.extend(check_notes(notes, html))
     if "data-rr-cite-copy" in html or "data-ggrr-cite-copy" in html or "room__cite-copy" in html:
         problems.extend(check_copy_citation(doc.citation, html))
+    if doc.display and doc.display.get("jsonld"):
+        problems.extend(check_jsonld(doc.display["jsonld"], html))
+    elif "application/ld+json" in html:
+        problems.extend(check_jsonld(None, html))
     return problems
+
+
+JSONLD_RE = re.compile(
+    r'<script[^>]*?type=["\']application/ld\+json["\'][^>]*>(.*?)</script>',
+    re.IGNORECASE | re.DOTALL,
+)
+
+
+def _diff_json(exp, act, path="") -> list[str]:
+    probs = []
+    if type(exp) != type(act):
+        probs.append(f"jsonld {path or 'root'} type {type(act).__name__} != {type(exp).__name__}")
+        return probs
+    if isinstance(exp, dict):
+        exp_keys = set(exp.keys())
+        act_keys = set(act.keys())
+        for k in sorted(exp_keys - act_keys):
+            p = f"{path}.{k}" if path else k
+            probs.append(f"jsonld missing key {p!r}")
+        for k in sorted(act_keys - exp_keys):
+            p = f"{path}.{k}" if path else k
+            probs.append(f"jsonld unexpected key {p!r}")
+        for k in sorted(exp_keys & act_keys):
+            p = f"{path}.{k}" if path else k
+            probs.extend(_diff_json(exp[k], act[k], p))
+    elif isinstance(exp, list):
+        if len(exp) != len(act):
+            probs.append(f"jsonld {path} count {len(act)} != {len(exp)}")
+        else:
+            for i, (ev, av) in enumerate(zip(exp, act)):
+                probs.extend(_diff_json(ev, av, f"{path}[{i}]"))
+    else:
+        if exp != act:
+            probs.append(f"jsonld {path} {act!r} != {exp!r}")
+    return probs
+
+
+def check_jsonld(expected: dict | None, html: str) -> list[str]:
+    """Check that the schema.org JSON-LD object matches expected key for key."""
+    problems = []
+    m = JSONLD_RE.search(html)
+    if not m:
+        if expected:
+            problems.append("no jsonld script tag")
+        return problems
+    if not expected:
+        problems.append("unexpected jsonld script tag")
+        return problems
+    raw_json = m.group(1).strip()
+    try:
+        actual = json.loads(raw_json)
+    except json.JSONDecodeError as e:
+        problems.append(f"malformed jsonld: {e}")
+        return problems
+    return _diff_json(expected, actual)
 
 
 CITE_BTN_RE = re.compile(

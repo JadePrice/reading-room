@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import json
+
 import pytest
 
 from roomkit.manifest import ManifestError, parse
@@ -413,6 +415,87 @@ def test_check_copy_citation_parity():
     assert P.check_copy_citation(cite, html_wrong_cite) == [
         f"copy citation data-cite 'Different citation' != {cite!r}"
     ]
+
+
+def test_check_jsonld_parity():
+    from roomkit import parity as P
+
+    jsonld_gg = {
+        "@context": "https://schema.org",
+        "@type": "DigitalDocument",
+        "name": "Camera Contract",
+        "description": "Summary of camera contract.",
+        "url": "https://glassgovernment.org/library/camera-contract/",
+        "mainEntityOfPage": "https://glassgovernment.org/library/camera-contract/",
+        "datePublished": "2026-01-31",
+        "author": {"@type": "Organization", "name": "Test Agency"},
+        "genre": "Contracts",
+        "license": "https://creativecommons.org/publicdomain/zero/1.0/",
+        "identifier": "a" * 64,
+        "creativeWorkStatus": "none",
+    }
+    # Matches live WordPress pretty-printed output
+    html_gg = f'<script type="application/ld+json">\n{json.dumps(jsonld_gg, indent=4)}\n</script>'
+    assert P.check_jsonld(jsonld_gg, html_gg) == []
+
+    # Matches Deflock Dane output with isPartOf
+    jsonld_dd = {
+        "@context": "https://schema.org",
+        "@type": "DigitalDocument",
+        "name": "Axon Contract",
+        "description": "City of Madison Axon contract.",
+        "url": "https://deflockdane.org/reading-room/axon-contract/",
+        "mainEntityOfPage": "https://deflockdane.org/reading-room/axon-contract/",
+        "datePublished": "2026-01-31",
+        "author": {"@type": "Organization", "name": "Madison Police Department"},
+        "identifier": "b" * 64,
+        "isPartOf": {
+            "@type": "Collection",
+            "name": "Deflock Dane Reading Room",
+            "url": "https://deflockdane.org/reading-room/",
+        },
+    }
+    html_dd = f'<script type="application/ld+json">{json.dumps(jsonld_dd)}</script>'
+    assert P.check_jsonld(jsonld_dd, html_dd) == []
+
+    # Author omitted when agency is unknown
+    jsonld_no_author = dict(jsonld_gg)
+    del jsonld_no_author["author"]
+    html_no_author = f'<script type="application/ld+json">{json.dumps(jsonld_no_author)}</script>'
+    assert P.check_jsonld(jsonld_no_author, html_no_author) == []
+
+    # Escaped solidus (e.g. </script> in values)
+    jsonld_escaped = {"@type": "DigitalDocument", "name": "</script><script>alert(1)"}
+    html_escaped = '<script type="application/ld+json">{"@type": "DigitalDocument", "name": "<\\/script><script>alert(1)"}</script>'
+    assert P.check_jsonld(jsonld_escaped, html_escaped) == []
+
+    # Clean page without JSON-LD when none expected
+    assert P.check_jsonld(None, "<main><h1>Doc</h1></main>") == []
+
+    # Mismatches
+    assert P.check_jsonld(jsonld_gg, "<main><h1>No script</h1></main>") == [
+        "no jsonld script tag"
+    ]
+    assert P.check_jsonld(None, html_gg) == [
+        "unexpected jsonld script tag"
+    ]
+    assert P.check_jsonld(jsonld_gg, '<script type="application/ld+json">{bad json}</script>') == [
+        "malformed jsonld: Expecting property name enclosed in double quotes: line 1 column 2 (char 1)"
+    ]
+    # Missing key
+    assert P.check_jsonld(jsonld_gg, html_no_author) == [
+        "jsonld missing key 'author'"
+    ]
+    # Unexpected key
+    assert P.check_jsonld(jsonld_no_author, html_gg) == [
+        "jsonld unexpected key 'author'"
+    ]
+    # Mismatched value
+    wrong_name = dict(jsonld_gg, name="Different Title")
+    assert P.check_jsonld(wrong_name, html_gg) == [
+        "jsonld name 'Camera Contract' != 'Different Title'"
+    ]
+
 
 
 
