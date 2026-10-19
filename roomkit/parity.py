@@ -28,7 +28,7 @@ import urllib.request
 from html import unescape
 from typing import Callable
 
-from scripts.roomkit.manifest import READER, Manifest
+from roomkit.manifest import READER, Manifest
 
 UA = "roomkit-parity/0.1 (+https://deflockdane.org; read-only)"
 READER_URL = re.compile(r'class="rr-reader"[^>]*?data-file-url="([^"]*)"', re.S)

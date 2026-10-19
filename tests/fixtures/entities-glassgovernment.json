@@ -1,0 +1,301 @@
+{
+ "_note": "Hand-made test fixture (not exported). The `entities` block an exporter would add to tests/roomkit/golden/manifest.json; strings shaped like the site's (GG: entity-ggrr.php, index-ggrr-entities.php).",
+ "entities": {
+  "index": {
+   "url": "https://example.test/library/entities/",
+   "head_title": "Entities – Glass Government",
+   "back": {
+    "label": "← Reading Room",
+    "url": "https://example.test/library/"
+   },
+   "title": "Entities",
+   "lede": "3 agencies, vendors, organizations and programs across the collection",
+   "note": "An entity groups every document that names the same party. Agencies and organizations are recorded as the party that produced a document; vendors are matched verbatim in the text.",
+   "empty_text": "No entities found.",
+   "groups": [
+    {
+     "type": "vendor",
+     "heading": "Vendors",
+     "count": "1",
+     "entities": [
+      {
+       "type": "vendor",
+       "slug": "flock",
+       "label": "Flock Safety",
+       "count": "3",
+       "url": "https://example.test/library/entity/vendor/flock/"
+      }
+     ]
+    },
+    {
+     "type": "agency",
+     "heading": "Agencies",
+     "count": "2",
+     "entities": [
+      {
+       "type": "agency",
+       "slug": "test-agency",
+       "label": "Test Agency",
+       "count": "2",
+       "url": "https://example.test/library/entity/agency/test-agency/"
+      },
+      {
+       "type": "agency",
+       "slug": "obrien-sons",
+       "label": "O'Brien & Sons",
+       "count": "1",
+       "url": "https://example.test/library/entity/agency/obrien-sons/"
+      }
+     ]
+    }
+   ]
+  },
+  "pages": [
+   {
+    "type": "vendor",
+    "slug": "flock",
+    "url": "https://example.test/library/entity/vendor/flock/",
+    "head_title": "Flock Safety – Glass Government",
+    "crumbs": [
+     {
+      "label": "Home",
+      "url": "https://example.test/"
+     },
+     {
+      "label": "Reading Room",
+      "url": "https://example.test/library/"
+     },
+     {
+      "label": "Entities",
+      "url": "https://example.test/library/entities/"
+     },
+     {
+      "label": "Flock Safety"
+     }
+    ],
+    "eyebrow": "Entity · Vendor",
+    "title": "Flock Safety",
+    "stats": [
+     {
+      "figure": "3",
+      "label": "documents"
+     },
+     {
+      "figure": "2",
+      "label": "collections"
+     },
+     {
+      "figure": "1",
+      "label": "connected entities"
+     }
+    ],
+    "alongside": {
+     "heading": "Appears alongside",
+     "note": "Other parties named on the same documents. The number is how many documents they share with Flock Safety.",
+     "count_sr": " shared documents",
+     "items": [
+      {
+       "type": "agency",
+       "slug": "test-agency",
+       "label": "Test Agency",
+       "kind": "Agency",
+       "count": "1",
+       "url": "https://example.test/library/entity/agency/test-agency/"
+      }
+     ]
+    },
+    "documents_heading": "Documents linked to this entity",
+    "documents_heading_hidden": true,
+    "groups": [
+     {
+      "heading": "Second Agency",
+      "documents": [
+       {
+        "slug": "big-report",
+        "title": "Big Report",
+        "url": "https://example.test/library/big-report/",
+        "badge": "Third-party report",
+        "badge_kind": "third-party",
+        "badge_sr": "Provenance: ",
+        "meta": "2025"
+       },
+       {
+        "slug": "cfr-text-only",
+        "title": "A text-only record",
+        "url": "https://example.test/library/cfr-text-only/",
+        "badge": "Government record",
+        "badge_kind": "government",
+        "badge_sr": "Provenance: "
+       }
+      ]
+     },
+     {
+      "heading": "Test Agency",
+      "documents": [
+       {
+        "slug": "camera-contract",
+        "title": "Camera Contract",
+        "url": "https://example.test/library/camera-contract/",
+        "badge": "Government record",
+        "badge_kind": "government",
+        "badge_sr": "Provenance: ",
+        "meta": "2026"
+       }
+      ]
+     }
+    ],
+    "empty_text": "No public documents are linked to this entity.",
+    "jsonld": {
+     "@context": "https://schema.org",
+     "@type": "Organization",
+     "name": "Flock Safety",
+     "url": "https://example.test/library/entity/vendor/flock/",
+     "description": "Vendor (Flock Safety) — 3 documents in the Glass Government Reading Room",
+     "identifier": "flock"
+    }
+   },
+   {
+    "type": "agency",
+    "slug": "test-agency",
+    "url": "https://example.test/library/entity/agency/test-agency/",
+    "head_title": "Test Agency – Glass Government",
+    "crumbs": [
+     {
+      "label": "Home",
+      "url": "https://example.test/"
+     },
+     {
+      "label": "Reading Room",
+      "url": "https://example.test/library/"
+     },
+     {
+      "label": "Entities",
+      "url": "https://example.test/library/entities/"
+     },
+     {
+      "label": "Test Agency"
+     }
+    ],
+    "eyebrow": "Entity · Agency",
+    "title": "Test Agency",
+    "stats": [
+     {
+      "figure": "2",
+      "label": "documents"
+     },
+     {
+      "figure": "1",
+      "label": "collections"
+     },
+     {
+      "figure": "1",
+      "label": "connected entities"
+     }
+    ],
+    "alongside": {
+     "heading": "Appears alongside",
+     "note": "Other parties named on the same documents. The number is how many documents they share with Test Agency.",
+     "count_sr": " shared documents",
+     "items": [
+      {
+       "type": "vendor",
+       "slug": "flock",
+       "label": "Flock Safety",
+       "kind": "Vendor",
+       "count": "1",
+       "url": "https://example.test/library/entity/vendor/flock/"
+      }
+     ]
+    },
+    "documents_heading": "Documents linked to this entity",
+    "documents_heading_hidden": true,
+    "groups": [
+     {
+      "heading": "Test Agency",
+      "documents": [
+       {
+        "slug": "camera-contract",
+        "title": "Camera Contract",
+        "url": "https://example.test/library/camera-contract/",
+        "meta": "2026"
+       },
+       {
+        "slug": "site-photo",
+        "title": "Site Photo",
+        "url": "https://example.test/library/site-photo/"
+       }
+      ]
+     }
+    ],
+    "empty_text": "No public documents are linked to this entity.",
+    "jsonld": {
+     "@context": "https://schema.org",
+     "@type": "GovernmentOrganization",
+     "name": "Test Agency",
+     "url": "https://example.test/library/entity/agency/test-agency/",
+     "description": "Agency (Test Agency) — 2 documents in the Glass Government Reading Room",
+     "identifier": "test-agency"
+    }
+   },
+   {
+    "type": "agency",
+    "slug": "obrien-sons",
+    "url": "https://example.test/library/entity/agency/obrien-sons/",
+    "head_title": "O'Brien & Sons – Glass Government",
+    "crumbs": [
+     {
+      "label": "Home",
+      "url": "https://example.test/"
+     },
+     {
+      "label": "Reading Room",
+      "url": "https://example.test/library/"
+     },
+     {
+      "label": "Entities",
+      "url": "https://example.test/library/entities/"
+     },
+     {
+      "label": "O'Brien & Sons"
+     }
+    ],
+    "eyebrow": "Entity · Agency",
+    "title": "O'Brien & Sons",
+    "stats": [
+     {
+      "figure": "1",
+      "label": "documents"
+     },
+     {
+      "figure": "1",
+      "label": "collections"
+     }
+    ],
+    "documents_heading": "Documents linked to this entity",
+    "documents_heading_hidden": true,
+    "groups": [
+     {
+      "heading": "Second Agency",
+      "documents": [
+       {
+        "slug": "big-report",
+        "title": "Big Report",
+        "url": "https://example.test/library/big-report/",
+        "meta": "2025"
+       }
+      ]
+     }
+    ],
+    "empty_text": "No public documents are linked to this entity.",
+    "jsonld": {
+     "@context": "https://schema.org",
+     "@type": "GovernmentOrganization",
+     "name": "O'Brien & Sons",
+     "url": "https://example.test/library/entity/agency/obrien-sons/",
+     "description": "Agency (O'Brien & Sons) — 1 document in the Glass Government Reading Room",
+     "identifier": "obrien-sons"
+    }
+   }
+  ]
+ }
+}

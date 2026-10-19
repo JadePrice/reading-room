@@ -1,0 +1,74 @@
+{
+ "_note": "Hand-made test fixture (not exported). The `entities` block an exporter would add to tests/roomkit/golden/manifest.json; strings shaped like the site's (dd: entity-reading-room.php).",
+ "entities": {
+  "pages": [
+   {
+    "type": "vendor",
+    "slug": "flock",
+    "url": "https://example.test/reading-room/entity/vendor/flock/",
+    "head_title": "Flock Safety — Reading Room — Deflock Dane",
+    "description": "Public records citing Flock Safety in the Deflock Dane reading room.",
+    "back": {
+     "label": "← Back to Reading Room",
+     "url": "https://example.test/reading-room/"
+    },
+    "eyebrow": "Vendor",
+    "title": "Flock Safety",
+    "lede": "2 released records across 2 agencies.",
+    "groups": [
+     {
+      "heading": "O'Brien & Sons",
+      "documents": [
+       {
+        "slug": "big-report",
+        "title": "Big Report",
+        "url": "https://example.test/reading-room/big-report/",
+        "meta": "2025"
+       }
+      ]
+     },
+     {
+      "heading": "Test Agency",
+      "documents": [
+       {
+        "slug": "camera-contract",
+        "title": "Camera Contract",
+        "url": "https://example.test/reading-room/camera-contract/",
+        "meta": "2026"
+       }
+      ]
+     }
+    ],
+    "empty_text": "No public records are linked to this entity yet."
+   },
+   {
+    "type": "agency",
+    "slug": "test-agency",
+    "url": "https://example.test/reading-room/entity/agency/test-agency/",
+    "head_title": "Test Agency — Reading Room — Deflock Dane",
+    "description": "Public records citing Test Agency in the Deflock Dane reading room.",
+    "back": {
+     "label": "← Back to Reading Room",
+     "url": "https://example.test/reading-room/"
+    },
+    "eyebrow": "Agency",
+    "title": "Test Agency",
+    "lede": "1 released record across 1 agency.",
+    "groups": [
+     {
+      "heading": "Test Agency",
+      "documents": [
+       {
+        "slug": "camera-contract",
+        "title": "Camera Contract",
+        "url": "https://example.test/reading-room/camera-contract/",
+        "meta": "2026"
+       }
+      ]
+     }
+    ],
+    "empty_text": "No public records are linked to this entity yet."
+   }
+  ]
+ }
+}

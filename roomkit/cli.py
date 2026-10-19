@@ -54,16 +54,16 @@ import json
 import sys
 from pathlib import Path
 
-from scripts.ops import kitlog
-from scripts.roomkit import build as B
-from scripts.roomkit import entity_parity as EP
-from scripts.roomkit import pack as K
-from scripts.roomkit import pack_import as PI
-from scripts.roomkit import parity as P
-from scripts.roomkit import passage_parity as PP
-from scripts.roomkit import search_parity as SP
-from scripts.roomkit import vendor as V
-from scripts.roomkit.manifest import ManifestError, load
+from roomkit import kitlog
+from roomkit import build as B
+from roomkit import entity_parity as EP
+from roomkit import pack as K
+from roomkit import pack_import as PI
+from roomkit import parity as P
+from roomkit import passage_parity as PP
+from roomkit import search_parity as SP
+from roomkit import vendor as V
+from roomkit.manifest import ManifestError, load
 
 
 MATRIX = Path(__file__).resolve().parent / "parity-matrix.yaml"

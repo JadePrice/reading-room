@@ -1,0 +1,274 @@
+{
+ "documents": [
+  {
+   "agency": "Test Agency",
+   "archive_url": "https://archive.org/details/x",
+   "citation": "Test Agency, Camera Contract (2026). https://example.test/reading-room/camera-contract/",
+   "date": "2026-01-31",
+   "display": {
+    "badge": "Government record",
+    "badge_kind": "government",
+    "breadcrumbs": [
+     {
+      "label": "Reading Room",
+      "url": "https://example.test/reading-room/"
+     },
+     {
+      "label": "Camera Contract"
+     }
+    ],
+    "details": [
+     {
+      "label": "Agency",
+      "value": "Test Agency"
+     },
+     {
+      "label": "Source",
+      "url": "https://agency.example/doc",
+      "value": "Agency site"
+     },
+     {
+      "label": "License",
+      "note": "U.S. federal work",
+      "value": "Public domain"
+     },
+     {
+      "code": true,
+      "label": "SHA-256",
+      "value": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+     }
+    ],
+    "eyebrow": {
+     "label": "Reading Room",
+     "url": "https://example.test/reading-room/"
+    },
+    "groups": [
+     {
+      "blurb": "Matched verbatim.",
+      "heading": "Named in this document",
+      "items": [
+       {
+        "kind": "Vendor",
+        "label": "Flock Safety",
+        "quote": "flock safety inc",
+        "url": "https://example.test/reading-room/entity/vendor/flock/"
+       },
+       {
+        "kind": "Person",
+        "label": "Unlinked Person"
+       }
+      ],
+      "style": "chips"
+     },
+     {
+      "heading": "Related documents",
+      "items": [
+       {
+        "label": "Site Photo",
+        "meta": "Photos",
+        "url": "https://example.test/reading-room/site-photo/"
+       },
+       {
+        "label": "Off-site page",
+        "url": "https://other.example/x"
+       }
+      ],
+      "style": "list"
+     }
+    ],
+    "jsonld": {
+     "@type": "DigitalDocument",
+     "name": "</script><script>alert(1)"
+    },
+    "notes": "Line one\nLine two",
+    "notice": {
+     "body": "Kept as released.",
+     "heading": "About the redactions",
+     "report": "Write to us."
+    },
+    "released": "January 31, 2026"
+   },
+   "file": {
+    "bytes": 1234,
+    "download_url": "/reading-room/camera-contract/file/?download=1",
+    "ext": "pdf",
+    "mime": "application/pdf",
+    "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "url": "/reading-room/camera-contract/file/?v=aaaaaaaaaaaa"
+   },
+   "index": {
+    "card_date": "January 31, 2026",
+    "facets": {
+     "year": "2026"
+    },
+    "group": "Test Agency",
+    "meta": [
+     "Contract",
+     "12 pages"
+    ],
+    "thumb_url": "https://example.test/t.png"
+   },
+   "pages": [
+    {
+     "n": 1,
+     "provenance": "pdf",
+     "text": "Page one"
+    },
+    {
+     "n": 2,
+     "provenance": "ocr",
+     "text": "Page two"
+    }
+   ],
+   "slug": "camera-contract",
+   "summary": "The contract.",
+   "title": "Camera Contract",
+   "visibility": "public"
+  },
+  {
+   "citation": "Test Agency, Site Photo.",
+   "file": {
+    "download_url": "https://example.test/f/photo.png",
+    "ext": "png",
+    "mime": "image/png",
+    "sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+    "url": "https://example.test/f/photo.png"
+   },
+   "index": {
+    "facets": {
+     "year": "2024"
+    },
+    "group": "Test Agency"
+   },
+   "slug": "site-photo",
+   "title": "Site Photo",
+   "visibility": "public"
+  },
+  {
+   "agency": "O'Brien & Sons",
+   "citation": "O'Brien & Sons, \"Big Report\" (2025). https://example.test/reading-room/big-report/",
+   "date": "2025-06",
+   "display": {
+    "badge": "Third-party record",
+    "badge_kind": "third-party",
+    "eyebrow": {
+     "label": "Second Agency"
+    },
+    "groups": [
+     {
+      "heading": "Mentions",
+      "items": [
+       {
+        "kind": "Org",
+        "label": "No URL",
+        "meta": "m",
+        "quote": "a quote"
+       }
+      ],
+      "style": "chips"
+     }
+    ],
+    "notes": "One\n\nThree & <four>",
+    "released": "June 2025"
+   },
+   "file": {
+    "download_url": "/reading-room/big-report/file/?download=1",
+    "ext": "pdf",
+    "mime": "application/pdf",
+    "poster_url": "https://example.test/thumb/big.png",
+    "sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+    "url": "/reading-room/big-report/file/",
+    "view_url": "https://example.test/view/big-report.pdf"
+   },
+   "index": {
+    "card_date": "June 2025",
+    "facets": {
+     "year": "2025"
+    },
+    "group": "Second Agency",
+    "meta": [
+     "Report"
+    ]
+   },
+   "slug": "big-report",
+   "summary": "A  summary\twith   odd\nwhitespace & <tags> and \"quotes\".",
+   "title": "Big Report: “Quoted” & <b>bold</b> café",
+   "visibility": "public"
+  },
+  {
+   "citation": "Data Dump.",
+   "display": {},
+   "file": {
+    "download_url": "https://example.test/f/dump.xlsx",
+    "ext": "xlsx",
+    "mime": "application/vnd.ms-excel",
+    "sha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+    "url": "https://example.test/f/dump.xlsx"
+   },
+   "index": {
+    "group": ""
+   },
+   "slug": "data-dump",
+   "title": "Data Dump",
+   "visibility": "public"
+  },
+  {
+   "citation": "Memo, undated.",
+   "file": {
+    "download_url": "https://example.test/f/memo.txt",
+    "ext": "txt",
+    "mime": "text/plain",
+    "sha256": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+    "url": "https://example.test/f/memo.txt"
+   },
+   "index": {
+    "card_date": "Undated",
+    "facets": {
+     "year": ""
+    },
+    "group": "Third Agency"
+   },
+   "pages": [
+    {
+     "n": 1,
+     "text": "memo body"
+    }
+   ],
+   "slug": "memo-text",
+   "summary": "Plain text memo.",
+   "title": "Memo",
+   "visibility": "public"
+  }
+ ],
+ "site": {
+  "base_url": "https://example.test",
+  "index": {
+   "empty_group_text": "No records have been released for this agency yet.",
+   "eyebrow": "Reading Room",
+   "facets": [
+    {
+     "label": "Year",
+     "name": "year"
+    }
+   ],
+   "group_label": "Agency",
+   "groups": [
+    "Test Agency",
+    "Second Agency",
+    "Empty Agency"
+   ],
+   "lede": "Browse.",
+   "links": [
+    {
+     "label": "Maps",
+     "text": "where the cameras are.",
+     "url": "https://example.test/maps/"
+    }
+   ],
+   "title": "Records"
+  },
+  "name": "example.test",
+  "room_path": "/reading-room/",
+  "title": "Reading Room"
+ }
+}

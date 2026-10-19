@@ -47,16 +47,16 @@ import json
 import re
 from pathlib import Path
 
-from scripts.roomkit import css as CSS
-from scripts.roomkit import entities as E
-from scripts.roomkit import pack as P
-from scripts.roomkit import passages as PS
-from scripts.roomkit import room as R
-from scripts.roomkit import search as S
-from scripts.roomkit import view as V
-from scripts.roomkit.manifest import IMAGE, PDF, READER, TEXT, Document, Manifest
+from roomkit import css as CSS
+from roomkit import entities as E
+from roomkit import pack as P
+from roomkit import passages as PS
+from roomkit import room as R
+from roomkit import search as S
+from roomkit import view as V
+from roomkit.manifest import IMAGE, PDF, READER, TEXT, Document, Manifest
 
-REPO_ROOT = Path(__file__).resolve().parents[2]
+REPO_ROOT = Path(__file__).resolve().parents[1]
 ENGINE = REPO_ROOT / "reading-room-reader"
 LOCK = "room.lock.json"
 ROOMKIT_VERSION = "0.3.0"

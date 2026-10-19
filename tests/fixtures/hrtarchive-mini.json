@@ -1,0 +1,184 @@
+{
+ "site": {
+  "name": "hrtarchive.org",
+  "title": "Archive",
+  "base_url": "https://hrtarchive.org",
+  "room_path": "/archive/",
+  "template": "hrtarchive",
+  "index": {
+   "eyebrow": "Synthetic demo",
+   "title": "Preserved public pages",
+   "lede": "Five made-up records, for proving the room needs no template change.",
+   "groups": [
+    "Health Agency A",
+    "Health Agency B"
+   ],
+   "group_label": "Agency",
+   "facets": [
+    {
+     "name": "year",
+     "label": "Year"
+    }
+   ]
+  }
+ },
+ "documents": [
+  {
+   "slug": "guidance-page-capture",
+   "title": "Guidance page capture",
+   "visibility": "public",
+   "citation": "HRT Archive (synthetic), Guidance page capture. https://hrtarchive.org/archive/guidance-page-capture/",
+   "agency": "Health Agency A",
+   "date": "2025-02-01",
+   "summary": "A synthetic capture of a guidance page.",
+   "file": {
+    "url": "/archive/guidance-page-capture/file/",
+    "download_url": "/archive/guidance-page-capture/file/?download=1",
+    "sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+    "ext": "pdf",
+    "mime": "application/pdf"
+   },
+   "index": {
+    "group": "Health Agency A",
+    "card_date": "February 1, 2025",
+    "meta": [
+     "Synthetic"
+    ],
+    "facets": {
+     "year": "2025"
+    }
+   },
+   "pages": [
+    {
+     "n": 1,
+     "text": "Synthetic page one.",
+     "provenance": "pdf"
+    }
+   ],
+   "archive_url": "https://archive.org/details/synthetic-example",
+   "display": {
+    "badge": "Government record",
+    "badge_kind": "government",
+    "notice": {
+     "heading": "About this demo",
+     "body": "Every record here is invented."
+    },
+    "details": [
+     {
+      "label": "Agency",
+      "value": "Health Agency A"
+     },
+     {
+      "label": "SHA-256",
+      "value": "1111111111111111111111111111111111111111111111111111111111111111",
+      "code": true
+     }
+    ]
+   }
+  },
+  {
+   "slug": "removed-fact-sheet",
+   "title": "Removed fact sheet",
+   "visibility": "public",
+   "citation": "HRT Archive (synthetic), Removed fact sheet. https://hrtarchive.org/archive/removed-fact-sheet/",
+   "agency": "Health Agency A",
+   "date": "2025-03",
+   "summary": "A synthetic fact sheet that was taken down.",
+   "file": {
+    "url": "/archive/removed-fact-sheet/file/",
+    "download_url": "/archive/removed-fact-sheet/file/?download=1",
+    "sha256": "2222222222222222222222222222222222222222222222222222222222222222",
+    "ext": "pdf",
+    "mime": "application/pdf"
+   },
+   "index": {
+    "group": "Health Agency A",
+    "card_date": "March 2025",
+    "meta": [
+     "Synthetic"
+    ],
+    "facets": {
+     "year": "2025"
+    }
+   }
+  },
+  {
+   "slug": "archived-chart",
+   "title": "Archived chart",
+   "visibility": "public",
+   "citation": "HRT Archive (synthetic), Archived chart. https://hrtarchive.org/archive/archived-chart/",
+   "agency": "Health Agency B",
+   "date": "2024-11-20",
+   "summary": "A synthetic chart image.",
+   "file": {
+    "url": "/archive/archived-chart/file/",
+    "download_url": "/archive/archived-chart/file/?download=1",
+    "sha256": "3333333333333333333333333333333333333333333333333333333333333333",
+    "ext": "png",
+    "mime": "image/png"
+   },
+   "index": {
+    "group": "Health Agency B",
+    "card_date": "November 20, 2024",
+    "meta": [
+     "Synthetic"
+    ],
+    "facets": {
+     "year": "2024"
+    }
+   }
+  },
+  {
+   "slug": "page-text-snapshot",
+   "title": "Page text snapshot",
+   "visibility": "public",
+   "citation": "HRT Archive (synthetic), Page text snapshot. https://hrtarchive.org/archive/page-text-snapshot/",
+   "agency": "Health Agency B",
+   "date": "2025",
+   "summary": "A synthetic HTML snapshot.",
+   "file": {
+    "url": "/archive/page-text-snapshot/file/",
+    "download_url": "/archive/page-text-snapshot/file/?download=1",
+    "sha256": "4444444444444444444444444444444444444444444444444444444444444444",
+    "ext": "html",
+    "mime": "text/html"
+   },
+   "index": {
+    "group": "Health Agency B",
+    "card_date": "2025",
+    "meta": [
+     "Synthetic"
+    ],
+    "facets": {
+     "year": "2025"
+    }
+   }
+  },
+  {
+   "slug": "dataset-export",
+   "title": "Dataset export",
+   "visibility": "public",
+   "citation": "HRT Archive (synthetic), Dataset export. https://hrtarchive.org/archive/dataset-export/",
+   "agency": "",
+   "date": "2024",
+   "summary": "A synthetic download-only file.",
+   "file": {
+    "url": "/archive/dataset-export/file/",
+    "download_url": "/archive/dataset-export/file/?download=1",
+    "sha256": "5555555555555555555555555555555555555555555555555555555555555555",
+    "ext": "xlsx",
+    "mime": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+   },
+   "index": {
+    "group": "",
+    "card_date": "2024",
+    "meta": [
+     "Synthetic"
+    ],
+    "facets": {
+     "year": "2024"
+    }
+   }
+  }
+ ]
+}

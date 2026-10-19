@@ -44,7 +44,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Callable
 
-from scripts.roomkit import passages as PS
+from roomkit import passages as PS
 
 UA = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0 Safari/537.36"
 WORD = re.compile(r"[a-z]{5,}")

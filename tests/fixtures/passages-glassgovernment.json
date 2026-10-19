@@ -1,0 +1,50 @@
+{
+ "_comment": "Hand-made, shaped like exporters/glassgovernment.php's passage fields over tests/roomkit/golden/manifest.json (test_passages.py overlays it). Strings follow GGRR_Citations::format_reference; keys are GGRR_Citations::stable_key.",
+ "document_ids": {
+  "camera-contract": 7,
+  "memo-text": 9
+ },
+ "page_cites": {
+  "camera-contract": [
+   {
+    "reference": "Test Agency. \"Camera Contract.\" January 31, 2026, p. 1. Glass Government Reading Room, https://example.test/library/camera-contract/#page-1.",
+    "provenance_level": "page",
+    "ocr_confidence": null
+   },
+   {
+    "reference": "Test Agency. \"Camera Contract.\" January 31, 2026, p. 2. Glass Government Reading Room, https://example.test/library/camera-contract/#page-2.",
+    "provenance_level": "page",
+    "ocr_confidence": 0.912
+   }
+  ]
+ },
+ "passages": {
+  "api": "https://example.test/wp-json/ggrr/v1/passage",
+  "source": {
+   "includes/class-ggrr-citations.php": "1111111111111111111111111111111111111111111111111111111111111111",
+   "includes/class-ggrr-rest.php": "2222222222222222222222222222222222222222222222222222222222222222"
+  },
+  "citations": [
+   {
+    "slug": "camera-contract",
+    "stable_key": "aeb060efe51ab019f80735e89a0f52fa44257b20ceef5a79264752b849cb5a7b",
+    "document_id": 7,
+    "page_id": 701,
+    "page_number": 1,
+    "offset_start": 5,
+    "offset_end": 8,
+    "provenance_level": "offset",
+    "ocr_confidence": null,
+    "citation_type": "evidence",
+    "bounding_box": null,
+    "text": "one"
+   }
+  ],
+  "excluded": [
+   {
+    "stable_key": "3333333333333333333333333333333333333333333333333333333333333333",
+    "problem": "its record (benefits-snap-7cfr271) is not in the export: no servable file"
+   }
+  ]
+ }
+}
