@@ -28,8 +28,12 @@ if [ -f "$PRIVATE_PATTERNS" ]; then
   while IFS= read -r line; do
     [ -n "$line" ] && [ "${line#\#}" = "$line" ] && PATTERNS+=("$line")
   done < "$PRIVATE_PATTERNS"
+elif [ "${SANITIZE_GENERIC_ONLY:-}" = "1" ]; then
+  echo "  [WARN] $PRIVATE_PATTERNS not found; SANITIZE_GENERIC_ONLY=1, scanning generic patterns only"
 else
-  echo "  [WARN] $PRIVATE_PATTERNS not found; scanning generic patterns only"
+  echo "  [FAIL] $PRIVATE_PATTERNS not found. Create it (one pattern per line), or set"
+  echo "         SANITIZE_GENERIC_ONLY=1 to knowingly scan generic patterns only."
+  exit 1
 fi
 
 echo "--- Scanning commit history for sensitive tokens ---"

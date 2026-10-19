@@ -22,6 +22,12 @@ jobs:
       with:
         python-version: ${{ matrix.python-version }}
 
+    - name: Install OCR system tools
+      # ocrmypdf shells out to these; the OCR tests run the real pipeline.
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y --no-install-recommends tesseract-ocr ghostscript unpaper pngquant
+
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
