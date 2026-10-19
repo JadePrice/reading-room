@@ -497,6 +497,67 @@ def test_check_jsonld_parity():
     ]
 
 
+def test_mask_sensitive_ssn():
+    from roomkit.search import REDACTED_SSN, mask_sensitive
+
+    assert mask_sensitive("SSN: 123-45-6789 confirmed") == f"SSN: {REDACTED_SSN} confirmed"
+    assert mask_sensitive("SSN: 123 45 6789 confirmed") == f"SSN: {REDACTED_SSN} confirmed"
+    assert mask_sensitive("SSN: 123 - 45 - 6789 confirmed") == f"SSN: {REDACTED_SSN} confirmed"
+    assert mask_sensitive("Contract 202610141") == "Contract 202610141"
+    assert mask_sensitive("Area 000-12-3456 invalid") == "Area 000-12-3456 invalid"
+    assert mask_sensitive("Area 666-12-3456 invalid") == "Area 666-12-3456 invalid"
+    assert mask_sensitive("") == ""
+
+
+def test_entity_page_rejects_non_public_document_slug():
+    from roomkit import entities as E
+
+    raw = {
+        "pages": [
+            {
+                "type": "vendor",
+                "slug": "axon",
+                "head_title": "Axon",
+                "title": "Axon",
+                "url": "https://example.test/reading-room/entity/vendor/axon/",
+                "empty_text": "No documents",
+                "groups": [
+                    {
+                        "heading": "Contracts",
+                        "documents": [
+                            {
+                                "slug": "excluded-doc",
+                                "title": "Excluded Doc",
+                                "url": "https://example.test/reading-room/excluded-doc/",
+                            }
+                        ],
+                    }
+                ],
+            }
+        ]
+    }
+    # With 'camera-contract' as the only public slug in doc_slugs:
+    res, problems = E.parse(raw, "https://example.test", "/reading-room/", {"camera-contract"})
+    assert res is None
+    assert any("excluded-doc' is not a public record in this room" in p for p in problems)
+
+
+def test_build_pages_json_masks_sensitive_text():
+    from roomkit import build as B
+    from roomkit.search import REDACTED_SSN
+
+    m_data = _valid_manifest()
+    m_data["documents"][0]["pages"] = [
+        {"n": 1, "text": "Confidential report. Subject SSN: 123-45-6789 on file."}
+    ]
+    manifest = parse(m_data)
+    files = B.render(manifest, engine=B.ENGINE)
+    p_key = next(k for k in files if k.startswith("camera-contract/pages.") and k.endswith(".json"))
+    pages_json = json.loads(files[p_key].decode())
+    assert pages_json["pages"][0]["text"] == f"Confidential report. Subject SSN: {REDACTED_SSN} on file."
+
+
+
 
 
 

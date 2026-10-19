@@ -50,9 +50,9 @@ import json
 import re
 import subprocess
 import tempfile
+from collections.abc import Callable
 from html import escape
 from pathlib import Path
-from typing import Callable
 
 from .manifest import PDF, Manifest
 
@@ -66,7 +66,8 @@ UNUSED = ("pagefind-ui.js", "pagefind-ui.css", "pagefind-modular-ui.js", "pagefi
           "pagefind-component-ui.js", "pagefind-component-ui.css", "pagefind-highlight.js")
 
 Indexer = Callable[[dict[str, str]], dict[str, bytes]]
-SSN = re.compile(r"\b\d{3}-\d{2}-\d{4}\b")
+SSN = re.compile(r"\b(?!(?:000|666))\d{3}(?:\s*-\s*|\s+)(?!(?:00))\d{2}(?:\s*-\s*|\s+)(?!(?:0000))\d{4}\b")
+REDACTED_SSN = "[REDACTED-SSN]"
 
 
 class SearchError(ValueError):
@@ -77,8 +78,15 @@ def enabled(pack: dict) -> bool:
     return bool(pack.get("features", {}).get(FEATURE))
 
 
+def mask_sensitive(text: str) -> str:
+    """Mask Social Security numbers and sensitive patterns in archival text."""
+    if not text:
+        return text
+    return SSN.sub(REDACTED_SSN, text)
+
+
 def _masked(text: str) -> str:
-    return SSN.sub("", text)
+    return mask_sensitive(text)
 
 
 def records(m: Manifest, at: str) -> list[dict]:
@@ -87,9 +95,12 @@ def records(m: Manifest, at: str) -> list[dict]:
     for d in m.documents:
         anchors = d.ext in PDF
         out.append({
-            "slug": d.slug, "url": f"{at}{d.slug}/", "title": d.title, "summary": d.summary,
-            "citation": d.citation, "agency": d.agency, "date": d.date,
-            "group": d.index.get("group", ""),
+            "slug": d.slug, "url": f"{at}{d.slug}/", "title": d.title,
+            "summary": _masked(d.summary),
+            "citation": _masked(d.citation),
+            "agency": _masked(d.agency),
+            "date": d.date,
+            "group": _masked(d.index.get("group", "")),
             "facets": dict(sorted(d.index.get("facets", {}).items())),
             "pages": [{"n": p.n, "anchor": f"page-{p.n}" if anchors else "", "text": _masked(p.text)}
                       for p in d.pages],

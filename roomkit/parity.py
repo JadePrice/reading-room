@@ -26,9 +26,9 @@ import re
 import time
 import urllib.error
 import urllib.request
+from collections.abc import Callable
 from html import unescape
 from html.parser import HTMLParser
-from typing import Callable
 
 try:
     from roomkit.manifest import READER, Manifest
@@ -36,7 +36,7 @@ except ImportError:
     from scripts.roomkit.manifest import READER, Manifest
 
 UA = "roomkit-parity/0.1 (+https://deflockdane.org; read-only)"
-READER_URL = re.compile(r'class="rr-reader"[^>]*?data-file-url="([^"]*)"', re.S)
+READER_URL = re.compile(r'class="rr-reader"[^>]*?data-file-url="([^"]*)"', re.DOTALL)
 
 
 class _DLParser(HTMLParser):
@@ -101,9 +101,12 @@ def check_details(expected_details: list[dict], html: str) -> list[str]:
         if exp_val not in live_val:
             problems.append(f"detail #{i} ({lab}) value {exp_val!r} not in {live_val!r}")
         note = exp.get("note")
-        if note and str(note) not in live_val:
-            if not (lab == "Permanent copy" and str(note) == "Verified present" and "verified" in live_val.lower()):
-                problems.append(f"detail #{i} ({lab}) note {note!r} not in {live_val!r}")
+        if (
+            note
+            and str(note) not in live_val
+            and not (lab == "Permanent copy" and str(note) == "Verified present" and "verified" in live_val.lower())
+        ):
+            problems.append(f"detail #{i} ({lab}) note {note!r} not in {live_val!r}")
     return problems
 
 
@@ -115,9 +118,13 @@ def check_header_actions(expected_header: dict, html: str) -> list[str]:
         if str(m) not in text:
             problems.append(f"header meta {m!r} not in page")
     orig = expected_header.get("original_url")
-    if orig and orig not in html and f'href="{orig}"' not in html:
-        if not (orig.endswith("?original=1") and "?original=1" in html):
-            problems.append(f"header original_url {orig!r} not in page")
+    if (
+        orig
+        and orig not in html
+        and f'href="{orig}"' not in html
+        and not (orig.endswith("?original=1") and "?original=1" in html)
+    ):
+        problems.append(f"header original_url {orig!r} not in page")
     ia_url = expected_header.get("ia_url")
     if ia_url and ia_url not in html:
         problems.append(f"header ia_url {ia_url!r} not in page")
@@ -510,8 +517,9 @@ def parse_matrix(data: object) -> list[dict]:
 
 
 def load_matrix(path) -> list[dict]:
-    import yaml
     from pathlib import Path
+
+    import yaml
     try:
         data = yaml.safe_load(Path(path).read_text(encoding="utf-8"))
     except (OSError, yaml.YAMLError) as exc:

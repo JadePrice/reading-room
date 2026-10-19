@@ -44,6 +44,7 @@ import json
 import re
 from html.parser import HTMLParser
 from pathlib import Path
+from typing import ClassVar
 from urllib.parse import urlsplit
 
 KEYS = {"site", "fetched", "source", "notes", "entities", "index", "pages", "unfetched"}
@@ -88,7 +89,7 @@ class _Collector(HTMLParser):
     with it), heading text (minus a count span), and the room's own data-room-*
     attributes."""
 
-    VOID = {"br", "img", "meta", "link", "input", "hr", "source", "wbr", "area", "base", "col", "embed", "track"}
+    VOID: ClassVar[set[str]] = {"br", "img", "meta", "link", "input", "hr", "source", "wbr", "area", "base", "col", "embed", "track"}
 
     def __init__(self, markup: dict):
         super().__init__(convert_charrefs=True)
@@ -371,8 +372,8 @@ def run(live_path, room: Path, sites: tuple[str, ...]) -> dict:
 def text(rep: dict) -> str:
     s = rep["set"]
     good = sum(1 for r in rep["pages"] if r["ok"])
-    lines = [f"{'AGREES' if rep['ok'] else 'DIFFERS'}: {good}/{len(rep['pages'])} entity pages agree; "
-             f"{s['live']} entities live, {s['room']} in the room ({rep['site']}, live read {rep['fetched']})"]
+    lines = [(f"{'AGREES' if rep['ok'] else 'DIFFERS'}: {good}/{len(rep['pages'])} entity pages agree; "
+              f"{s['live']} entities live, {s['room']} in the room ({rep['site']}, live read {rep['fetched']})")]
     lines += [f"   missing from the room: {k}" for k in s["missing"]]
     lines += [f"   in the room, not live: {k}" for k in s["extra"]]
     if "index" in rep:

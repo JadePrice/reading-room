@@ -1,1 +1,1 @@
--e .[dev,ocr]
+-e .[dev,ocr,search]

@@ -43,6 +43,9 @@ ocr = [
     "ocrmypdf>=16.0.0",
     "pdfplumber>=0.11.0",
 ]
+search = [
+    "pagefind[bin]==1.5.2",
+]
 
 [project.scripts]
 roomkit = "roomkit.cli:main"

@@ -53,15 +53,30 @@ from roomkit import pack as P
 from roomkit import passages as PS
 from roomkit import room as R
 from roomkit import search as S
+
 try:
     from roomkit import view as V
     from roomkit.manifest import (
-        IMAGE, PDF, READER, TEXT, Document, Manifest, ManifestError, validate_room_path
+        IMAGE,
+        PDF,
+        READER,
+        TEXT,
+        Document,
+        Manifest,
+        ManifestError,
+        validate_room_path,
     )
 except ImportError:
     from scripts.roomkit import view as V
     from scripts.roomkit.manifest import (
-        IMAGE, PDF, READER, TEXT, Document, Manifest, ManifestError, validate_room_path
+        IMAGE,
+        PDF,
+        READER,
+        TEXT,
+        Document,
+        Manifest,
+        ManifestError,
+        validate_room_path,
     )
 REPO_ROOT = Path(__file__).resolve().parents[1]
 ENGINE = REPO_ROOT / "reading-room-reader"
@@ -201,7 +216,7 @@ def _fingerprint(files: dict[str, bytes], at: str) -> tuple[dict[str, bytes], di
     names them all. A reference is rewritten only as a whole quoted URL.
     """
     def named(path: str) -> str:
-        head, dot, ext = path.rpartition(".")
+        head, _dot, ext = path.rpartition(".")
         return f"{head}.{sha256(files[path])[:12]}.{ext}"
 
     def leaf(p: str) -> bool:
@@ -278,7 +293,7 @@ def render(m: Manifest, engine: Path = ENGINE, mount: str | None = None, noindex
         files[f"{d.slug}/index.html"] = _doc_page(d, m, at, noindex, pack).encode()
         if d.pages:
             pages = {"slug": d.slug, "total": len(d.pages),
-                     "pages": [{"n": p.n, "provenance": p.provenance, "text": p.text,
+                     "pages": [{"n": p.n, "provenance": p.provenance, "text": S.mask_sensitive(p.text),
                                 **({"cite": p.cite} if m.passages and p.cite else {})} for p in d.pages]}
             files[f"{d.slug}/pages.json"] = (json.dumps(pages, ensure_ascii=False, sort_keys=True) + "\n").encode()
     if m.passages:

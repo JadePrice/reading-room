@@ -21,17 +21,19 @@
 #   - the URLs to purge are printed at the end. Staging HTML is not edge-cached
 #     today, so nothing needs purging yet; at cutover the purge is a step, not advice.
 set -euo pipefail
-cd "$HOME/LLM_WIKI"
-PY=/Users/tessa/anaconda3/bin/python
-RK="$PY -m scripts.roomkit.cli"
+REPO_DIR="${REPO_DIR:-$HOME/LLM_WIKI}"
+cd "$REPO_DIR"
+PY="${PYTHON:-python3}"
+RK="${ROOMKIT_CMD:-$PY -m roomkit.cli}"
 W=$(mktemp -d)
 DOCROOT='domains/deflockdane.org/public_html'
 MOUNT=/rr-staging/
-PACK=scripts/roomkit/packs/deflockdane/
+PACK=roomkit/packs/deflockdane/
+[ -d "$PACK" ] || PACK=scripts/roomkit/packs/deflockdane/
 
 echo "== 1/6 export the manifest (read-only)"
 ssh gg-shared "ROOMKIT_ALLOW_EXCLUDED=1 ~/bin/wp --path=\$HOME/$DOCROOT eval-file -" \
-  < scripts/roomkit/exporters/deflockdane.php > "$W/manifest.json"
+  < $([ -f roomkit/exporters/deflockdane.php ] && echo roomkit/exporters/deflockdane.php || echo scripts/roomkit/exporters/deflockdane.php) > "$W/manifest.json"
 
 echo "== 2/6 build + check, in the dd site pack"
 ROOM=(--manifest "$W/manifest.json" --out "$W/room" --mount "$MOUNT" --noindex --site-pack "$PACK")
@@ -39,8 +41,9 @@ $RK build "${ROOM[@]}"
 $RK check "${ROOM[@]}" >/dev/null
 
 echo "== 3/6 parity: every citation and file URL against the live WordPress pages (via the origin)"
+FETCH_SCRIPT=$([ -f roomkit/exporters/deflockdane-fetch-pages.sh ] && echo roomkit/exporters/deflockdane-fetch-pages.sh || echo scripts/roomkit/exporters/deflockdane-fetch-pages.sh)
 ssh gg-shared bash -s -- $($PY -c "import json,sys;print(' '.join(d['slug'] for d in json.load(open(sys.argv[1]))['documents']))" "$W/manifest.json") \
-  < scripts/roomkit/exporters/deflockdane-fetch-pages.sh > "$W/live-pages.tsv"
+  < "$FETCH_SCRIPT" > "$W/live-pages.tsv"
 $RK parity --manifest "$W/manifest.json" --pages "$W/live-pages.tsv"
 
 echo "== 4/6 what changes: the served lock against this build"
@@ -64,7 +67,7 @@ ssh gg-shared "cd $DOCROOT$MOUNT && $(cat <<'SH'
 keep=""; while IFS= read -r line; do
   case "$line" in
     "#ASSETS-KEEP "*) keep=" ${line#\#ASSETS-KEEP } " ;;
-    *) [[ $line =~ ^[a-z0-9-]+/[A-Za-z0-9._-]+$ ]] && rm -f -- "$line" && echo "   removed $line" ;;
+    *) [[ ! "$line" =~ \.\. ]] && [[ $line =~ ^([a-zA-Z0-9._-]+/)*[a-zA-Z0-9._-]+$ ]] && rm -f -- "$line" && echo "   removed $line" ;;
   esac
 done
 find assets -type f | while IFS= read -r f; do

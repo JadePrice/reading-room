@@ -54,9 +54,9 @@ import json
 import sys
 from pathlib import Path
 
-from roomkit import kitlog
 from roomkit import build as B
 from roomkit import entity_parity as EP
+from roomkit import kitlog
 from roomkit import pack as K
 from roomkit import pack_import as PI
 from roomkit import parity as P
@@ -64,7 +64,6 @@ from roomkit import passage_parity as PP
 from roomkit import search_parity as SP
 from roomkit import vendor as V
 from roomkit.manifest import ManifestError, load
-
 
 MATRIX = Path(__file__).resolve().parent / "parity-matrix.yaml"
 
@@ -119,8 +118,8 @@ def _pack_import_cmd(args) -> int:
     out = {"source": res["source"], "written": args.write,
            "changes": [{"token": k, "old": a, "new": b} for k, a, b in res["changes"]],
            "variants_not_imported": res["variants"]}
-    lines = [f"{'wrote' if args.write else 'would write'} {args.map.parent / 'pack.json'} from {res['source']}: "
-             f"{len(res['changes'])} token(s) change"]
+    lines = [(f"{'wrote' if args.write else 'would write'} {args.map.parent / 'pack.json'} from {res['source']}: "
+              f"{len(res['changes'])} token(s) change")]
     lines += [f"   {k}: {a!r} -> {b!r}" for k, a, b in res["changes"]]
     lines += [f"   variant, not imported: {v}: {'; '.join(w)}" for v, w in res["variants"].items()]
     _print(out, args.json, "\n".join(lines))

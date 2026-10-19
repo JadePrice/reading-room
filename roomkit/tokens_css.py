@@ -22,8 +22,8 @@ from __future__ import annotations
 import re
 from dataclasses import dataclass, field
 
-COMMENT = re.compile(r"/\*.*?\*/", re.S)
-DECL = re.compile(r"^\s*(--[A-Za-z0-9_-]+)\s*:\s*(.+?)\s*$", re.S)
+COMMENT = re.compile(r"/\*.*?\*/", re.DOTALL)
+DECL = re.compile(r"^\s*(--[A-Za-z0-9_-]+)\s*:\s*(.+?)\s*$", re.DOTALL)
 VAR = re.compile(r"var\(\s*(--[A-Za-z0-9_-]+)\s*(?:,\s*([^()]*(?:\([^()]*\)[^()]*)*))?\)")
 
 

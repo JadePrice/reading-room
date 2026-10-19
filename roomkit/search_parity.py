@@ -126,7 +126,7 @@ class _Mounted(SimpleHTTPRequestHandler):
         rest = path[len(self.mount):] if path.startswith(self.mount) else "__outside_the_mount__"
         return str(Path(self.directory) / rest)
 
-    def log_message(self, *a):  # noqa: D401 - quiet
+    def log_message(self, *a):
         pass
 
 
@@ -191,8 +191,8 @@ def run(live_path, room: Path, n: int = TOP_N, sites: tuple[str, ...] = ()) -> d
 
 
 def text(rep: dict) -> str:
-    lines = [f"{'AGREES' if rep['ok'] else 'DIFFERS'}: recall {rep['recall']:.1%} of live hits in the room's top "
-             f"{rep['top_n']} ({rep['site']}, live read {rep['fetched']})"]
+    lines = [(f"{'AGREES' if rep['ok'] else 'DIFFERS'}: recall {rep['recall']:.1%} of live hits in the room's top "
+              f"{rep['top_n']} ({rep['site']}, live read {rep['fetched']})")]
     for r in rep["queries"]:
         lines.append(f"   {r['query']!r}: {r['found']}/{r['live'] - len(r['not_in_room'])} found"
                      + (f", {len(r['not_in_room'])} live hit(s) not in the room" if r["not_in_room"] else ""))

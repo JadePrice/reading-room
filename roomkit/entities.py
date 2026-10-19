@@ -140,7 +140,7 @@ def _entity_ref(e: object, where: str, problems: list[str]) -> str:
     return key(e["type"], e["slug"])
 
 
-def _page(p: dict, where: str, problems: list[str]) -> None:
+def _page(p: dict, where: str, problems: list[str], doc_slugs: set[str] | None = None) -> None:
     _common(p, where, problems)
     if "documents_heading" in p and not _text(p["documents_heading"]):
         problems.append(f"{where}.documents_heading is not text")
@@ -161,6 +161,9 @@ def _page(p: dict, where: str, problems: list[str]) -> None:
             if not (isinstance(d, dict) and SLUG.match(str(d.get("slug", ""))) and _text(d.get("title"))
                     and _url_ok(d.get("url"))):
                 problems.append(f"a {where} document is not {{slug, title, url}}")
+                continue
+            if doc_slugs is not None and d["slug"] not in doc_slugs:
+                problems.append(f"{where} document {d['slug']!r} is not a public record in this room")
                 continue
             _strings(d, ("badge", "badge_sr", "meta"), f"{where} document {d['slug']}", problems, optional=True)
             if d.get("badge_kind") and not SLUG.match(str(d["badge_kind"])):
@@ -217,7 +220,7 @@ def parse(raw: object, base_url: str, room_path: str, doc_slugs: set[str]) -> tu
             problems.append(f"{where}: listed twice")
         keys.add(k)
         rest = claim(p.get("url"), where, k + "/")
-        _page(p, where, problems)
+        _page(p, where, problems, doc_slugs)
         out_pages.append({**p, "path": rest})
 
     index = raw.get("index")

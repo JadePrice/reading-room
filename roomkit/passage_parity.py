@@ -40,9 +40,9 @@ import time
 import urllib.error
 import urllib.parse
 import urllib.request
-from datetime import datetime, timezone
+from collections.abc import Callable
+from datetime import UTC, datetime
 from pathlib import Path
-from typing import Callable
 
 from roomkit import passages as PS
 
@@ -112,7 +112,7 @@ def fetch(api: str, want: dict, get: Callable[[str], tuple[int, str]] = http_get
     if not api:
         raise LiveError("the room has no passage route (pack features.passage-cite off, or no passages block)")
     citation = api.rsplit("/passage", 1)[0] + "/citation"
-    out = {"site": "glassgovernment", "fetched": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+    out = {"site": "glassgovernment", "fetched": datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ"),
            "source": f"GET {api} and {citation}, {pace:g} s apart", "pages": [], "spans": [], "citations": []}
     jobs = ([("pages", w, api, {"slug": w["slug"], "page": w["page"]}) for w in want["pages"]]
             + [("spans", w, api, {"slug": w["slug"], "page": w["page"], "start": w["start"], "end": w["end"]})

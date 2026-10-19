@@ -63,6 +63,7 @@ def test_process_pdf_bytes(tmp_path: Path) -> None:
 
 def test_run_ocrmypdf_fails_when_output_missing(tmp_path: Path, monkeypatch) -> None:
     import subprocess
+
     from roomkit.ocr import OcrError
 
     dummy_in = tmp_path / "in.pdf"

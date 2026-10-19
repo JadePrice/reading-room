@@ -161,11 +161,10 @@ def run(logger: logging.Logger, command: str | None, argv=None):
     except KeyboardInterrupt:
         logger.warning("interrupted %s after %.2fs", label, time.monotonic() - started)
         raise
-    except BaseException as exc:
-        logger.error(
-            "fail %s after %.2fs: %s: %s",
-            label, time.monotonic() - started, type(exc).__name__, exc,
-            exc_info=True,
+    except BaseException:
+        logger.exception(
+            "fail %s after %.2fs",
+            label, time.monotonic() - started,
         )
         raise
     else:

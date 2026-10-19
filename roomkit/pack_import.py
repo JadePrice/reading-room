@@ -32,9 +32,8 @@ import json
 from pathlib import Path
 from typing import Any
 
-from . import css
+from . import css, tokens_css
 from . import pack as P
-from . import tokens_css
 
 MAP_KEYS = {"source", "tokens", "tokens_dark", "literal", "literal_dark"}
 

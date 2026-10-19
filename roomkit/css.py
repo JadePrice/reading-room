@@ -24,7 +24,7 @@ TOKENS = ("page-bg", "page-ink", "page-ink-soft", "page-link", "surface", "surfa
 
 def css_selectors(css: str) -> list[str]:
     """Every selector in `css` (comments and @media/@supports wrappers ignored)."""
-    bare = re.sub(r"/\*.*?\*/|@(?:media|supports)[^{]*\{", "", css, flags=re.S)
+    bare = re.sub(r"/\*.*?\*/|@(?:media|supports)[^{]*\{", "", css, flags=re.DOTALL)
     return [sel.strip() for rule in re.findall(r"(?:^|})\s*([^{}@]+)\{", bare) for sel in rule.split(",")]
 
 
