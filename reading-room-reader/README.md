@@ -12,7 +12,8 @@ Porting features between the two consumers (GG = upstream, dd = downstream): [`P
 src/rr-reader.js                 registry/loader — window.RRReader; mounts .rr-reader[data-file-url]; fallback restore, copy helper, events
 src/modules/rr-reader-pdf.js     pdf viewer — single + two-page spread, page-aware search, text layer, cite panel, lightbox/fullscreen
 src/modules/rr-reader-image.js   image viewer — jpg/png/gif/webp/svg, alt from data-title, fullscreen button
-src/modules/rr-reader-text.js    text viewer — txt/md/csv/json/xml/html shown verbatim (never rendered), 1 MB cap
+src/modules/rr-reader-table.js   table viewer — csv/tsv interactive grid with column sorting, filtering, pagination, and cell/row citation
+src/modules/rr-reader-text.js    text viewer — txt/md/json/xml/html shown verbatim (never rendered), 1 MB cap
 src/modules/rr-cite.js           copy-citation control — self-wires [data-rr-cite-copy] (and legacy [data-ggrr-cite-copy]) buttons
 vendor/pdfjs/                    pinned pdf.js 3.11.174 (pdf.min.js + worker); sync.sh ships it
 sync.sh                          copy src/ + pdf.js into a plugin's assets/vendor/, write MANIFEST.sha256
