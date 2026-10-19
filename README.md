@@ -17,12 +17,15 @@ reading-room/
 ├── roomkit/              # Python static generator, manifest parser, and parity verifier
 │   ├── build.py          # Builds static room files with content-addressed fingerprints
 │   ├── manifest.py       # Validates document metadata, citation models, and file hashes
+│   ├── ocr.py            # ocrmypdf + tesseract PDF/A viewing copy and sidecar pipeline
 │   ├── pack.py           # Site pack token and layout validator
+│   ├── router.py         # Local deterministic decision and query intent routing
 │   ├── view.py           # Strict view models
 │   └── templates/        # Jinja templates (shared across static and live engines)
 ├── reading-room-reader/  # Vanilla JS in-browser reader
 │   ├── src/              # Core reader controller and rendering modules
 │   └── vendor/pdfjs/     # Bundled PDF.js rendering worker
+├── tests/                # Hermetic test suite (golden, packs, manifest, router, ocr)
 ├── tools/                # Release gates, sanitization, and verification scripts
 └── pyproject.toml        # Standard Python package configuration
 ```
