@@ -286,7 +286,7 @@ def render(m: Manifest, engine: Path = ENGINE, mount: str | None = None, noindex
         if d.pages:
             pages_list = []
             for p in d.pages:
-                p_dict = {"n": p.n, "provenance": p.provenance, "text": p.text}
+                p_dict = {"n": p.n, "provenance": p.provenance, "text": S.mask_sensitive(p.text, S.REDACTED_SSN)}
                 if p.image_url:
                     p_dict["image_url"] = p.image_url
                 if p.boxes:

@@ -660,3 +660,44 @@ def test_table_csv_tsv_module_resolution() -> None:
 
 
 
+
+
+def _entity_block(doc_url: str) -> dict:
+    return {"pages": [{
+        "type": "vendor", "slug": "axon", "head_title": "Axon", "title": "Axon",
+        "url": "https://example.test/reading-room/entity/vendor/axon/", "empty_text": "No documents",
+        "groups": [{"heading": "Contracts", "documents": [
+            {"slug": "excluded-doc", "title": "Excluded Doc", "url": doc_url}]}],
+    }]}
+
+
+def test_entity_page_rejects_non_public_document_slug():
+    from roomkit import entities as E
+
+    for url in ("https://example.test/reading-room/excluded-doc/", "/reading-room/excluded-doc/"):
+        res, problems = E.parse(_entity_block(url), "https://example.test", "/reading-room/", {"camera-contract"})
+        assert res is None
+        assert any("excluded-doc' is not a public record in this room" in p for p in problems)
+
+
+def test_entity_page_allows_external_document_link():
+    from roomkit import entities as E
+
+    _, problems = E.parse(_entity_block("https://other.example/records/excluded-doc/"),
+                          "https://example.test", "/reading-room/", {"camera-contract"})
+    assert not any("is not a public record" in p for p in problems)
+
+
+def test_build_pages_json_masks_sensitive_text():
+    from roomkit import build as B
+    from roomkit.search import REDACTED_SSN
+
+    m_data = _valid_manifest()
+    m_data["documents"][0]["pages"] = [
+        {"n": 1, "text": "Confidential report. Subject SSN: 123-45-6789 on file."}
+    ]
+    manifest = parse(m_data)
+    files = B.render(manifest, engine=B.ENGINE)
+    p_key = next(k for k in files if k.startswith("camera-contract/pages.") and k.endswith(".json"))
+    pages_json = json.loads(files[p_key].decode())
+    assert pages_json["pages"][0]["text"] == f"Confidential report. Subject SSN: {REDACTED_SSN} on file."
