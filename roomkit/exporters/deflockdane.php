@@ -5,12 +5,12 @@
  * READ-ONLY. Run from the Mac, script on stdin, nothing copied to the host:
  *
  *   ssh gg-shared '~/bin/wp --path=$HOME/domains/deflockdane.org/public_html eval-file -' \
- *     < scripts/roomkit/exporters/deflockdane.php > dd-manifest.json
+ *     < roomkit/exporters/deflockdane.php > dd-manifest.json
  *
- * Prints one JSON manifest (scripts/roomkit/manifest.py) of the public
+ * Prints one JSON manifest (roomkit/manifest.py) of the public
  * documents, in the reading room's own order, and `entities`: a page for every
  * approved entity of every type, as entity-reading-room.php shows it
- * (scripts/roomkit/entities.py). URLs come from the plugin's own
+ * (roomkit/entities.py). URLs come from the plugin's own
  * helpers. The citation is the template's formula (single-reading-room.php,
  * "Formatted citation from provenance metadata"), repeated here because the
  * plugin builds it inline; `roomkit parity` checks every exported citation
@@ -328,7 +328,7 @@ try {
             'facets' => [['name' => 'year', 'label' => 'Year']],
         ],
     ],
-    'exported_by' => 'scripts/roomkit/exporters/deflockdane.php',
+    'exported_by' => 'roomkit/exporters/deflockdane.php',
     'documents' => $docs,
     'excluded' => $problems,
 ] + ($entities ? ['entities' => $entities] : []), JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT | JSON_THROW_ON_ERROR);

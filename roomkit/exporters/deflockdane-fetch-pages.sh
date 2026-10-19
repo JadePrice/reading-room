@@ -4,8 +4,8 @@
 # READ-ONLY, writes nothing on the host. Run from the Mac, slugs as arguments:
 #
 #   ssh gg-shared bash -s -- $(jq -r '.documents[].slug' M.json) \
-#     < scripts/roomkit/exporters/deflockdane-fetch-pages.sh > pages.tsv
-#   python -m scripts.roomkit.cli parity --manifest M.json --pages pages.tsv
+#     < roomkit/exporters/deflockdane-fetch-pages.sh > pages.tsv
+#   python -m roomkit.cli parity --manifest M.json --pages pages.tsv
 #
 # Why the origin: Cloudflare rate-limits deflockdane.org (a 429 from the edge
 # after a few dozen paced requests, 2026-10-08). On the host, --resolve pins the

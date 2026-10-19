@@ -1,6 +1,6 @@
 """Join an exporter's ROOMKIT_SLICE pieces into one manifest.
 
-    python scripts/roomkit/exporters/merge-slices.py OUT.json SLICE.json [SLICE.json ...]
+    python roomkit/exporters/merge-slices.py OUT.json SLICE.json [SLICE.json ...]
 
 Each piece carries `slice` {offset, limit, total}. The pieces must share the
 same site block and total, and their windows must cover 0..total with no gap

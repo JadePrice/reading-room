@@ -44,7 +44,7 @@ publish step: publishing is a separate, human decision
 Records the exporter could not export arrive in the manifest's `excluded` list
 and are named by every command. They are never dropped quietly.
 
-Exporters (read-only, run on the site): scripts/roomkit/exporters/.
+Exporters (read-only, run on the site): roomkit/exporters/.
 """
 
 from __future__ import annotations
@@ -218,7 +218,7 @@ def _run(argv: list[str] | None = None) -> int:
     pp = sub.add_parser("parity", help="live pages vs the manifest (read-only GETs), or the parity matrix's gap")
     src = pp.add_mutually_exclusive_group(required=True)
     src.add_argument("--manifest", type=Path)
-    src.add_argument("--matrix", type=Path, help="scripts/roomkit/parity-matrix.yaml: report rows by status per site")
+    src.add_argument("--matrix", type=Path, help="roomkit/parity-matrix.yaml: report rows by status per site")
     src.add_argument("--search", type=Path, metavar="LIVE.json",
                      help="parity.search: live search results (search_parity.py documents the file) vs the built room's "
                           "own search, with --out ROOM")

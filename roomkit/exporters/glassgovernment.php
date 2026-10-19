@@ -5,12 +5,12 @@
  * READ-ONLY. Run from the Mac, script on stdin, nothing copied to the host:
  *
  *   ssh gg-core 'sudo -n /usr/local/bin/wp-prod eval-file -' \
- *     < scripts/roomkit/exporters/glassgovernment.php > gg-manifest.json
+ *     < roomkit/exporters/glassgovernment.php > gg-manifest.json
  *
  * (`wp-prod` is the operator's wp-cli wrapper for /srv/wp-prod/current; the
  * same route scripts/wiki/corpus_manifest.py reads the census by.)
  *
- * Prints one JSON manifest (scripts/roomkit/manifest.py) of the public
+ * Prints one JSON manifest (roomkit/manifest.py) of the public
  * documents, in the library's own order. Everything a page shows comes from
  * the plugin's own helpers, called the way templates/single-ggrr-document.php
  * calls them: the citation is GGRR_Citations::format_reference, the badge
@@ -38,7 +38,7 @@
  * ROOMKIT_SLICE ("<offset>:<limit>", env or constant) exports one window of
  * the records in the same order, with `slice` {offset, limit, total} beside
  * the documents, so a slow link can fetch the manifest in pieces and
- * scripts/roomkit/exporters/merge-slices.py joins them (refusing a gap or an
+ * roomkit/exporters/merge-slices.py joins them (refusing a gap or an
  * overlap). Without it, everything goes out at once, as before.
  *
  * Refuses (exit 1, JSON {"error", "problems"}) when a public record has no
@@ -66,7 +66,7 @@ $S = 'GGRR_Storage';
 $T = 'GGRR_Template';
 // sudo (wp-prod) does not pass environment variables, so the flags may also
 // arrive as constants defined in a one-line PHP block prepended on stdin
-// (scripts/roomkit/publish/glassgovernment-staging.sh does this).
+// (roomkit/publish/glassgovernment-staging.sh does this).
 $with_pages = getenv('ROOMKIT_WITH_PAGES') !== '0' && !defined('ROOMKIT_NO_PAGES');
 $allow_excluded = getenv('ROOMKIT_ALLOW_EXCLUDED') === '1' || defined('ROOMKIT_ALLOW_EXCLUDED');
 
@@ -652,7 +652,7 @@ try {
             ],
         ],
     ],
-    'exported_by' => 'scripts/roomkit/exporters/glassgovernment.php',
+    'exported_by' => 'roomkit/exporters/glassgovernment.php',
     'documents' => $docs,
     'excluded' => $problems,
 ] + ($entities ? ['entities' => $entities] : []) + ($passages ? ['passages' => $passages] : [])

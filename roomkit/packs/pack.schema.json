@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://glassgovernment.org/schemas/roomkit/pack.schema.json",
   "title": "Reading-room site pack",
-  "description": "Everything a site may change about the shared reading room. Anything not in a pack is the same for every site. roomkit validates packs with this schema plus the checks a schema cannot state (scripts/roomkit/pack.py: contrast, CSS scoping, the parity matrix, font files). Civica validates tenant packs against this same file.",
+  "description": "Everything a site may change about the shared reading room. Anything not in a pack is the same for every site. roomkit validates packs with this schema plus the checks a schema cannot state (roomkit/pack.py: contrast, CSS scoping, the parity matrix, font files). Civica validates tenant packs against this same file.",
   "type": "object",
   "additionalProperties": false,
   "required": [

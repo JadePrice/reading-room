@@ -32,7 +32,7 @@ can be cached for a year as immutable: a new build is new names, never a stale
 file. HTML is the only thing that changes in place; it revalidates in the
 browser and is what a publish purges from the edge (`roomkit diff`).
 
-Every page is the one shared template (Jinja, `scripts/roomkit/templates/room/`,
+Every page is the one shared template (Jinja, `roomkit/templates/room/`,
 fed a plain view model from `view.py`, rendered by `room.py`). The page is the
 room's own: it draws its header, navigation and footer from the site pack's
 `chrome` (`packs/<site>/pack.json`), which also gives its tokens, labels and

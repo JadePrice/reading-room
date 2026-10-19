@@ -15,7 +15,7 @@ The schema says what a pack may contain. This module adds what a schema cannot:
 - every `extra_css` rule scoped under `#room-content` (or the plain page's own
   `body.room-plain`), the rule `room.css` already keeps;
 - no feature turned on whose matrix rows are all `dropped`
-  (scripts/roomkit/parity-matrix.yaml);
+  (roomkit/parity-matrix.yaml);
 - fonts and logos are files inside the pack (no CDN), and they exist.
 
 Every problem is listed; nothing is guessed. A pack that fails is refused whole.

@@ -14,12 +14,12 @@
 # glassgovernment.org, from the Mac (public pages, no login):
 #   jq -r '.entities.index.url, .entities.pages[].url' gg-manifest.json \
 #     | sed 's#^https://glassgovernment.org/##' > gg-entity-paths.txt
-#   bash scripts/roomkit/exporters/fetch-entity-pages.sh glassgovernment.org $(cat gg-entity-paths.txt) > gg-entity-pages.tsv
+#   bash roomkit/exporters/fetch-entity-pages.sh glassgovernment.org $(cat gg-entity-paths.txt) > gg-entity-pages.tsv
 #
 # deflockdane.org, through the origin (the same ssh route as the dd export):
 #   ssh gg-shared bash -s -- --origin deflockdane.org deflock_rr_entity-sitemap.xml \
 #     $(jq -r '.entities.pages[].url | sub("^https://deflockdane.org/"; "")' dd-manifest.json) \
-#     < scripts/roomkit/exporters/fetch-entity-pages.sh > dd-entity-pages.tsv
+#     < roomkit/exporters/fetch-entity-pages.sh > dd-entity-pages.tsv
 #
 # Output: "# fetched <UTC time> <how>", then one "<path>\t<http code>\t<base64 html>" per path.
 # Runs under the Mac's bash 3.2 and BSD base64 as well as on Linux.

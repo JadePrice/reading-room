@@ -41,8 +41,8 @@ packs/
 A pack does not copy hex values by hand. `tokens.map.json` beside it maps each room token to a variable in the site's `design-tokens/<site>.tokens.css`, and `roomkit pack import` writes the pack's `tokens` from it:
 
 ```bash
-$PY -m scripts.roomkit.cli pack import --map scripts/roomkit/packs/deflockdane/tokens.map.json          # what would change
-$PY -m scripts.roomkit.cli pack import --map scripts/roomkit/packs/deflockdane/tokens.map.json --write  # write it
+$PY -m roomkit.cli pack import --map roomkit/packs/deflockdane/tokens.map.json          # what would change
+$PY -m roomkit.cli pack import --map roomkit/packs/deflockdane/tokens.map.json --write  # write it
 ```
 
 - The map is complete: the pack's tokens become exactly the mapped and `literal` entries.
@@ -69,7 +69,7 @@ hrtarchive is the site the template was never shaped around, and the test of "cu
 ## Using one
 
 ```bash
-$PY -m scripts.roomkit.cli build --manifest M.json --out DIR --site-pack scripts/roomkit/packs/deflockdane/
+$PY -m roomkit.cli build --manifest M.json --out DIR --site-pack roomkit/packs/deflockdane/
 ```
 
 Without `--site-pack`, a build uses the manifest's site's pack (`site.template`), else `packs/default/`. A manifest that names its `site.template` refuses a pack for another site.

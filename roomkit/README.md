@@ -9,24 +9,24 @@ A document page today is a PHP template in front of the database, cached at the 
 ## Commands
 
 ```bash
-PY=/Users/tessa/anaconda3/bin/python
-$PY -m scripts.roomkit.cli build  --manifest M.json --out DIR [--json]   # validate, then write the room
-$PY -m scripts.roomkit.cli check  --manifest M.json --out DIR [--json]   # rebuild in memory, compare; changes nothing
-$PY -m scripts.roomkit.cli status --manifest M.json --out DIR --json     # unbuilt | stale | current | refused, and the next command
+PY=python3
+$PY -m roomkit.cli build  --manifest M.json --out DIR [--json]   # validate, then write the room
+$PY -m roomkit.cli check  --manifest M.json --out DIR [--json]   # rebuild in memory, compare; changes nothing
+$PY -m roomkit.cli status --manifest M.json --out DIR --json     # unbuilt | stale | current | refused, and the next command
 ```
 
 ```bash
-$PY -m scripts.roomkit.cli parity --manifest M.json [--pages PAGES.tsv]   # live pages vs the manifest; read-only
-$PY -m scripts.roomkit.cli parity --matrix scripts/roomkit/parity-matrix.yaml [--site S] [--json]  # the gap to cutover
-$PY -m scripts.roomkit.cli status --matrix scripts/roomkit/parity-matrix.yaml --json                # the next row that blocks
-$PY -m scripts.roomkit.cli parity --entities LIVE.json --out ROOM [--json]       # parity.entities (below, "Entities")
-$PY -m scripts.roomkit.cli parity --entities-from PAGES.tsv --site S > LIVE.json  # the live file, from fetched pages
-$PY -m scripts.roomkit.cli parity --passages-fetch --out ROOM --sample 10 [--keys KEYS.txt] > LIVE.json  # paced GETs (GG)
-$PY -m scripts.roomkit.cli parity --passages LIVE.json --out ROOM [--json]       # parity.passages (below, "Passage citations")
-$PY -m scripts.roomkit.cli diff --old OLD/room.lock.json --new NEW/room.lock.json [--json]  # purge + remove lists
-$PY -m scripts.roomkit.cli vendor write --to path/to/civica/app/room       # copy the core into Civica, pinned
-$PY -m scripts.roomkit.cli pack import --map scripts/roomkit/packs/<site>/tokens.map.json [--write]  # pack tokens from design-tokens
-$PY -m scripts.roomkit.cli vendor check --to path/to/civica/app/room [--json]  # its drift; changes nothing
+$PY -m roomkit.cli parity --manifest M.json [--pages PAGES.tsv]   # live pages vs the manifest; read-only
+$PY -m roomkit.cli parity --matrix roomkit/parity-matrix.yaml [--site S] [--json]  # the gap to cutover
+$PY -m roomkit.cli status --matrix roomkit/parity-matrix.yaml --json                # the next row that blocks
+$PY -m roomkit.cli parity --entities LIVE.json --out ROOM [--json]       # parity.entities (below, "Entities")
+$PY -m roomkit.cli parity --entities-from PAGES.tsv --site S > LIVE.json  # the live file, from fetched pages
+$PY -m roomkit.cli parity --passages-fetch --out ROOM --sample 10 [--keys KEYS.txt] > LIVE.json  # paced GETs (GG)
+$PY -m roomkit.cli parity --passages LIVE.json --out ROOM [--json]       # parity.passages (below, "Passage citations")
+$PY -m roomkit.cli diff --old OLD/room.lock.json --new NEW/room.lock.json [--json]  # purge + remove lists
+$PY -m roomkit.cli vendor write --to path/to/civica/app/room       # copy the core into Civica, pinned
+$PY -m roomkit.cli pack import --map roomkit/packs/<site>/tokens.map.json [--write]  # pack tokens from design-tokens
+$PY -m roomkit.cli vendor check --to path/to/civica/app/room [--json]  # its drift; changes nothing
 ```
 
 `build`, `check` and `status` take `--site-pack packs/<site>/` (the site pack, below). Without it, the manifest's site's pack (`site.template`), else `packs/default/`.
@@ -72,11 +72,11 @@ One exporter per site, each a `wp eval-file` script on stdin, so nothing is copi
 **glassgovernment.org** (`exporters/glassgovernment.php`), through the operator's `wp-prod` wrapper, the route `scripts/wiki/corpus_manifest.py` already uses. `sudo` passes no environment, so flags go in as constants on a one-line PHP block in front of the script:
 
 ```bash
-{ echo "<?php define('ROOMKIT_ALLOW_EXCLUDED', true); ?>"; cat scripts/roomkit/exporters/glassgovernment.php; } \
+{ echo "<?php define('ROOMKIT_ALLOW_EXCLUDED', true); ?>"; cat roomkit/exporters/glassgovernment.php; } \
   | ssh gg-core 'sudo -n /usr/local/bin/wp-prod eval-file -' > gg-manifest.json
 ```
 
-With `search_text` the full export is slow (84 MB on 2026-10-14). To run it in pieces, add `define('ROOMKIT_SLICE', '0:100');` (then `100:100`, and so on) to the same PHP block. Each piece carries a `slice` key, and `python scripts/roomkit/exporters/merge-slices.py gg-manifest.json piece-*.json` joins them. It refuses a gap, an overlap, a short piece or pieces from different exports, and writes nothing when it refuses.
+With `search_text` the full export is slow (84 MB on 2026-10-14). To run it in pieces, add `define('ROOMKIT_SLICE', '0:100');` (then `100:100`, and so on) to the same PHP block. Each piece carries a `slice` key, and `python roomkit/exporters/merge-slices.py gg-manifest.json piece-*.json` joins them. It refuses a gap, an overlap, a short piece or pieces from different exports, and writes nothing when it refuses.
 
 The citation is `GGRR_Citations::format_reference`, the badge and rights line come from `GGRR_Template`, entities from `GGRR_Entities::for_doc` under the template's two headings ("Attributed to", "Named in this document"). On 2026-10-12: 390 documents (295 with page text), 65 excluded as "no servable file". Those are the text-only CFR records, which have full text but no PDF; the static room has no text-only page yet.
 
@@ -84,7 +84,7 @@ The citation is `GGRR_Citations::format_reference`, the badge and rights line co
 
 ```bash
 ssh gg-shared 'ROOMKIT_ALLOW_EXCLUDED=1 ~/bin/wp --path=$HOME/domains/deflockdane.org/public_html eval-file -' \
-  < scripts/roomkit/exporters/deflockdane.php > dd-manifest.json
+  < roomkit/exporters/deflockdane.php > dd-manifest.json
 ```
 
 - **URLs** come from the plugin's own helpers. That includes the verified viewing copy as `file.view_url`, checked the way the plugin checks it but without the transient the plugin writes.
@@ -96,8 +96,8 @@ ssh gg-shared 'ROOMKIT_ALLOW_EXCLUDED=1 ~/bin/wp --path=$HOME/domains/deflockdan
 
 ```bash
 ssh gg-shared bash -s -- $(jq -r '.documents[].slug' dd-manifest.json) \
-  < scripts/roomkit/exporters/deflockdane-fetch-pages.sh > dd-pages.tsv
-$PY -m scripts.roomkit.cli parity --manifest dd-manifest.json --pages dd-pages.tsv
+  < roomkit/exporters/deflockdane-fetch-pages.sh > dd-pages.tsv
+$PY -m roomkit.cli parity --manifest dd-manifest.json --pages dd-pages.tsv
 ```
 
 ## What a build writes
@@ -168,27 +168,27 @@ A pack's `features.entities` (off in every committed pack) builds the site's ent
 
 ```bash
 # GG: export (the new `entities` block rides in the first slice), build with the switch on, fetch, compare
-{ echo "<?php define('ROOMKIT_ALLOW_EXCLUDED', true); ?>"; cat scripts/roomkit/exporters/glassgovernment.php; } \
+{ echo "<?php define('ROOMKIT_ALLOW_EXCLUDED', true); ?>"; cat roomkit/exporters/glassgovernment.php; } \
   | ssh gg-core 'sudo -n /usr/local/bin/wp-prod eval-file -' > gg-manifest.json
-mkdir -p /tmp/gg-pack && cp -R scripts/roomkit/packs/glassgovernment/. /tmp/gg-pack/ \
-  && jq '.features.entities = true' scripts/roomkit/packs/glassgovernment/pack.json > /tmp/gg-pack/pack.json
-$PY -m scripts.roomkit.cli build --manifest gg-manifest.json --out /tmp/gg-room --site-pack /tmp/gg-pack
+mkdir -p /tmp/gg-pack && cp -R roomkit/packs/glassgovernment/. /tmp/gg-pack/ \
+  && jq '.features.entities = true' roomkit/packs/glassgovernment/pack.json > /tmp/gg-pack/pack.json
+$PY -m roomkit.cli build --manifest gg-manifest.json --out /tmp/gg-room --site-pack /tmp/gg-pack
 jq -r '.entities.index.url, .entities.pages[].url' gg-manifest.json | sed 's#^https://glassgovernment.org/##' > gg-entity-paths.txt
-bash scripts/roomkit/exporters/fetch-entity-pages.sh glassgovernment.org $(cat gg-entity-paths.txt) > gg-entity-pages.tsv
-$PY -m scripts.roomkit.cli parity --entities-from gg-entity-pages.tsv --site glassgovernment > gg-entities-live.json
-$PY -m scripts.roomkit.cli parity --entities gg-entities-live.json --out /tmp/gg-room
+bash roomkit/exporters/fetch-entity-pages.sh glassgovernment.org $(cat gg-entity-paths.txt) > gg-entity-pages.tsv
+$PY -m roomkit.cli parity --entities-from gg-entity-pages.tsv --site glassgovernment > gg-entities-live.json
+$PY -m roomkit.cli parity --entities gg-entities-live.json --out /tmp/gg-room
 
 # dd: the same, every live read through the origin
 ssh gg-shared 'ROOMKIT_ALLOW_EXCLUDED=1 ~/bin/wp --path=$HOME/domains/deflockdane.org/public_html eval-file -' \
-  < scripts/roomkit/exporters/deflockdane.php > dd-manifest.json
-mkdir -p /tmp/dd-pack && cp -R scripts/roomkit/packs/deflockdane/. /tmp/dd-pack/ \
-  && jq '.features.entities = true' scripts/roomkit/packs/deflockdane/pack.json > /tmp/dd-pack/pack.json
-$PY -m scripts.roomkit.cli build --manifest dd-manifest.json --out /tmp/dd-room --site-pack /tmp/dd-pack
+  < roomkit/exporters/deflockdane.php > dd-manifest.json
+mkdir -p /tmp/dd-pack && cp -R roomkit/packs/deflockdane/. /tmp/dd-pack/ \
+  && jq '.features.entities = true' roomkit/packs/deflockdane/pack.json > /tmp/dd-pack/pack.json
+$PY -m roomkit.cli build --manifest dd-manifest.json --out /tmp/dd-room --site-pack /tmp/dd-pack
 ssh gg-shared bash -s -- --origin deflockdane.org deflock_rr_entity-sitemap.xml \
   $(jq -r '.entities.pages[].url | sub("^https://deflockdane.org/"; "")' dd-manifest.json) \
-  < scripts/roomkit/exporters/fetch-entity-pages.sh > dd-entity-pages.tsv
-$PY -m scripts.roomkit.cli parity --entities-from dd-entity-pages.tsv --site deflockdane > dd-entities-live.json
-$PY -m scripts.roomkit.cli parity --entities dd-entities-live.json --out /tmp/dd-room
+  < roomkit/exporters/fetch-entity-pages.sh > dd-entity-pages.tsv
+$PY -m roomkit.cli parity --entities-from dd-entity-pages.tsv --site deflockdane > dd-entities-live.json
+$PY -m roomkit.cli parity --entities dd-entities-live.json --out /tmp/dd-room
 ```
 
 **The template is Jinja**, the same files the Civica reading room will render live (plan `2026-10-13-unified-reading-room-frontend`, Task 3a):

@@ -33,7 +33,7 @@ from html.parser import HTMLParser
 try:
     from roomkit.manifest import READER, Manifest
 except ImportError:
-    from scripts.roomkit.manifest import READER, Manifest
+    from roomkit.manifest import READER, Manifest
 
 UA = "roomkit-parity/0.1 (+https://deflockdane.org; read-only)"
 READER_URL = re.compile(r'class="rr-reader"[^>]*?data-file-url="([^"]*)"', re.DOTALL)
@@ -298,7 +298,7 @@ JSONLD_RE = re.compile(
 
 def _diff_json(exp, act, path="") -> list[str]:
     probs = []
-    if type(exp) != type(act):
+    if type(exp) is not type(act):
         probs.append(f"jsonld {path or 'root'} type {type(act).__name__} != {type(exp).__name__}")
         return probs
     if isinstance(exp, dict):
@@ -413,7 +413,7 @@ def run(m: Manifest, get: Callable[[str], tuple[int, str]] = http_get, pause: fl
 
 # --- the parity matrix: what the unified room must do before any cutover ----
 #
-# scripts/roomkit/parity-matrix.yaml, one row per feature, a disposition and a
+# roomkit/parity-matrix.yaml, one row per feature, a disposition and a
 # need/status per site (wiki/reading-room-parity.md). `roomkit parity --matrix`
 # turns it into a number and an exit code. Malformed rows are refused, never
 # guessed at: a matrix that silently misreads a row would report green early.

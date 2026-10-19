@@ -1,4 +1,4 @@
-/* Entity index and entity pages (pack features.entities; scripts/roomkit/entities.py).
+/* Entity index and entity pages (pack features.entities; roomkit/entities.py).
    Shipped only when the pack turns entities on. Every rule is under #room-content and
    every color is a token pair pack.PAIRS already gates: page-* on the page, ink/ink-soft/
    link on a panel (surface) or a chip (surface-sunk). */

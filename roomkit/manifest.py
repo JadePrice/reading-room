@@ -39,9 +39,9 @@ should hold is the failure this kit exists to prevent.
       "passages": {"api": "...", "citations": [...]}                   (optional; passages.py)
     }
 
-`site.template` names the site's pack (scripts/roomkit/packs/<site>/): its
+`site.template` names the site's pack (roomkit/packs/<site>/): its
 colors, fonts, labels and layout for the one shared page template
-(scripts/roomkit/templates/room/).
+(roomkit/templates/room/).
 `site.index` is the index copy: {eyebrow, title, lede, groups: [ordered group
 names], group_label, links: [{label, url, text}], facets: [{name, label}],
 empty_group_text}. `display` and `index` on a document are what the template
