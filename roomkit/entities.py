@@ -56,9 +56,10 @@ that is not text, an index or "alongside" entry naming an entity with no page.
 
 from __future__ import annotations
 
+import posixpath
 import re
 from dataclasses import replace
-from urllib.parse import urlsplit
+from urllib.parse import unquote, urlsplit
 
 FEATURE = "entities"
 SLUG = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
@@ -83,6 +84,20 @@ def key(type_: str, slug: str) -> str:
 
 def _url_ok(u: object) -> bool:
     return isinstance(u, str) and (u.startswith("https://") or (u.startswith("/") and not u.startswith("//")))
+
+
+def _room_slug(url: str, room: str) -> str | None:
+    """The record slug a link into `room` names ('' for the room itself), or None
+    for a link to another site. Host case, percent-escapes and dot segments are
+    normalized first, so a non-canonical spelling of an internal URL is internal."""
+    u, r = urlsplit(url), urlsplit(room)
+    if u.netloc and u.netloc.lower().removesuffix(":443") != r.netloc.lower().removesuffix(":443"):
+        return None
+    path = posixpath.normpath("/" + unquote(u.path).lstrip("/"))
+    root = r.path.rstrip("/")
+    if path != root and not path.startswith(root + "/"):
+        return None
+    return path[len(root):].strip("/").split("/", 1)[0]
 
 
 def _text(v: object, optional: bool = False) -> bool:
@@ -165,8 +180,8 @@ def _page(p: dict, where: str, problems: list[str], room: str = "", doc_slugs: s
                 continue
             # A link into this room must name one of its public records; a link to
             # another site is that site's business.
-            internal = d["url"].startswith(room) or (d["url"].startswith("/") and d["url"].startswith(urlsplit(room).path))
-            if doc_slugs is not None and internal and d["slug"] not in doc_slugs:
+            named = _room_slug(d["url"], room)
+            if doc_slugs is not None and named is not None and (named not in doc_slugs or named != d["slug"]):
                 problems.append(f"{where} document {d['slug']!r} is not a public record in this room")
                 continue
             _strings(d, ("badge", "badge_sr", "meta"), f"{where} document {d['slug']}", problems, optional=True)
