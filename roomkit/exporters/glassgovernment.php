@@ -267,13 +267,24 @@ foreach ($rows as $doc) {
     }
 
     $badge = '';
-    $badge_kind = function_exists('ggrr_doc_class') ? ggrr_doc_class($doc) : '';
-    if ($badge_kind === 'government') {
-        $badge = 'Government record';
-    } elseif ($badge_kind === 'third-party') {
-        $badge = 'Third-party report';
-    } else {
-        $badge_kind = '';
+    $badge_kind = '';
+    $badge_sr = '';
+    if (class_exists('GGRR_Template') && method_exists('GGRR_Template', 'provenance_badge')) {
+        $binfo = roomkit_gg_badge($doc);
+        $badge = $binfo['badge'] ?? '';
+        $badge_kind = $binfo['badge_kind'] ?? '';
+        $badge_sr = $binfo['badge_sr'] ?? '';
+    } elseif (function_exists('ggrr_doc_class')) {
+        $badge_kind = ggrr_doc_class($doc);
+        if ($badge_kind === 'government') {
+            $badge = 'Government record';
+            $badge_sr = 'Provenance: ';
+        } elseif ($badge_kind === 'third-party') {
+            $badge = 'Third-party report';
+            $badge_sr = 'Provenance: ';
+        } else {
+            $badge_kind = '';
+        }
     }
     $sens = function_exists('ggrr_collection_sensitivity') ? ggrr_collection_sensitivity($collection) : null;
 
@@ -327,6 +338,7 @@ foreach ($rows as $doc) {
         'eyebrow' => ['label' => $collection_label, 'url' => $collection_url],
         'badge' => $badge,
         'badge_kind' => $badge_kind,
+        'badge_sr' => $badge_sr,
         'released' => $date_display,
         'notice' => $sens ? array_filter(['heading' => $sens['heading'], 'body' => $sens['body'], 'report' => (string) ($sens['report'] ?? '')]) : null,
         'details' => $details,

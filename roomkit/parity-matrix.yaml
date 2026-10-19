@@ -122,7 +122,7 @@ rows:
   disposition: static
   sites:
     deflockdane: {need: n/a, status: missing}
-    glassgovernment: {need: required, status: partial}
+    glassgovernment: {need: required, status: done}
   acceptance: "badge kind and notice text equal to live"
   check: parity.display
 

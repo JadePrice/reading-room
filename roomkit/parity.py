@@ -125,6 +125,34 @@ def check_header_actions(expected_header: dict, html: str) -> list[str]:
     return problems
 
 
+def check_badges_notice(display: dict, html: str) -> list[str]:
+    """Check that doc.display badge and notice match the page."""
+    problems = []
+    text = unescape(html)
+    norm_text = " ".join(text.split())
+
+    badge = display.get("badge")
+    badge_kind = display.get("badge_kind")
+    if badge:
+        if badge not in text:
+            problems.append(f"badge {badge!r} not in page")
+        if badge_kind and f"--{badge_kind}" not in html:
+            problems.append(f"badge_kind {badge_kind!r} not in page")
+
+    notice = display.get("notice")
+    if notice:
+        heading = notice.get("heading")
+        if heading and heading not in text:
+            problems.append(f"notice heading {heading!r} not in page")
+        body = notice.get("body")
+        if body and " ".join(body.split()) not in norm_text:
+            problems.append(f"notice body {body!r} not in page")
+        report = notice.get("report")
+        if report and " ".join(report.split()) not in norm_text:
+            problems.append(f"notice report {report!r} not in page")
+    return problems
+
+
 def http_get(url: str, timeout: float = 30.0) -> tuple[int, str]:
     req = urllib.request.Request(url, headers={"User-Agent": UA})
     try:
@@ -153,6 +181,8 @@ def check_page(doc, html: str) -> list[str]:
         problems.extend(check_details(doc.display["details"], html))
     if doc.display and doc.display.get("header"):
         problems.extend(check_header_actions(doc.display["header"], html))
+    if doc.display and (doc.display.get("badge") or doc.display.get("notice")):
+        problems.extend(check_badges_notice(doc.display, html))
     return problems
 
 

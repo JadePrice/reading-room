@@ -221,7 +221,7 @@ def _display(raw: object) -> tuple[dict, str]:
         return {}, ""
     if not isinstance(raw, dict):
         return {}, "display is not an object"
-    for key in ("released", "notes", "badge"):
+    for key in ("released", "notes", "badge", "badge_sr"):
         if not isinstance(raw.get(key, ""), str):
             return {}, f"display.{key} is not a string"
     if raw.get("badge_kind") and not (isinstance(raw["badge_kind"], str) and SLUG.match(raw["badge_kind"])):

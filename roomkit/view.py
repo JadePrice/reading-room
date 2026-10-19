@@ -137,6 +137,7 @@ def doc_view(doc: Document, m: Manifest, at: str, pack: dict) -> dict:
         "eyebrow": {"label": eb["label"], "url": _rebase_url(eb.get("url", ""), m, at)} if eb else None,
         "header": header_view,
         "title": doc.title, "badge": d.get("badge", ""), "badge_kind": d.get("badge_kind", ""),
+        "badge_sr": d.get("badge_sr", ""),
         "released": d.get("released", ""), "released_label": labels.get("released", "Released"),
         "summary": doc.summary,
         "notice": {"heading": notice["heading"], "body": notice["body"], "report": notice.get("report", "")}

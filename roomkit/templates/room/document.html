@@ -34,7 +34,7 @@
 {% if doc.eyebrow %}
 <p class="room__eyebrow">{{ link(doc.eyebrow.label, doc.eyebrow.url) }}</p>
 {% endif %}
-<h1 class="room__title">{{ doc.title }}{% if doc.badge %} <span class="room__badge{% if doc.badge_kind %} room__badge--{{ doc.badge_kind }}{% endif %}">{{ doc.badge }}</span>{% endif %}</h1>
+<h1 class="room__title">{{ doc.title }}{% if doc.badge %} <span class="room__badge{% if doc.badge_kind %} room__badge--{{ doc.badge_kind }}{% endif %}">{% if doc.badge_sr %}<span class="room__sr">{{ doc.badge_sr }}</span>{% endif %}{{ doc.badge }}</span>{% endif %}</h1>
 {% if doc.released %}
 <p class="room__released">{{ doc.released_label }} {{ doc.released }}</p>
 {% endif %}

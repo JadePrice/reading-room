@@ -117,3 +117,56 @@ def test_display_header_parsing() -> None:
     assert hdr["ia_url"] == "https://archive.org/details/test"
     assert hdr["category"] == "contracts"
 
+
+def test_badges_and_notice_parity():
+    from roomkit import parity as P
+    display = {
+        "badge": "Government record",
+        "badge_kind": "government",
+        "badge_sr": "Provenance: ",
+        "notice": {
+            "heading": "Collection Sensitivity",
+            "body": "This collection contains sensitive surveillance materials.",
+            "report": "Report issues to records@example.test",
+        },
+    }
+    # Matches live WordPress markup
+    html_live = """
+    <h1 class="ggrr-doc__title">Test Doc<span class="ggrr-prov-badge ggrr-prov-badge--government"><span class="visually-hidden">Provenance: </span>Government record</span></h1>
+    <aside class="ggrr-sensitivity" aria-labelledby="ggrr-sensitivity-head">
+      <h2 class="ggrr-sensitivity__head" id="ggrr-sensitivity-head">Collection Sensitivity</h2>
+      <p class="ggrr-sensitivity__body">This collection contains sensitive surveillance materials.</p>
+      <p class="ggrr-sensitivity__report">Report issues to records@example.test</p>
+    </aside>
+    """
+    assert P.check_badges_notice(display, html_live) == []
+
+    # Matches static roomkit markup
+    html_static = """
+    <h1 class="room__title">Test Doc <span class="room__badge room__badge--government"><span class="room__sr">Provenance: </span>Government record</span></h1>
+    <aside class="room__notice" aria-labelledby="room-notice-h">
+      <h2 id="room-notice-h">Collection Sensitivity</h2>
+      <p>This collection contains sensitive surveillance materials.</p>
+      <p class="room__notice-report">Report issues to records@example.test</p>
+    </aside>
+    """
+    assert P.check_badges_notice(display, html_static) == []
+
+    # Mismatches
+    assert P.check_badges_notice({"badge": "Third-party report"}, html_live) == [
+        "badge 'Third-party report' not in page"
+    ]
+    assert P.check_badges_notice({"badge": "Government record", "badge_kind": "third-party"}, html_live) == [
+        "badge_kind 'third-party' not in page"
+    ]
+    assert P.check_badges_notice({"notice": {"heading": "Other Heading", "body": "Body"}}, html_live) == [
+        "notice heading 'Other Heading' not in page",
+        "notice body 'Body' not in page",
+    ]
+    assert P.check_badges_notice(
+        {"notice": {"heading": "Collection Sensitivity", "body": "This collection contains sensitive surveillance materials.", "report": "Wrong report"}},
+        html_live,
+    ) == [
+        "notice report 'Wrong report' not in page",
+    ]
+
