@@ -141,8 +141,8 @@ rows:
   live: "GG notes_public; dd public_notes (OCR-looking notes suppressed by looks_like_ocr)"
   disposition: static
   sites:
-    deflockdane: {need: required, status: partial}
-    glassgovernment: {need: required, status: partial}
+    deflockdane: {need: required, status: done}
+    glassgovernment: {need: required, status: done}
   acceptance: "same notes text, same suppression"
   check: parity.display
 

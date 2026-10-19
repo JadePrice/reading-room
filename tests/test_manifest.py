@@ -319,3 +319,53 @@ def test_check_link_groups_parity():
     ]
 
 
+def test_check_notes_parity():
+    from roomkit import parity as P
+
+    # Live GG markup
+    html_gg = """
+    <div class="ggrr-doc__notes">
+      <h2>Notes</h2>
+      <p>Line one<br />Line two</p>
+    </div>
+    """
+    assert P.check_notes("Line one\nLine two", html_gg) == []
+
+    # Live DD markup
+    html_dd = """
+    <section class="deflock-reading-room__notes">
+      <h2>Notes</h2>
+      <p>Line one<br />Line two</p>
+    </section>
+    """
+    assert P.check_notes("Line one\nLine two", html_dd) == []
+
+    # Roomkit static markup
+    html_static = """
+    <section class="room__panel" aria-labelledby="room-notes-h">
+      <h2 id="room-notes-h">Notes</h2>
+      <p class="room__notes">Line one<br>Line two</p>
+    </section>
+    """
+    assert P.check_notes("Line one\nLine two", html_static) == []
+
+    # Absent/suppressed notes with clean page
+    html_clean = "<main><h1>Document</h1><p>Citation</p></main>"
+    assert P.check_notes("", html_clean) == []
+    assert P.check_notes(None, html_clean) == []
+
+    # Multiline notes with HTML entities
+    html_entities = '<p class="room__notes">One<br><br>Three &amp; &lt;four&gt;</p>'
+    assert P.check_notes("One\n\nThree & <four>", html_entities) == []
+
+    # Mismatches
+    assert P.check_notes("Different text", html_gg) == ["notes 'Different text' not in page"]
+    assert P.check_notes("Line one\nLine two", html_clean) == [
+        "notes 'Line one\\nLine two' not in page",
+        "notes block absent from page",
+    ]
+    assert P.check_notes("", html_gg) == ["unexpected notes block in page"]
+    assert P.check_notes(None, html_dd) == ["unexpected notes block in page"]
+
+
+

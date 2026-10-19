@@ -153,11 +153,16 @@ def check_badges_notice(display: dict, html: str) -> list[str]:
     return problems
 
 
+def _plain(html: str) -> str:
+    """Strip tags first then unescape entities, preserving entity-encoded brackets."""
+    return " ".join(unescape(re.sub(r"<[^>]+>", " ", html)).split())
+
+
 def check_link_groups(expected_groups: list[dict], html: str) -> list[str]:
     """Check that doc.display['groups'] matches the page's link groups in order."""
     problems = []
     text = unescape(html)
-    plain_text = " ".join(re.sub(r"<[^>]+>", " ", text).split())
+    plain_text = _plain(html)
 
     last_group_pos = 0
     for gi, g in enumerate(expected_groups):
@@ -209,6 +214,31 @@ def check_link_groups(expected_groups: list[dict], html: str) -> list[str]:
     return problems
 
 
+def check_notes(expected_notes: str | None, html: str) -> list[str]:
+    """Check that doc.display['notes'] matches the page's notes block."""
+    problems = []
+    notes = (expected_notes or "").strip()
+    plain_text = _plain(html)
+
+    has_notes_block = (
+        'class="ggrr-doc__notes"' in html
+        or 'class="deflock-reading-room__notes"' in html
+        or 'class="room__notes"' in html
+    )
+
+    if notes:
+        norm_notes = " ".join(notes.split())
+        if norm_notes not in plain_text:
+            problems.append(f"notes {notes!r} not in page")
+        if not has_notes_block:
+            problems.append("notes block absent from page")
+    else:
+        if has_notes_block:
+            problems.append("unexpected notes block in page")
+
+    return problems
+
+
 def http_get(url: str, timeout: float = 30.0) -> tuple[int, str]:
     req = urllib.request.Request(url, headers={"User-Agent": UA})
     try:
@@ -241,6 +271,8 @@ def check_page(doc, html: str) -> list[str]:
         problems.extend(check_badges_notice(doc.display, html))
     if doc.display and doc.display.get("groups"):
         problems.extend(check_link_groups(doc.display["groups"], html))
+    notes = doc.display.get("notes") if doc.display else None
+    problems.extend(check_notes(notes, html))
     return problems
 
 
