@@ -78,15 +78,15 @@ def enabled(pack: dict) -> bool:
     return bool(pack.get("features", {}).get(FEATURE))
 
 
-def mask_sensitive(text: str) -> str:
+def mask_sensitive(text: str, replacement: str = "") -> str:
     """Mask Social Security numbers and sensitive patterns in archival text."""
     if not text:
         return text
-    return SSN.sub(REDACTED_SSN, text)
+    return SSN.sub(replacement, text)
 
 
 def _masked(text: str) -> str:
-    return mask_sensitive(text)
+    return mask_sensitive(text, "")
 
 
 def records(m: Manifest, at: str) -> list[dict]:

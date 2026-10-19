@@ -293,7 +293,7 @@ def render(m: Manifest, engine: Path = ENGINE, mount: str | None = None, noindex
         files[f"{d.slug}/index.html"] = _doc_page(d, m, at, noindex, pack).encode()
         if d.pages:
             pages = {"slug": d.slug, "total": len(d.pages),
-                     "pages": [{"n": p.n, "provenance": p.provenance, "text": S.mask_sensitive(p.text),
+                     "pages": [{"n": p.n, "provenance": p.provenance, "text": p.text,
                                 **({"cite": p.cite} if m.passages and p.cite else {})} for p in d.pages]}
             files[f"{d.slug}/pages.json"] = (json.dumps(pages, ensure_ascii=False, sort_keys=True) + "\n").encode()
     if m.passages:
