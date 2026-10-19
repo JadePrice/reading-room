@@ -96,3 +96,24 @@ def test_duplicate_slug_refuses_second_document() -> None:
     assert len(m.refusals) == 1
     assert m.refusals[0][1] == "duplicate slug"
     assert len(m.documents) == 1
+
+
+def test_display_header_parsing() -> None:
+    data = _valid_manifest()
+    data["documents"][0]["display"] = {
+        "header": {
+            "meta": ["Agency", "Collection", "2020-2025"],
+            "original_url": "?original=1",
+            "ia_url": "https://archive.org/details/test",
+            "ia_pending": False,
+            "category": "contracts",
+        }
+    }
+    m = parse(data)
+    assert not m.refusals
+    hdr = m.documents[0].display["header"]
+    assert hdr["meta"] == ["Agency", "Collection", "2020-2025"]
+    assert hdr["original_url"] == "?original=1"
+    assert hdr["ia_url"] == "https://archive.org/details/test"
+    assert hdr["category"] == "contracts"
+

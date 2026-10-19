@@ -122,9 +122,20 @@ def doc_view(doc: Document, m: Manifest, at: str, pack: dict) -> dict:
     crumbs = d.get("breadcrumbs") or [{"label": labels.get("room", "Reading Room"), "url": at}, {"label": doc.title}]
     eb = d.get("eyebrow")
     notice = d.get("notice")
+    hdr = d.get("header")
+    header_view = None
+    if hdr:
+        header_view = {
+            "meta": [str(x) for x in hdr.get("meta", [])],
+            "original_url": _rebase_url(hdr["original_url"], m, at) if hdr.get("original_url") else "",
+            "ia_url": hdr.get("ia_url", ""),
+            "ia_pending": bool(hdr.get("ia_pending")),
+            "category": hdr.get("category", ""),
+        }
     return {**_chrome(pack, at), "doc": {
         "crumbs": _crumbs([{**c, "url": _rebase_url(c.get("url", ""), m, at)} for c in crumbs]),
         "eyebrow": {"label": eb["label"], "url": _rebase_url(eb.get("url", ""), m, at)} if eb else None,
+        "header": header_view,
         "title": doc.title, "badge": d.get("badge", ""), "badge_kind": d.get("badge_kind", ""),
         "released": d.get("released", ""), "released_label": labels.get("released", "Released"),
         "summary": doc.summary,

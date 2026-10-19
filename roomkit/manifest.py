@@ -252,6 +252,17 @@ def _display(raw: object) -> tuple[dict, str]:
             return {}, why
     if not isinstance(raw.get("jsonld", {}), dict):
         return {}, "display.jsonld is not an object"
+    hdr = raw.get("header")
+    if hdr is not None:
+        if not isinstance(hdr, dict):
+            return {}, "display.header is not an object"
+        if "meta" in hdr and not (isinstance(hdr["meta"], list) and all(isinstance(x, str) for x in hdr["meta"])):
+            return {}, "display.header.meta is not a list of strings"
+        for k in ("original_url", "ia_url", "category"):
+            if k in hdr and not isinstance(hdr[k], str):
+                return {}, f"display.header.{k} is not a string"
+        if "ia_pending" in hdr and not isinstance(hdr["ia_pending"], bool):
+            return {}, "display.header.ia_pending is not a bool"
     return raw, ""
 
 

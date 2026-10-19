@@ -299,6 +299,23 @@ foreach ($rows as $doc) {
         'archivedAt' => $ia_url,
     ], fn($v) => $v !== '' && $v !== null);
 
+    $cm = function_exists('ggrr_collection_meta') ? ggrr_collection_meta($collection) : null;
+    $hdr_meta = array_values(array_filter([
+        (string) ($doc['agency'] ?: 'Agency'),
+        $cm ? (string) $cm['title'] : '',
+        (!empty($cm['year_start']) && !empty($cm['year_end'])) ? ((int) $cm['year_start'] . '–' . (int) $cm['year_end']) : '',
+    ]));
+    $hdr = [
+        'meta' => $hdr_meta,
+        'original_url' => $inline . (str_contains($inline, '?') ? '&' : '?') . 'original=1',
+        'category' => (string) ($cm['category'] ?? 'historical'),
+    ];
+    if ($ia_ok) {
+        $hdr['ia_url'] = $ia_url;
+    } elseif (!empty($doc['ia_id']) && ($doc['ia_status'] ?? '') === 'pending') {
+        $hdr['ia_pending'] = true;
+    }
+
     $display = array_filter([
         'breadcrumbs' => [
             ['label' => 'Home', 'url' => home_url('/')],
@@ -306,6 +323,7 @@ foreach ($rows as $doc) {
             ['label' => $collection_label, 'url' => $collection_url],
             ['label' => (string) $doc['title']],
         ],
+        'header' => $hdr,
         'eyebrow' => ['label' => $collection_label, 'url' => $collection_url],
         'badge' => $badge,
         'badge_kind' => $badge_kind,

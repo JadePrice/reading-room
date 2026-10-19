@@ -26,12 +26,103 @@ import time
 import urllib.error
 import urllib.request
 from html import unescape
+from html.parser import HTMLParser
 from typing import Callable
 
-from roomkit.manifest import READER, Manifest
+try:
+    from roomkit.manifest import READER, Manifest
+except ImportError:
+    from scripts.roomkit.manifest import READER, Manifest
 
 UA = "roomkit-parity/0.1 (+https://deflockdane.org; read-only)"
 READER_URL = re.compile(r'class="rr-reader"[^>]*?data-file-url="([^"]*)"', re.S)
+
+
+class _DLParser(HTMLParser):
+    def __init__(self):
+        super().__init__()
+        self.in_dl = False
+        self.in_dt = False
+        self.in_dd = False
+        self.cur_dt: list[str] = []
+        self.cur_dd: list[str] = []
+        self.rows: list[tuple[str, str]] = []
+
+    def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]):
+        if tag == "dl":
+            classes = (dict(attrs).get("class") or "").split()
+            if any(c in classes for c in ("ggrr-doc__dl", "deflock-reading-room__dl", "room__dl")):
+                self.in_dl = True
+        elif self.in_dl:
+            if tag == "dt":
+                self.in_dt = True
+                self.cur_dt = []
+            elif tag == "dd":
+                self.in_dd = True
+                self.cur_dd = []
+
+    def handle_endtag(self, tag: str):
+        if tag == "dl" and self.in_dl:
+            self.in_dl = False
+        elif self.in_dl:
+            if tag == "dt":
+                self.in_dt = False
+            elif tag == "dd":
+                self.in_dd = False
+                dt_str = unescape(" ".join("".join(self.cur_dt).split()))
+                dd_str = unescape(" ".join("".join(self.cur_dd).split()))
+                if dt_str:
+                    self.rows.append((dt_str, dd_str))
+
+    def handle_data(self, data: str):
+        if self.in_dt:
+            self.cur_dt.append(data)
+        elif self.in_dd:
+            self.cur_dd.append(data)
+
+
+def check_details(expected_details: list[dict], html: str) -> list[str]:
+    """Check that doc.display['details'] matches the live page's dl rail."""
+    p = _DLParser()
+    p.feed(html)
+    live_rows = p.rows
+    if not live_rows:
+        return ["no details list (<dl>) found"]
+    if len(live_rows) != len(expected_details):
+        return [f"details row count {len(live_rows)} != {len(expected_details)}"]
+    problems = []
+    for i, (exp, (live_label, live_val)) in enumerate(zip(expected_details, live_rows)):
+        lab = exp.get("label", "")
+        if lab != live_label:
+            problems.append(f"detail #{i} label {live_label!r} != {lab!r}")
+            continue
+        exp_val = str(exp.get("value", ""))
+        if exp_val not in live_val:
+            problems.append(f"detail #{i} ({lab}) value {exp_val!r} not in {live_val!r}")
+        note = exp.get("note")
+        if note and str(note) not in live_val:
+            if not (lab == "Permanent copy" and str(note) == "Verified present" and "verified" in live_val.lower()):
+                problems.append(f"detail #{i} ({lab}) note {note!r} not in {live_val!r}")
+    return problems
+
+
+def check_header_actions(expected_header: dict, html: str) -> list[str]:
+    """Check that doc.display['header'] matches the page's file-meta and actions."""
+    problems = []
+    text = unescape(html)
+    for m in expected_header.get("meta") or []:
+        if str(m) not in text:
+            problems.append(f"header meta {m!r} not in page")
+    orig = expected_header.get("original_url")
+    if orig and orig not in html and f'href="{orig}"' not in html:
+        if not (orig.endswith("?original=1") and "?original=1" in html):
+            problems.append(f"header original_url {orig!r} not in page")
+    ia_url = expected_header.get("ia_url")
+    if ia_url and ia_url not in html:
+        problems.append(f"header ia_url {ia_url!r} not in page")
+    if expected_header.get("ia_pending") and "Internet Archive backup pending" not in text:
+        problems.append("header ia_pending badge not in page")
+    return problems
 
 
 def http_get(url: str, timeout: float = 30.0) -> tuple[int, str]:
@@ -58,6 +149,10 @@ def check_page(doc, html: str) -> list[str]:
             problems.append(f"reader url {unescape(m.group(1))!r} != {want!r}")
     if doc.download_url not in text:
         problems.append("download url absent")
+    if doc.display and doc.display.get("details"):
+        problems.extend(check_details(doc.display["details"], html))
+    if doc.display and doc.display.get("header"):
+        problems.extend(check_header_actions(doc.display["header"], html))
     return problems
 
 

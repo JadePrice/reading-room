@@ -3,6 +3,33 @@
 {{ root("doc", theme_key) }}
 <div class="room__shell">
 <div class="room__topline">{{ crumbs(doc.crumbs) }}{{ toggle(toggle_on) }}</div>
+{% if doc.header %}
+<div class="room__header-meta{% if doc.header.category %} room__header-meta--{{ doc.header.category }}{% endif %}">
+<p class="room__file-meta">
+{% for item in doc.header.meta %}<span>{{ item }}</span>{% endfor %}
+</p>
+<p class="room__header-actions" role="status">
+{%- if doc.header.original_url %}
+<a class="room__header-original" href="{{ doc.header.original_url }}" target="_blank" rel="noopener">Open original file</a>
+{%- endif %}
+{%- if doc.header.ia_url %}
+<a class="room__ia-stamp" href="{{ doc.header.ia_url }}" target="_blank" rel="noopener">Internet Archive</a>
+{%- elif doc.header.ia_pending %}
+<span class="room__ia-badge room__ia-badge--pending" aria-label="Internet Archive backup pending"><span class="room__sr">Internet Archive upload status: </span>backup pending</span>
+{%- endif %}
+</p>
+</div>
+<style>
+.room__header-meta{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:0.5rem;padding:0.5rem 0.75rem;border:1px solid var(--room-rule);border-radius:var(--room-radius,3px);margin-block:0.75rem}
+.room__file-meta{display:flex;align-items:center;flex-wrap:wrap;gap:0.75rem;margin:0;color:var(--room-ink-soft);font-size:0.85rem}
+.room__header-actions{display:flex;align-items:center;gap:0.75rem;margin:0}
+.room__header-original{font-family:var(--room-font-mono);font-size:0.8rem;color:var(--room-link);text-decoration:underline}
+.room__header-original:hover{text-decoration:none}
+.room__ia-stamp{font-family:var(--room-font-mono);font-size:0.75rem;padding:0.15rem 0.4rem;border:1px solid var(--room-rule);border-radius:var(--room-radius-pill,3px);color:var(--room-ink-soft);text-decoration:none}
+.room__ia-stamp:hover{color:var(--room-ink);border-color:var(--room-ink)}
+.room__ia-badge--pending{font-size:0.75rem;color:var(--room-ink-soft);font-style:italic}
+</style>
+{% endif %}
 <header class="room__head">
 {% if doc.eyebrow %}
 <p class="room__eyebrow">{{ link(doc.eyebrow.label, doc.eyebrow.url) }}</p>

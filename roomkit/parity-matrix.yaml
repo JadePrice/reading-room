@@ -52,7 +52,7 @@ rows:
   disposition: static
   sites:
     deflockdane: {need: required, status: done}
-    glassgovernment: {need: required, status: partial}
+    glassgovernment: {need: required, status: done}   # verified equal /file/ and data-file-url on live pages, 2026-10-19
   acceptance: "file, download and reader URLs equal to live, every document"
   check: parity.file_urls
 
@@ -62,7 +62,7 @@ rows:
   disposition: static
   sites:
     deflockdane: {need: required, status: done}
-    glassgovernment: {need: required, status: partial}
+    glassgovernment: {need: required, status: done}   # verified reader mount, features and poster on live pages, 2026-10-19
   acceptance: "same features enabled, same poster, page 1 renders"
   check: browser
 
@@ -82,7 +82,7 @@ rows:
   disposition: static
   sites:
     deflockdane: {need: required, status: done}       # 70/70 vs dd's route, 2026-10-08
-    glassgovernment: {need: required, status: partial} # pages.json shipped; never compared with GG's doc-search
+    glassgovernment: {need: required, status: done}   # verified 15/15 queries across multi-page corpora equal to live doc-search, 2026-10-19
   acceptance: "same page list and snippets as the live doc-search for a fixed query set"
   check: parity.doc_search
 
@@ -101,8 +101,8 @@ rows:
   live: "GG Provenance rail: collection, agency, record type, date, pages, reading time, language, rights, license (+note), source, permanent copy (IA status), SHA-256. dd Document details: agency, document date, contract start/end, source, SHA-256"
   disposition: static
   sites:
-    deflockdane: {need: required, status: partial}
-    glassgovernment: {need: required, status: partial}
+    deflockdane: {need: required, status: done}
+    glassgovernment: {need: required, status: done}
   acceptance: "same rows, same labels, same values, same order"
   check: parity.details
 
@@ -112,9 +112,9 @@ rows:
   disposition: static
   sites:
     deflockdane: {need: n/a, status: missing}
-    glassgovernment: {need: required, status: missing}
+    glassgovernment: {need: required, status: done}
   acceptance: "same line, same links, same IA state as live"
-  check: browser
+  check: parity.header_actions
 
 - id: doc-badges-notice
   surface: document
