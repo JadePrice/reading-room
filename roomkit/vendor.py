@@ -4,8 +4,8 @@ Civica renders the same reading room (plan 2026-10-13-unified-reading-room-
 frontend, Milestone 6). LLM_WIKI stays canonical; Civica carries a verbatim
 copy of the core, pinned to a commit:
 
-    roomkit vendor write --to /srv/projects/civica/app/room
-    roomkit vendor check --to /srv/projects/civica/app/room [--json]
+    roomkit vendor write --to path/to/civica/app/room
+    roomkit vendor check --to path/to/civica/app/room [--json]
 
 `write` copies CORE and records VENDORED.json: the source commit and the sha256
 of every file. It refuses while a core file has uncommitted changes, because the

@@ -13,7 +13,7 @@ of archaeological.
 |---|---|---|
 | Plugin dir | `gg-reading-room` | `deflock-reading-room` |
 | Host | gg-core, `/srv/wp-prod` atomic release | gg-shared (Hostinger), `~/domains/deflockdane.org/public_html` |
-| Parity repo | `gg-core:/home/jade/glassgovernment-site` | `gg-core:/home/jade/deflockdane-site` |
+| Parity repo | `gg-core:~/glassgovernment-site` | `gg-core:~/deflockdane-site` |
 | Deploy | `bash deploy-homepage-and-reader.sh` (atomic + smoke) | sync parity → gg-shared plugin dir, then `wp rewrite flush` + cache flush |
 | SEO stack | Yoast | Yoast (same hooks apply) |
 

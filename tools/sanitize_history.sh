@@ -28,7 +28,7 @@ PATTERNS=(
 echo "--- Scanning commit history for sensitive tokens ---"
 FOUND=0
 for p in "${PATTERNS[@]}"; do
-  COUNT=$(git log --all --grep="$p" -F -c 2>/dev/null || echo 0)
+  COUNT=$(git log --all --grep="$p" -F --oneline 2>/dev/null | wc -l)
   if [ "$COUNT" -gt 0 ]; then
     echo "  [FOUND] Pattern: '$p' in $COUNT commit messages"
     FOUND=1
@@ -36,8 +36,10 @@ for p in "${PATTERNS[@]}"; do
 done
 
 echo "--- Scanning committed file content for private paths ---"
-if git grep -nE "(/home/jade|/srv/projects|egret-boa\.ts\.net)" HEAD 2>/dev/null; then
-  echo "  [FAIL] Found private paths in repository tree."
+MATCHES=$(git grep -nE "(/home/jade|/srv/projects|egret-boa\.ts\.net)" HEAD -- ':!tools/sanitize_history.sh' 2>/dev/null || true)
+if [ -n "$MATCHES" ]; then
+  echo "  [FAIL] Found private paths in repository tree:"
+  echo "$MATCHES"
   FOUND=1
 else
   echo "  [PASS] Clean file content tree. No private paths detected."

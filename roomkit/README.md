@@ -24,9 +24,9 @@ $PY -m scripts.roomkit.cli parity --entities-from PAGES.tsv --site S > LIVE.json
 $PY -m scripts.roomkit.cli parity --passages-fetch --out ROOM --sample 10 [--keys KEYS.txt] > LIVE.json  # paced GETs (GG)
 $PY -m scripts.roomkit.cli parity --passages LIVE.json --out ROOM [--json]       # parity.passages (below, "Passage citations")
 $PY -m scripts.roomkit.cli diff --old OLD/room.lock.json --new NEW/room.lock.json [--json]  # purge + remove lists
-$PY -m scripts.roomkit.cli vendor write --to /srv/projects/civica/app/room       # copy the core into Civica, pinned
+$PY -m scripts.roomkit.cli vendor write --to path/to/civica/app/room       # copy the core into Civica, pinned
 $PY -m scripts.roomkit.cli pack import --map scripts/roomkit/packs/<site>/tokens.map.json [--write]  # pack tokens from design-tokens
-$PY -m scripts.roomkit.cli vendor check --to /srv/projects/civica/app/room [--json]  # its drift; changes nothing
+$PY -m scripts.roomkit.cli vendor check --to path/to/civica/app/room [--json]  # its drift; changes nothing
 ```
 
 `build`, `check` and `status` take `--site-pack packs/<site>/` (the site pack, below). Without it, the manifest's site's pack (`site.template`), else `packs/default/`.
