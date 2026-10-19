@@ -38,7 +38,7 @@ reading-room/
 
 ```bash
 # Clone the repository
-git clone https://github.com/glassgovernment/reading-room.git
+git clone https://github.com/JadePrice/reading-room.git
 cd reading-room
 
 # Install with pip or uv
