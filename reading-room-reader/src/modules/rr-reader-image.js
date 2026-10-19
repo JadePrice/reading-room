@@ -332,7 +332,7 @@
             var pageImgUrl = (pageObj && pageObj.image_url) ? pageObj.image_url : ctx.fileUrl;
 
             img.src = pageImgUrl;
-            img.alt = title ? (title + ' — Page ' + n) : ('Page ' + n);
+            img.alt = title ? (totalPages > 1 ? (title + ' — Page ' + n) : ('Scan of ' + title)) : (totalPages > 1 ? ('Page ' + n) : 'Document image');
 
             if (pageObj) {
                 renderBoxes(pageObj.boxes || []);
