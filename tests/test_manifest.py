@@ -207,3 +207,115 @@ def test_numeric_validation_rejects_booleans():
     m3 = parse(d3)
     assert any("document_id is not a positive integer" in prob for _, prob in m3.refusals)
 
+
+def test_check_link_groups_parity():
+    from roomkit import parity as P
+
+    groups = [
+        {
+            "heading": "Topics",
+            "style": "chips",
+            "items": [
+                {"label": "Surveillance", "url": "https://glassgovernment.org/library/topics/surveillance/"},
+            ],
+        },
+        {
+            "heading": "Named in this document",
+            "blurb": "Matched verbatim in the document text.",
+            "style": "chips",
+            "items": [
+                {
+                    "label": "Flock Safety",
+                    "kind": "Vendor",
+                    "quote": "contract with Flock Safety for ALPR cameras",
+                    "url": "https://glassgovernment.org/library/entity/vendor/flock-safety/",
+                },
+            ],
+        },
+        {
+            "heading": "Related documents",
+            "style": "list",
+            "items": [
+                {
+                    "label": "Camera Audit",
+                    "url": "https://glassgovernment.org/library/camera-audit/",
+                    "meta": "Audit Collection",
+                },
+            ],
+        },
+    ]
+
+    html_live = """
+    <div class="ggrr-doc__topics">
+      <dl>
+        <dt>Topics</dt>
+        <dd class="ggrr-doc__topic-list">
+          <a class="ggrr-doc__topic-badge" href="https://glassgovernment.org/library/topics/surveillance/">Surveillance</a>
+        </dd>
+      </dl>
+    </div>
+    <div class="ggrr-doc__entities">
+      <dl>
+        <dt>Named in this document<span class="ggrr-doc__entity-why">Matched verbatim in the document text.</span></dt>
+        <dd class="ggrr-doc__entity-list">
+          <a class="ggrr-doc__entity-badge ggrr-doc__entity-badge--vendor" href="https://glassgovernment.org/library/entity/vendor/flock-safety/">
+            <span class="ggrr-doc__entity-name">Flock Safety</span>
+            <span class="ggrr-doc__entity-type">Vendor</span>
+            <span class="ggrr-doc__entity-span">&ldquo;contract with <mark class="ggrr-doc__entity-hit">Flock Safety</mark> for ALPR cameras&rdquo;</span>
+          </a>
+        </dd>
+      </dl>
+    </div>
+    <div class="ggrr-doc__related">
+      <h2>Related documents</h2>
+      <ul class="ggrr-doc__related-list">
+        <li>
+          <a href="https://glassgovernment.org/library/camera-audit/">Camera Audit</a>
+          <span class="ggrr-doc__related-collection">Audit Collection</span>
+        </li>
+      </ul>
+    </div>
+    """
+    assert P.check_link_groups(groups, html_live) == []
+
+    # Deflock Dane single vendors group
+    dd_groups = [
+        {
+            "heading": "Vendors",
+            "style": "chips",
+            "items": [
+                {"label": "Axon", "url": "/reading-room/entity/vendor/axon/"},
+            ],
+        }
+    ]
+    html_dd = """
+    <div class="deflock-reading-room__vendors">
+      <h2>Vendors</h2>
+      <ul class="deflock-reading-room__chips">
+        <li><a class="deflock-reading-room__chip" href="/reading-room/entity/vendor/axon/">Axon</a></li>
+      </ul>
+    </div>
+    """
+    assert P.check_link_groups(dd_groups, html_dd) == []
+
+    # Mismatches
+    assert P.check_link_groups([{"heading": "Missing Heading", "items": [{"label": "X"}]}], html_live) == [
+        "group #0 heading 'Missing Heading' not in page"
+    ]
+    assert P.check_link_groups([{"heading": "Topics", "items": [{"label": "Missing Topic"}]}], html_live) == [
+        "group #0 item #0 label 'Missing Topic' not in page"
+    ]
+    assert P.check_link_groups(
+        [{"heading": "Topics", "items": [{"label": "Surveillance", "url": "https://other.test/wrong-url/"}]}],
+        html_live,
+    ) == [
+        "group #0 item #0 (Surveillance) url 'https://other.test/wrong-url/' not in page"
+    ]
+    assert P.check_link_groups(
+        [{"heading": "Named in this document", "items": [{"label": "Flock Safety", "quote": "truncated quote that doesn't match"}]}],
+        html_live,
+    ) == [
+        "group #0 item #0 (Flock Safety) quote \"truncated quote that doesn't match\" not in page"
+    ]
+
+

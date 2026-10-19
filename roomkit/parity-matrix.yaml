@@ -131,8 +131,8 @@ rows:
   live: "GG: topics, entities under 'Attributed to' / 'Named in this document' with verbatim spans, 'Quoted in a power map', related documents. dd: vendors (approved_by_doc)"
   disposition: static
   sites:
-    deflockdane: {need: required, status: partial}
-    glassgovernment: {need: required, status: partial}
+    deflockdane: {need: required, status: done}
+    glassgovernment: {need: required, status: done}
   acceptance: "same groups, same items and URLs, same order; spans never truncated in HTML"
   check: parity.display
 

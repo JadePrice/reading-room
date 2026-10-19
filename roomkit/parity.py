@@ -153,6 +153,62 @@ def check_badges_notice(display: dict, html: str) -> list[str]:
     return problems
 
 
+def check_link_groups(expected_groups: list[dict], html: str) -> list[str]:
+    """Check that doc.display['groups'] matches the page's link groups in order."""
+    problems = []
+    text = unescape(html)
+    plain_text = " ".join(re.sub(r"<[^>]+>", " ", text).split())
+
+    last_group_pos = 0
+    for gi, g in enumerate(expected_groups):
+        heading = g.get("heading", "")
+        if not heading:
+            continue
+        gpos = text.find(heading, last_group_pos)
+        if gpos == -1:
+            problems.append(f"group #{gi} heading {heading!r} not in page")
+            continue
+        last_group_pos = gpos
+
+        blurb = g.get("blurb")
+        if blurb and " ".join(blurb.split()) not in plain_text:
+            problems.append(f"group #{gi} ({heading}) blurb {blurb!r} not in page")
+
+        last_item_pos = gpos
+        for ii, it in enumerate(g.get("items", [])):
+            label = it.get("label", "")
+            if not label:
+                continue
+            ipos = text.find(label, last_item_pos)
+            if ipos == -1:
+                if label not in plain_text:
+                    problems.append(f"group #{gi} item #{ii} label {label!r} not in page")
+                    continue
+            else:
+                last_item_pos = ipos
+
+            url = it.get("url")
+            if url:
+                parsed = urllib.parse.urlparse(url)
+                path = parsed.path or url
+                if url not in html and path not in html:
+                    problems.append(f"group #{gi} item #{ii} ({label}) url {url!r} not in page")
+
+            quote = it.get("quote")
+            if quote and " ".join(quote.split()) not in plain_text:
+                problems.append(f"group #{gi} item #{ii} ({label}) quote {quote!r} not in page")
+
+            kind = it.get("kind")
+            if kind and kind not in plain_text:
+                problems.append(f"group #{gi} item #{ii} ({label}) kind {kind!r} not in page")
+
+            meta = it.get("meta")
+            if meta and meta not in plain_text:
+                problems.append(f"group #{gi} item #{ii} ({label}) meta {meta!r} not in page")
+
+    return problems
+
+
 def http_get(url: str, timeout: float = 30.0) -> tuple[int, str]:
     req = urllib.request.Request(url, headers={"User-Agent": UA})
     try:
@@ -183,6 +239,8 @@ def check_page(doc, html: str) -> list[str]:
         problems.extend(check_header_actions(doc.display["header"], html))
     if doc.display and (doc.display.get("badge") or doc.display.get("notice")):
         problems.extend(check_badges_notice(doc.display, html))
+    if doc.display and doc.display.get("groups"):
+        problems.extend(check_link_groups(doc.display["groups"], html))
     return problems
 
 
