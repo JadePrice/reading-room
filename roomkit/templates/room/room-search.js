@@ -4,7 +4,9 @@
   // searched in the room's own Pagefind index (pagefind/, shipped with the room;
   // nothing is fetched from a server). Facet selects narrow both the text results
   // and, with no text, the cards on the page. Suggestions come from the same
-  // index: a WAI-ARIA combobox over a grouped listbox.
+  // index: a WAI-ARIA combobox over a grouped listbox, in the site's own groups and
+  // words when the page carries them (manifest site.index.suggest), else one group
+  // per facet select.
   var root = document.getElementById("room-content");
   if (!root) { return; }
   var finder = root.querySelector("[data-room-search]");
@@ -24,6 +26,8 @@
   var BASE = finder.getAttribute("data-room-pagefind");
   var RECENT = finder.getAttribute("data-room-recent-key");
   var PAGE = 20, TOP = 5, PER_FACET = 4, KEEP = 5;
+  var SITE = null;
+  try { SITE = JSON.parse((finder.querySelector("[data-room-suggest]") || {}).textContent || "null"); } catch (e) {}
   var total = cards.length;
   var byUrl = {};
   cards.forEach(function (c) {
@@ -240,8 +244,8 @@
     q.removeAttribute("aria-activedescendant");
     if (first) { setActive(0); }
   }
-  function docs(res, label) {
-    return Promise.all(((res && res.results) || []).slice(0, TOP).map(function (r) { return r.data(); }))
+  function docs(res, label, n) {
+    return Promise.all(((res && res.results) || []).slice(0, n || TOP).map(function (r) { return r.data(); }))
       .then(function (ds) {
         return { label: label, items: ds.map(function (d) { return { kind: "doc", url: d.url, label: (d.meta && d.meta.title) || d.url }; }) };
       });
@@ -259,12 +263,78 @@
       }) };
     });
   }
+  // dd's deflock-reading-room.js normalize(), scoreDoc() and getRankedDocs(), ported
+  // unchanged, so a site panel matches and ranks as the site's own panel does.
+  function norm(v) {
+    return String(v || "").toLowerCase().replace(/&/g, " and ").replace(/[\u2019']/g, "")
+      .replace(/[^a-z0-9]+/g, " ").replace(/\s+/g, " ").trim();
+  }
+  var RANKED = SITE && SITE.rank ? SITE.rank.map(function (r) {
+    return { r: r, title: norm(r.title), agency: norm(r.agency), summary: norm(r.summary), type: norm(r.doc_type),
+             year: norm(r.year), aliases: norm(r.aliases.join(" ")),
+             all: norm([r.title, r.agency, r.summary, r.doc_type, r.year].concat(r.aliases, r.vendors).join(" ")) };
+  }) : null;
+  function score(d, query) {
+    var s = 0;
+    if (!query) { return s; }
+    if (d.title === query) { s += 120; }
+    if (d.title.indexOf(query) === 0) { s += 80; } else if (d.title.indexOf(query) !== -1) { s += 52; }
+    if (d.agency === query) { s += 70; }
+    if (d.agency.indexOf(query) === 0) { s += 44; } else if (d.agency.indexOf(query) !== -1) { s += 28; }
+    if (d.type && d.type === query) { s += 30; } else if (d.type && d.type.indexOf(query) !== -1) { s += 18; }
+    if (d.aliases.indexOf(query) !== -1) { s += 24; }
+    if (d.summary.indexOf(query) !== -1) { s += 12; }
+    if (d.year === query) { s += 10; }
+    if (s > 0 && d.all.indexOf(query) !== -1) { s += 4; }
+    if (s > 0 && d.r.date) { s += Math.max(0, 8 - Math.min(8, new Date().getFullYear() - Number((d.r.year || "").slice(0, 4) || 0))); }
+    return s;
+  }
+  function stamp(v) { var t = v ? Date.parse(v) : 0; return isFinite(t) ? t : 0; }
+  function rankDocs(text, label, n) {
+    var query = norm(text);
+    var hits = RANKED.map(function (d) { return { d: d, s: score(d, query) }; })
+      .filter(function (e) { return e.s > 0; })
+      .sort(function (a, b) {
+        if (a.s === b.s) { return (stamp(b.d.r.date) - stamp(a.d.r.date)) || String(a.d.r.title).localeCompare(String(b.d.r.title)); }
+        return b.s - a.s;
+      });
+    return { label: label, items: hits.slice(0, n).map(function (e) { return { kind: "doc", url: e.d.r.url, label: e.d.r.label }; }) };
+  }
+  function siteGroups(text) {
+    var lc = RANKED ? norm(text) : text.toLowerCase();
+    return SITE.groups.map(function (g) {
+      var n = text ? g.typing : g.empty;
+      var items = text ? g.items.filter(function (it) {
+        var hay = it.label + " " + it.query;
+        return (RANKED ? norm(hay) : hay.toLowerCase()).indexOf(lc) !== -1;
+      }) : g.items;
+      return { label: g.label, items: items.slice(0, n).map(function (it) {
+        return { kind: "query", value: it.query, label: it.label,
+                 note: typeof it.count === "number" ? " (" + it.count + " " + count.getAttribute(it.count === 1 ? "data-room-one" : "data-room-other") + ")" : "" };
+      }) };
+    });
+  }
+  function siteJobs(pf, text) {
+    var L = SITE.labels, jobs = [];
+    if (!text) {
+      jobs.push(Promise.resolve({ label: L.recent_docs, items: SITE.recent_docs.map(function (d) { return { kind: "doc", url: d.url, label: d.label }; }) }));
+      jobs.push(Promise.resolve({ label: L.recent_searches, items: recent().map(function (s) { return { kind: "query", value: s, label: s }; }) }));
+    } else if (RANKED) {
+      jobs.push(Promise.resolve(rankDocs(text, L.top, SITE.top)));
+    } else if (pf) {
+      jobs.push(pf.search(text).then(function (r) { return docs(r, L.top, SITE.top); }));
+    }
+    jobs.push(Promise.resolve(siteGroups(text)));
+    return jobs;
+  }
   function suggest(first) {
     var text = q.value.trim(), my = ++sugToken;
     engine().then(function (pf) {
       if (my !== sugToken) { return; }
       var jobs;
-      if (!text) {
+      if (SITE) {
+        jobs = siteJobs(pf, text);
+      } else if (!text) {
         jobs = [Promise.resolve({ label: "Recent searches", items: recent().map(function (s) { return { kind: "query", value: s, label: s }; }) })];
         if (pf) { jobs.push(pf.search(null, { sort: { date: "desc" } }).then(function (r) { return docs(r, "Recent documents"); })); }
       } else {

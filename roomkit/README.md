@@ -23,6 +23,11 @@ $PY -m roomkit.cli parity --entities LIVE.json --out ROOM [--json]       # parit
 $PY -m roomkit.cli parity --entities-from PAGES.tsv --site S > LIVE.json  # the live file, from fetched pages
 $PY -m roomkit.cli parity --passages-fetch --out ROOM --sample 10 [--keys KEYS.txt] > LIVE.json  # paced GETs (GG)
 $PY -m roomkit.cli parity --passages LIVE.json --out ROOM [--json]       # parity.passages (below, "Passage citations")
+$PY -m roomkit.cli parity --facets-from INDEX.html --site deflockdane > LIVE.json  # live facets, from the live index
+$PY -m roomkit.cli parity --facet-pages LIVE.json --out ROOM [--json]    # parity.facet_pages (below, "Facet pages and the sitemap")
+$PY -m roomkit.cli parity --sitemaps PROVIDER.xml... --out ROOM [--json] # parity.sitemaps
+$PY -m roomkit.cli parity --thumbs LIVE.tsv --out ROOM [--json]          # parity.thumbnails (below, "Card thumbnails")
+$PY -m roomkit.cli parity --search LIVE.json --out ROOM [--top N] [--json]  # parity.search (below, "Corpus search")
 $PY -m roomkit.cli diff --old OLD/room.lock.json --new NEW/room.lock.json [--json]  # purge + remove lists
 $PY -m roomkit.cli vendor write --to path/to/civica/app/room       # copy the core into Civica, pinned
 $PY -m roomkit.cli pack import --map roomkit/packs/<site>/tokens.map.json [--write]  # pack tokens from design-tokens
@@ -108,11 +113,17 @@ index.html                   the list of documents
 entities/index.html          GG's entity index        } pack features.entities and the
 entity/<type>/<slug>/index.html  one page per entity  } manifest's `entities` block
 <slug>/index.html            one page per document
+<facet>/<value>/index.html   one page per facet value } pack features.facet-pages and the
+                                                      } manifest's site.index.browse
+sitemap.xml                  every served page by its live URL (pack features.sitemaps)
 <slug>/pages.<hash>.json     page texts, when the manifest carries them (and each page's citation,
                              with pack features.passage-cite)
 citations.json               GG's curated citations by stable_key (features.passage-cite)
 assets/room.<hash>.css       the shared template's styles, the room's chrome, the site pack's tokens
 assets/room.<hash>.js        the index finder and the light/dark toggle
+assets/room-search.<hash>.js the corpus-search finder and suggestions (features.corpus-search)
+assets/thumbs/<slug>.<hash>.<ext>  card thumbnails the manifest carries (index.thumb)
+pagefind/                    the Pagefind index (features.corpus-search)
 assets/rr-config.<hash>.js   window.rrReaderConfig
 assets/vendor/rr-reader/     reading-room-reader/src, verbatim (fingerprinted names)
 assets/vendor/pdfjs/         pdf.js as the engine pins it (fingerprinted names)
@@ -144,13 +155,20 @@ The finder filters the cards already on the page (title, summary, agency, group,
 
 A pack's `features.corpus-search` (off unless the pack turns it on; `labels.fulltext_placeholder` is the box's placeholder) adds a [Pagefind](https://pagefind.app) index and swaps the finder's script for `room-search.js` (`search.py`, `templates/room/room-search.js`, `search.css`).
 
-- **Indexed:** title, summary, citation, agency, group and every page's OCR text from `pages.json`, or, for a record with no usable pages, its `search_text`. That is GG's `full_text` (what the live search reads), exported for a record whose page rows are not a complete 1..N run, most often a large scan OCR'd as one row with no page number. It is indexed and never shown: no `pages.json`, no in-document search, and a hit links to the record, not to a page. The group and each facet are Pagefind filters, the date is a sort; none of them add words. The record pages Pagefind reads are built in memory by `search.record_html` and never served.
+- **Indexed:** title, summary, citation, agency, group, the public notes the record page shows (`display.notes`) and every page's OCR text from `pages.json`, or, for a record with no usable pages, its `search_text`. That is GG's `full_text` (what the live search reads), exported for a record whose page rows are not a complete 1..N run, most often a large scan OCR'd as one row with no page number. It is indexed and never shown: no `pages.json`, no in-document search, and a hit links to the record, not to a page. The group and each facet are Pagefind filters, the date is a sort; none of them add words. The record pages Pagefind reads are built in memory by `search.record_html` and never served.
 - **Shipped:** the index under `pagefind/` (the loader, worker, wasm, shards, fragments, filters; Pagefind's own UI bundles are dropped). No network at page view: the finder loads `pagefind/pagefind.js` from the room's own mount. The room sets no CSP; a site that adds one needs `'wasm-unsafe-eval'` in `script-src` for Pagefind's wasm (QW1).
 - **Pinned:** `pagefind[bin]==1.5.2` in `requirements-dev.txt` (the PyPI wrapper with its bundled binary: `uv pip install --python ~/.venvs/llm-wiki/bin/python 'pagefind[bin]==1.5.2'`). A build with the switch on and another version, or none, is refused with that command.
 - **Not byte-reproducible.** Pagefind writes each filter's values in a random order, so `filter/*`, `pagefind.*.pf_meta` and the hashes in their names change between runs of the same input (fragments and index shards do not). So `room.lock.json` records `search.input` (a hash of every indexed field) and the version; `check` calls the index current when both match and the shipped `pagefind/` files are the ones the on-disk lock lists. The goldens run a stand-in indexer that writes the HTML Pagefind would read.
 - **Finder.** Text goes to the index; the facet selects narrow text results too (and the cards when the box is empty). Results link to the record, and to `#page-N` for PDF records (the reader opens `#page-N`). The query stays in the URL. Pagefind stems words, so `zephy` finds nothing and `zephyr` finds `zephyrine`. Without JavaScript the finder stays hidden and the static list stands.
-- **Suggestions.** A WAI-ARIA combobox over a grouped listbox (arrow keys, Enter, Escape; `aria-activedescendant`; the result count is `aria-live`). Groups: top matches, one per facet the room holds (agency/category, year, and others the manifest carries), recent documents, recent searches (localStorage). "Try searching" is not built (no data to draw it from).
-- **parity.search.** `roomkit parity --search LIVE.json --out ROOM [--top N] [--json]` runs the room's own `pagefind.js` in Chromium and checks that every live hit is in the room's top N (default 100; `--top`). `LIVE.json` is `{"site", "fetched", "source", "notes"?, "queries": {"<query>": ["<slug or record URL>", ...]}}`; a hit's last path segment is its slug. A live hit the room does not hold is reported as `not_in_room`, not a miss. GG's set is `search-queries/glassgovernment-2026-10-14.json`; for dd the Mac feeds results fetched through the origin in the same format.
+- **Suggestions.** A WAI-ARIA combobox over a grouped listbox (arrow keys, Enter, Escape; `aria-activedescendant`; the result count is `aria-live`). Without a site panel, the groups are: top matches, one per facet the room holds (agency/category, year, and others the manifest carries), recent documents, recent searches (localStorage).
+- **The site's own panel.** When the manifest carries `site.index.suggest` (`manifest.py` documents it), the index embeds it as inert JSON (`<script type="application/json" data-room-suggest>`, every `<` escaped) and `room-search.js` draws that panel instead: the site's labels, its recent documents in its order, then each group's items (`empty` of them on an empty box, the `typing` first that hold the text otherwise), with top matches (`top` of them, from Pagefind) first while typing. A chip fills the box with its query. dd's exporter writes live's panel from the shortcode's archive payload (Try searching, Agencies, Surveillance vendors, Document types, Years, with live's limits). With the block's optional `rank` rows (what dd's `prepareDoc` reads per record, from the same payload), top matches are dd's own `scoreDoc` ported into `room-search.js` (title, agency, type, alias, summary and year matches with live's weights and its recency bonus) rather than Pagefind relevance; 14 probe inputs gave every group, item and top-match order equal to live. Live's "See all results for" row is not drawn.
+- **parity.search.** `roomkit parity --search LIVE.json --out ROOM [--top N] [--json]` runs the room's own `pagefind.js` in Chromium and checks that every live hit is in the room's top N (default 100; `--top`). `LIVE.json` is `{"site", "fetched", "source", "notes"?, "queries": {"<query>": ["<slug or record URL>", ...]}}`; a hit's last path segment is its slug. A live hit the room does not hold is reported as `not_in_room`, not a miss. GG's set is `search-queries/glassgovernment-2026-10-14.json`. dd's live results come through the origin: `ssh gg-shared bash -s -- $(jq -r '.queries | keys_unsorted[] | @base64' OLD.json) < roomkit/exporters/deflockdane-fetch-search.sh > LIVE.json` (`search-queries/deflockdane-2026-10-20.json`, 98.5%; the misses are live ignoring words under 3 characters and past the 8th, accepted as explained on 2026-10-20).
+
+### Card thumbnails
+
+A card's thumbnail is either `index.thumb` (`{mime, sha256, data}`, base64 of a JPEG, PNG or WebP up to 256 KiB, checked against its magic bytes and hash) or `index.thumb_url` (a remote image, used as given); a row with both is refused. A `thumb` is written to `assets/thumbs/<slug>.<hash>.<ext>` and cached a year, so the card no longer depends on a route only the site's server answers. dd's exporter emits the plugin's cached preview as `thumb`, and keeps `thumb_url` (the live `/thumb/` route) only for a PDF with no cached preview yet.
+
+**parity.thumbnails** (`thumb_parity.py`). `exporters/deflockdane-fetch-thumbs.sh` reads the live index via the origin and fetches and hashes each card's image (`ssh gg-shared bash -s < roomkit/exporters/deflockdane-fetch-thumbs.sh > thumbs.tsv`); `parity --thumbs thumbs.tsv --out ROOM` passes when every card live shows an image shows the same bytes from the room's own tree. A live `<img>` that 404s is `live-broken`, explained, not a miss.
 
 
 ### Entities
@@ -204,6 +222,26 @@ Without `--site-pack`, a build uses the manifest's site's pack, else `packs/defa
 Verified 2026-10-12, locally: axe WCAG 2.2 AA clean on both sites' index, a document page and the 404, light and dark, 1280 and 390 wide. All 460 built pages (dd 69, GG 391) fit 390px with no sideways scroll.
 
 **Continuity.** The pack is an input to the build, hashed into the lock. A menu or footer change on the live site reaches the room as an edit to the pack's `chrome`; `check` then reports the pages as stale.
+
+### Facet pages and the sitemap
+
+The no-JS ways in (`browse.py`; matrix rows `index-facet-pages` and `sitemaps`), each behind its own pack switch, off unless the pack asks. dd's pack turns both on (and, since 2026-10-20, `features.entities`).
+
+- **Facet pages** (`features.facet-pages`). The manifest's `site.index.browse` names the facets that get pages (`{heading, facets: [{name, label, title}]}`, `title` holding `{value}`), and each record's `index.browse` the values it is listed under (`{name: [values]}`: a record can name two vendors). One page per value at `<room>/<facet>/<value-slug>/`, the index's cards in manifest order, and a browse block on the index, one folded list per facet, that works without JavaScript. Separate from `index.facets`, the finder's selects, which do not move. Refused at build: a facet named like a record or a path the room serves, a value with no ASCII slug, two values slugging the same, a record naming a facet the site does not browse. dd's exporter takes agency, document type, vendor and year from the shortcode's own `build_archive_search_payload`, fed what `render()` feeds it, so each page holds what live filtering holds.
+- **Sitemap** (`features.sitemaps`). `sitemap.xml`: the room, every record, the entity index and pages (with entities on), every facet page, by live canonical URL, no lastmod.
+- **parity.facet_pages.** `parity --facets-from INDEX.html --site deflockdane` reads the live index's `archiveSearch` docs into the live file (`browse_parity.py` documents it); `parity --facet-pages LIVE.json --out ROOM` passes when every live facet and value is built, every page's records are equal and the index links every page.
+- **parity.sitemaps.** `parity --sitemaps <provider.xml>... --out ROOM`: the live provider files as fetched (dd: Yoast's `deflock_rr_document-sitemap.xml`, `deflock_rr_entity-sitemap.xml`), URLs under the room only, against the room's `sitemap.xml`; the room's index and facet pages are its own and not differences. A sitemap with a DOCTYPE is refused.
+
+Fetch the live inputs through the origin for dd (Cloudflare 429s):
+
+```bash
+R=deflockdane.org:443:$ORIGIN_IP   # the host's own public address (exporters/deflockdane-fetch-pages.sh finds it)
+curl -sS --resolve $R -o live-index.html https://deflockdane.org/reading-room/
+curl -sS --resolve $R -o docs.xml https://deflockdane.org/deflock_rr_document-sitemap.xml
+curl -sS --resolve $R -o entities.xml https://deflockdane.org/deflock_rr_entity-sitemap.xml
+```
+
+2026-10-20, dd: facet pages 33/33 (agency 17, type 7, vendor 2, year 7); the sitemap equal to the document and entity providers, 84/84, once dd's pack turned `features.entities` on the same day (parity.entities re-run 16/16). axe 0 serious/critical on the index and four facet pages, light, dark and 375 px; the browse block's 33 links present without JavaScript.
 
 ### Passage citations (GG)
 
@@ -270,7 +308,7 @@ A pack with no `chrome` gets only the skip link ("Skip to the content"). So does
 
 ## Publishing (staging)
 
-`publish/deflockdane-staging.sh`, run by a person on the Mac. It exports, builds and checks in the dd site pack, runs parity, uploads without `--delete`, removes per `roomkit diff`, checks every served file against the lock, and prints the purge list. Everything it reads from the site goes through the origin (Cloudflare 429s).
+`publish/deflockdane-staging.sh`, run by a person on the Mac. It exports, builds and checks in the dd site pack, runs parity (pages, then thumbnails), uploads without `--delete`, removes per `roomkit diff`, checks every served file against the lock, and prints the purge list. Everything it reads from the site goes through the origin (Cloudflare 429s).
 
 Rendering is deterministic: no timestamps, sorted keys, documents in manifest order. `check` uses the same in-memory render as `build`, so a check cannot pass a tree the build would not have made.
 
@@ -333,4 +371,5 @@ In the upstream monorepo (`llm-wiki`), the full extended test suite under `tests
 - `test_pack_import.py`: reading design-tokens files (duplicates, unresolved names, cycles, `@media` variants), the map's refusals, an import refused when the pack would be, and every shipped pack equal to what its map derives;
 - `test_pack.py`: the site packs: the schema; every refusal (unknown keys, missing tokens, unsafe URLs and values, contrast light and dark including the 1.29:1 dd panels, unscoped `extra_css`, dropped features, missing files); explicit packs building the golden bytes; `color.py` agreeing with the wiki gate's contrast math;
 - a Playwright run that mounts the reader on a built page, and the same page with JavaScript off;
-- `test_entities.py`: the entity surface on GG- and dd-shaped fixtures: the switch off changes no byte (goldens with a block), every committed pack off; index grouping and entity order as exported; documents in the export's groups and order; links following the mount, a record outside the room kept live, record-page chips rebased only with the switch on; "appears alongside" with kind and count; every heading and label changed in the export changes the page (the record page's claim headings too); no entity word in a template or view; the JSON-LD the exported object (none for dd); each refusal; the same pages for two sites with the same knobs; `entities.css` scoped and token-only; parity.entities reading its own room, agreeing, naming each kind of difference (order, missing, extra, index heading, unchecked, unfetched), refusing a bad live file; live markup (GG index and page, dd page and sitemap) turned into the live file; axe at 375 and 1280, light and dark, no sideways scroll, and without JavaScript one h1, no heading gap, landmarks and named lists.
+- `test_browse.py`: facet pages and the sitemap: both switches off change no byte, facet pages on without a browse block build none; one page per value at its path with its records in manifest order, the canonical live and links following the mount; the index linking every page without JavaScript, facets in the site's order and years newest first; each build refusal and each malformed browse block; the sitemap's URLs, escaping and switch; parity.facet_pages from a dd-shaped live index, agreeing with its own room and naming each difference (extra or missing value, members, missing facet, an unlinked page); parity.sitemaps ignoring the room's own pages and URLs outside it, naming missing and extra, refusing a sitemap index, a DOCTYPE and a room without a sitemap; the CLI for both;
+- `test_entities.py`: the entity surface on GG- and dd-shaped fixtures: the switch off changes no byte (goldens with a block), only dd's committed pack on; index grouping and entity order as exported; documents in the export's groups and order; links following the mount, a record outside the room kept live, record-page chips rebased only with the switch on; "appears alongside" with kind and count; every heading and label changed in the export changes the page (the record page's claim headings too); no entity word in a template or view; the JSON-LD the exported object (none for dd); each refusal; the same pages for two sites with the same knobs; `entities.css` scoped and token-only; parity.entities reading its own room, agreeing, naming each kind of difference (order, missing, extra, index heading, unchecked, unfetched), refusing a bad live file; live markup (GG index and page, dd page and sitemap) turned into the live file; axe at 375 and 1280, light and dark, no sideways scroll, and without JavaScript one h1, no heading gap, landmarks and named lists.

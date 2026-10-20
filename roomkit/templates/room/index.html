@@ -27,6 +27,9 @@
 {% if index.search %}
 <div class="room__combo"><input type="search" id="room-q" name="q" autocomplete="off" placeholder="{{ index.search.placeholder }}" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="room-suggest" aria-describedby="room-q-hint">
 <div class="room__suggest" id="room-suggest" role="listbox" aria-label="Suggestions" hidden></div></div>
+{%- if index.search.suggest %}
+<script type="application/json" data-room-suggest>{{ index.search.suggest|safe }}</script>
+{%- endif %}
 <p class="room__sr" id="room-q-hint">Searches the text of every record. Suggestions appear as you type: arrow keys move through them, Enter chooses, Escape closes.</p></div>
 {% else %}
 <input type="search" id="room-q" name="q" autocomplete="off" placeholder="{{ index.search_placeholder }}"></div>
@@ -57,6 +60,16 @@
 {%- endif %}
 {%- for g in index.jump.groups %}<li><a href="#{{ g.id }}">{{ g.label }}</a></li>{% endfor %}</ul>
 {%- if index.jump.folded %}</details>{% endif %}</nav>
+{% endif %}
+{% if index.browse %}
+{# The facet pages (pack features.facet-pages): the way to narrow the list without JavaScript. #}
+<nav class="room__jump room__browse" aria-labelledby="room-browse-h" data-room-browse>
+<h2 id="room-browse-h" class="room__jump-label">{{ index.browse.heading }}</h2>
+{% for f in index.browse.facets %}
+<details data-room-browse-facet="{{ f.name }}"><summary>{{ f.label }} ({{ f["values"]|length }})</summary><ul>
+{%- for v in f["values"] %}<li><a href="{{ v.url }}">{{ v.label }} <span class="room__section-n">{{ v.count }}</span></a></li>{% endfor %}</ul></details>
+{% endfor %}
+</nav>
 {% endif %}
 <div class="room__groups room__groups--{{ layout }}">
 {% for sec in index.sections %}

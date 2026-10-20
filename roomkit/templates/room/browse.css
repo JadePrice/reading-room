@@ -1,0 +1,7 @@
+/* The index's browse block and the facet pages (pack features.facet-pages;
+   roomkit/browse.py). Shipped only when the pack turns facet pages on. It
+   sits inside .room__jump, so the chips and the folded lists are the jump nav's;
+   only the spacing between facets and the heading's size are added here. */
+#room-content .room__browse h2.room__jump-label{font-family:var(--room-font-body);line-height:1.4}
+#room-content .room__browse details+details{margin-top:4px}
+#room-content .room--index .room__head+.room__cards{margin-top:8px}

@@ -11,6 +11,7 @@ import pytest
 from roomkit import build as B
 from roomkit import cli
 from roomkit import pack as K
+from roomkit import search as S
 from tests import test_golden as G
 
 SITES = ("default", "deflockdane", "glassgovernment", "hrtarchive")
@@ -46,7 +47,7 @@ def test_the_shipped_packs_pass_every_check(site: str) -> None:
 )
 def test_an_explicit_pack_builds_the_same_bytes_as_the_golden_file(case: str, site: str) -> None:
     m, kw = G.CASES[case]()
-    files = B.render(m, engine=G.ENGINE, pack=K.for_site(site), **kw)
+    files = B.render(m, engine=G.ENGINE, pack=K.for_site(site), indexer=S.stand_in, **kw)
     got = b"".join(f"=== {p} ===\n".encode() + files[p] + b"\n" for p in sorted(files))
     assert got == (G.GOLDEN / f"{case}.txt").read_bytes()
 

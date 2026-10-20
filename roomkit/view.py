@@ -21,7 +21,7 @@ import re
 
 from . import entities as E
 from . import search as S
-from .manifest import PDF, READER, Document, Manifest
+from .manifest import PDF, READER, THUMB_TYPES, Document, Manifest
 
 
 def slugify(s: str) -> str:
@@ -165,24 +165,56 @@ def _year(doc: Document) -> str:
     return doc.date[:4] if doc.date else ""
 
 
+def thumb_path(doc: Document) -> str:
+    """The room's copy of the card thumbnail (manifest index.thumb), before its
+    content hash is added; empty when the manifest carries none."""
+    t = doc.index.get("thumb")
+    return f"assets/thumbs/{doc.slug}.{THUMB_TYPES[t['mime']][0]}" if t else ""
+
+
 def _card(doc: Document, at: str) -> dict:
     ix = doc.index
     blob = " ".join([doc.title, doc.summary, doc.agency, ix.get("group", ""), ix.get("card_date", ""),
                      *ix.get("meta", []), *ix.get("facets", {}).values()]).lower()
     return {"text": re.sub(r"\s+", " ", blob).strip(), "group": ix.get("group", ""),
             "facets": [{"name": k, "value": v} for k, v in sorted(ix.get("facets", {}).items())],
-            "url": f"{at}{doc.slug}/", "thumb_url": ix.get("thumb_url", ""),
+            "url": f"{at}{doc.slug}/", "thumb_url": at + thumb_path(doc) if ix.get("thumb") else ix.get("thumb_url", ""),
             "date": doc.date, "card_date": ix.get("card_date", ""),
             "title": doc.title, "meta": list(ix.get("meta", [])), "summary": doc.summary}
+
+
+def _suggest(m: Manifest, at: str) -> str:
+    """site.index.suggest as room-search.js reads it: recent documents as titles and room URLs."""
+    sg = m.site.index.get("suggest")
+    if not sg:
+        return ""
+    titles = {d.slug: d.title for d in m.documents}
+    out = dict(sg, recent_docs=[{"label": titles[s], "url": f"{at}{s}/"} for s in sg["recent_docs"]])
+    if "rank" in sg:
+        out["rank"] = [dict(r, label=titles[r["slug"]], url=f"{at}{r['slug']}/") for r in sg["rank"]]
+    return script_json(out)
 
 
 def _noun(n: int, singular: str, plural: str) -> str:
     return singular if n == 1 else plural
 
 
-def index_view(m: Manifest, at: str, pack: dict) -> dict:
+def _browse(facet_pages: list[dict], heading: str, at: str) -> dict | None:
+    """The index's links to every facet page (browse.py), one folded list per facet."""
+    if not facet_pages:
+        return None
+    facets: dict[str, dict] = {}
+    for p in facet_pages:
+        f = facets.setdefault(p["name"], {"name": p["name"], "label": p["label"], "values": []})
+        f["values"].append({"label": p["value"], "url": at + p["path"], "count": len(p["docs"])})
+    return {"heading": heading, "facets": list(facets.values())}
+
+
+def index_view(m: Manifest, at: str, pack: dict, facet_pages: list[dict] | None = None,
+               browse_heading: str = "") -> dict:
     """The index. Every noun comes from the pack, and the jump nav is named by its
-    visible label."""
+    visible label. `facet_pages` (browse.pages, when the pack builds them) adds the
+    browse block."""
     ix, labels = m.site.index, pack.get("labels", {})
     order = list(ix.get("groups", []))
     grouped: dict[str, list[Document]] = {g: [] for g in order}
@@ -218,7 +250,9 @@ def index_view(m: Manifest, at: str, pack: dict) -> dict:
         # loads the Pagefind index from here. None: room.js filters the cards as before.
         "search": {"pagefind_url": f"{at}{S.OUT}/",
                    "placeholder": labels.get("fulltext_placeholder", "Words in the records, titles, agencies..."),
-                   "recent_key": f"room-recent-searches:{at}"} if S.enabled(pack) else None,
+                   "recent_key": f"room-recent-searches:{at}",
+                   # The site's suggestion panel (manifest site.index.suggest), for room-search.js.
+                   "suggest": _suggest(m, at)} if S.enabled(pack) else None,
         # A select with fewer than two values could not narrow anything.
         "selects": [{"name": n, "label": lab, "values": vals} for n, lab, vals in selects if len(vals) >= 2],
         "jump": {"label": jump_label, "name": jump_name,
@@ -227,7 +261,20 @@ def index_view(m: Manifest, at: str, pack: dict) -> dict:
                 if len(jump) > 1 else None,
         "sections": [{"id": slugify(g), "label": g, "cards": [_card(d, at) for d in grouped[g]]} for g in shown],
         "empty_group_text": ix.get("empty_group_text") or "No records yet.",
+        "browse": _browse(facet_pages or [], browse_heading, at),
     }}
+
+
+def facet_view(p: dict, m: Manifest, at: str, pack: dict) -> dict:
+    """One facet page (browse.py): the records listed under one value, as index cards."""
+    labels = pack.get("labels", {})
+    n = len(p["docs"])
+    return {**_chrome(pack, at), "layout": pack["layout"]["style"], "facet": {
+        "key": f"{p['name']}/{p['slug']}",
+        "crumbs": [{"label": labels.get("room", "Reading Room"), "url": at}, {"label": p["title"], "url": ""}],
+        "eyebrow": p["label"], "title": p["title"], "count": n,
+        "records_noun": _noun(n, labels["record_singular"], labels["record_plural"]),
+        "cards": [_card(d, at) for d in p["docs"]]}}
 
 
 # --- entities (pack features.entities; entities.py) ----------------------------------
@@ -288,6 +335,12 @@ def not_found_view(m: Manifest, at: str, pack: dict) -> dict:
 
 
 # --- the page around it -------------------------------------------------------------
+
+def script_json(obj: dict) -> str:
+    """JSON for a <script type="application/json"> block: every "<" escaped, so no
+    "</script" or "<!--" in the data can end or change the block."""
+    return json.dumps(obj, ensure_ascii=False, sort_keys=True).replace("<", "\\u003c")
+
 
 def jsonld(obj: dict) -> str:
     # "</" inside a script block would end it; JSON allows the escaped slash.

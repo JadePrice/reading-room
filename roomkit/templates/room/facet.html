@@ -1,0 +1,16 @@
+{#- The content element of one facet page (browse.py): the records listed under
+    one value, as the index's cards, with no finder. -#}
+{% from "room/partials/macros.html" import crumbs, toggle, root %}
+{% from "room/partials/card.html" import card %}
+{{ root("index", theme_key) }}
+<div class="room__shell" data-room-facet-page="{{ facet.key }}">
+<div class="room__topline">{{ crumbs(facet.crumbs) }}{{ toggle(toggle_on) }}</div>
+<header class="room__head">
+<p class="room__eyebrow">{{ facet.eyebrow }}</p>
+<h1 class="room__title">{{ facet.title }}</h1>
+<ul class="room__stats"><li><span class="room__stat">{{ facet.count }}</span> {{ facet.records_noun }}</li></ul>
+<p class="room__head-link"><a href="{{ at }}">All records</a></p>
+</header>
+<ul class="room__cards room__cards--{{ layout }}">{% for c in facet.cards %}{{ card(c, layout) }}{% endfor %}</ul>
+</div>
+</main>

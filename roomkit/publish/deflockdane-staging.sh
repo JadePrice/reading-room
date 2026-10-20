@@ -40,11 +40,15 @@ ROOM=(--manifest "$W/manifest.json" --out "$W/room" --mount "$MOUNT" --noindex -
 $RK build "${ROOM[@]}"
 $RK check "${ROOM[@]}" >/dev/null
 
-echo "== 3/6 parity: every citation and file URL against the live WordPress pages (via the origin)"
+echo "== 3/6 parity: every citation, file URL and card thumbnail against the live WordPress pages (via the origin)"
 FETCH_SCRIPT=$([ -f roomkit/exporters/deflockdane-fetch-pages.sh ] && echo roomkit/exporters/deflockdane-fetch-pages.sh || echo scripts/roomkit/exporters/deflockdane-fetch-pages.sh)
 ssh gg-shared bash -s -- $($PY -c "import json,sys;print(' '.join(d['slug'] for d in json.load(open(sys.argv[1]))['documents']))" "$W/manifest.json") \
   < "$FETCH_SCRIPT" > "$W/live-pages.tsv"
 $RK parity --manifest "$W/manifest.json" --pages "$W/live-pages.tsv"
+# Card thumbnails: the room's own copies against the bytes each live card shows.
+THUMBS_SCRIPT=$([ -f roomkit/exporters/deflockdane-fetch-thumbs.sh ] && echo roomkit/exporters/deflockdane-fetch-thumbs.sh || echo scripts/roomkit/exporters/deflockdane-fetch-thumbs.sh)
+ssh gg-shared bash -s < "$THUMBS_SCRIPT" > "$W/live-thumbs.tsv"
+$RK parity --thumbs "$W/live-thumbs.tsv" --out "$W/room"
 
 echo "== 4/6 what changes: the served lock against this build"
 ssh gg-shared "cat $DOCROOT${MOUNT}room.lock.json 2>/dev/null || echo '{}'" > "$W/served-lock.json"

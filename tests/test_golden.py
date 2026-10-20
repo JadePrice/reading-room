@@ -12,6 +12,7 @@ from pathlib import Path
 import pytest
 
 from roomkit import build as B
+from roomkit import search as S
 from roomkit.manifest import parse
 
 GOLDEN = Path(__file__).resolve().parent / "golden"
@@ -65,7 +66,7 @@ CASES = {
 def render_golden(case: str) -> bytes:
     m, kw = CASES[case]()
     assert not m.refusals, m.refusals
-    files = B.render(m, engine=ENGINE, **kw)
+    files = B.render(m, engine=ENGINE, indexer=S.stand_in, **kw)
     return b"".join(f"=== {p} ===\n".encode() + files[p] + b"\n" for p in sorted(files))
 
 

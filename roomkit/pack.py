@@ -64,6 +64,8 @@ FEATURE_ROWS = {
     "read-aloud": ("read-aloud",),
     "passage-cite": ("passage-citations",),
     "corpus-search": ("index-fulltext-search", "index-suggest"),
+    "facet-pages": ("index-facet-pages",),
+    "sitemaps": ("sitemaps",),
 }
 
 

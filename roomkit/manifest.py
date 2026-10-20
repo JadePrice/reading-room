@@ -32,7 +32,9 @@ should hold is the failure this kit exists to prevent.
                       "items": [{"label", "url"?, "kind"?, "quote"?, "meta"?}]}],
           "jsonld": {...}},
         "index": {"group": "...", "card_date": "...", "thumb_url": "...",
-                  "meta": ["..."], "facets": {"<name>": "<value>"}}   (optional)
+                  "thumb": {"mime": "image/jpeg", "sha256": "...", "data": "<base64>"},
+                  "meta": ["..."], "facets": {"<name>": "<value>"},
+                  "browse": {"<name>": ["<value>", ...]}}           (optional)
       }],
       "excluded": [{"slug": "...", "problem": "..."}],                 (optional)
       "entities": {"index": {...}, "pages": [...]}                     (optional; entities.py)
@@ -44,9 +46,41 @@ colors, fonts, labels and layout for the one shared page template
 (roomkit/templates/room/).
 `site.index` is the index copy: {eyebrow, title, lede, groups: [ordered group
 names], group_label, links: [{label, url, text}], facets: [{name, label}],
-empty_group_text}. `display` and `index` on a document are what the template
+empty_group_text, browse}. `display` and `index` on a document are what the template
 shows, already formatted by the site's own helpers: roomkit formats no dates
 and composes no labels.
+
+`site.index.browse` is {heading, facets: [{name, label, title}]}: the facets
+that get a page per value (pack features.facet-pages; browse.py), each
+document's `index.browse` the values it is listed under (a list: a record can
+name two vendors). `title` is the page's heading with `{value}` where the value
+goes, as the site words it. Separate from `facets`, the finder's selects.
+
+`index.thumb` is the card's thumbnail itself, so the room serves its own copy
+(`assets/thumbs/<slug>.<hash>.<ext>`) instead of pointing at a route only the
+site's server answers. Refused unless the bytes decode, hash to `sha256`, are
+the image `mime` says (JPEG, PNG or WebP, by their first bytes) and are at most
+THUMB_MAX bytes. A row has `thumb` or `thumb_url`, not both.
+
+`site.index.suggest` is the finder's suggestion panel as the site words it
+(pack features.corpus-search; room-search.js):
+
+    {"labels": {"top": "Top matches", "recent_docs": "...", "recent_searches": "..."},
+     "top": 6,                                      how many top matches to show
+     "recent_docs": ["<slug>", ...],                the site's recent documents, its order
+     "groups": [{"label": "Try searching", "items": [{"label", "query", "count"?}],
+                 "empty": 6, "typing": 0}],         how many with no text / matching the text
+     "rank": [{"slug", "title", "agency", "summary", "date", "year", "doc_type",
+               "aliases": [...], "vendors": [...]}]}   optional: what the site's own
+                                                    top-match scorer reads, per record
+
+With no text: recent documents, recent searches, then each group with `empty`
+items; while typing: top matches, then each group's items whose label or query
+holds the text. Choosing an item searches its `query`. Without the block the
+panel draws its groups from the finder's selects. roomkit composes none of it.
+With `rank`, top matches are the site's own field scorer over those rows
+(room-search.js `rankDocs`, ported from dd's deflock-reading-room.js scoreDoc)
+instead of Pagefind's relevance; a rank row naming no document is refused.
 
 `search_text` is a record's text for corpus search alone, for a record the
 site can search but cannot export page by page (no complete 1..N run of
@@ -71,6 +105,9 @@ citations, so a static page and the WordPress page cannot disagree about one.
 
 from __future__ import annotations
 
+import base64
+import binascii
+import hashlib
 import json
 import re
 from dataclasses import dataclass, field
@@ -91,6 +128,10 @@ READER = PDF | IMAGE | TABLE | TEXT
 # No reader module: the page offers the download and the citation, nothing inline.
 DOWNLOAD_ONLY = {"zip", "xlsx", "xls", "docx", "doc", "pptx", "tiff", "tif"}
 EXTS = READER | DOWNLOAD_ONLY
+# index.thumb: mime -> (extension, the file's first bytes).
+THUMB_TYPES = {"image/jpeg": ("jpg", b"\xff\xd8\xff"), "image/png": ("png", b"\x89PNG\r\n\x1a\n"),
+               "image/webp": ("webp", b"RIFF")}
+THUMB_MAX = 256 * 1024
 
 
 class ManifestError(ValueError):
@@ -216,7 +257,65 @@ def _site(raw: object) -> Site:
     if not (isinstance(facets, list) and all(isinstance(f, dict) and SLUG.match(str(f.get("name", "")))
                                              and isinstance(f.get("label"), str) for f in facets)):
         raise ManifestError("site.index.facets entries need a slug name and a label")
+    browse = index.get("browse")
+    if browse is not None:
+        bf = browse.get("facets") if isinstance(browse, dict) else None
+        if not (isinstance(browse.get("heading") if isinstance(browse, dict) else None, str) and isinstance(bf, list) and bf
+                and all(isinstance(f, dict) and SLUG.match(str(f.get("name", ""))) and isinstance(f.get("label"), str)
+                        and isinstance(f.get("title"), str) and "{value}" in f["title"] for f in bf)):
+            raise ManifestError("site.index.browse needs a heading and facets of {slug name, label, title with {value}}")
+        if len({f["name"] for f in bf}) != len(bf):
+            raise ManifestError("site.index.browse names a facet twice")
+    if "suggest" in index:
+        why = _suggest_problem(index["suggest"])
+        if why:
+            raise ManifestError(f"site.index.suggest: {why}")
     return Site(name, title, base, path, template, index)
+
+
+def _count(v: object, lo: int = 0) -> bool:
+    return _is_int(v) and lo <= v <= 50
+
+
+def _suggest_problem(sg: object) -> str:
+    if not isinstance(sg, dict) or set(sg) - {"rank"} != {"labels", "top", "recent_docs", "groups"}:
+        return "is not {labels, top, recent_docs, groups, rank?}"
+    labels = sg["labels"]
+    if not (isinstance(labels, dict) and set(labels) == {"top", "recent_docs", "recent_searches"}
+            and all(isinstance(v, str) and v.strip() for v in labels.values())):
+        return "labels is not {top, recent_docs, recent_searches} text"
+    if not _count(sg["top"], 1):
+        return "top is not 1 to 50"
+    if not (isinstance(sg["recent_docs"], list) and all(isinstance(x, str) and SLUG.match(x) for x in sg["recent_docs"])):
+        return "recent_docs is not a list of slugs"
+    if not isinstance(sg["groups"], list):
+        return "groups is not a list"
+    for g in sg["groups"]:
+        if not (isinstance(g, dict) and set(g) == {"label", "items", "empty", "typing"}
+                and isinstance(g["label"], str) and g["label"].strip() and _count(g["empty"]) and _count(g["typing"])
+                and isinstance(g["items"], list)):
+            return "a group is not {label, items, empty: 0-50, typing: 0-50}"
+        for it in g["items"]:
+            if not (isinstance(it, dict) and set(it) <= {"label", "query", "count"}
+                    and all(isinstance(it.get(k), str) and it[k].strip() for k in ("label", "query"))
+                    and ("count" not in it or (_is_int(it["count"]) and it["count"] > 0))):
+                return f"group {g['label']!r}: an item is not {{label, query, count?}}"
+    if "rank" in sg:
+        rows = sg["rank"]
+        if not isinstance(rows, list):
+            return "rank is not a list"
+        for r in rows:
+            if not (isinstance(r, dict) and set(r) == set(RANK_TEXT) | set(RANK_LISTS)
+                    and all(isinstance(r[k], str) for k in RANK_TEXT) and SLUG.match(r["slug"])
+                    and all(isinstance(r[k], list) and all(isinstance(x, str) for x in r[k]) for k in RANK_LISTS)):
+                return "a rank row is not {slug, title, agency, summary, date, year, doc_type} text and {aliases, vendors} lists"
+        if len({r["slug"] for r in rows}) != len(rows):
+            return "rank names a record twice"
+    return ""
+
+
+RANK_TEXT = ("slug", "title", "agency", "summary", "date", "year", "doc_type")
+RANK_LISTS = ("aliases", "vendors")
 
 
 def _href(u: object, where: str) -> str:
@@ -303,9 +402,43 @@ def _index(raw: object) -> tuple[dict, str]:
     facets = raw.get("facets", {})
     if not (isinstance(facets, dict) and all(SLUG.match(k) and isinstance(v, str) for k, v in facets.items())):
         return {}, "index.facets is not {slug: string}"
+    browse = raw.get("browse", {})
+    if not (isinstance(browse, dict) and all(SLUG.match(k) and isinstance(v, list) and all(isinstance(x, str) for x in v)
+                                             for k, v in browse.items())):
+        return {}, "index.browse is not {slug: [string]}"
     if raw.get("thumb_url") and not _url_ok(raw["thumb_url"]):
         return {}, f"index.thumb_url {raw['thumb_url']!r} is not https:// or a same-host path"
+    if "thumb" in raw:
+        why = _thumb_problem(raw["thumb"])
+        if why:
+            return {}, why
+        if raw.get("thumb_url"):
+            return {}, "index has both thumb and thumb_url"
     return raw, ""
+
+
+def thumb_bytes(thumb: dict) -> bytes:
+    """index.thumb's image (checked by _thumb_problem when the row was parsed)."""
+    return base64.b64decode(thumb["data"], validate=True)
+
+
+def _thumb_problem(t: object) -> str:
+    if not (isinstance(t, dict) and set(t) == {"mime", "sha256", "data"} and all(isinstance(v, str) for v in t.values())):
+        return "index.thumb is not {mime, sha256, data} strings"
+    if t["mime"] not in THUMB_TYPES:
+        return f"index.thumb.mime {t['mime']!r} is not one of {', '.join(sorted(THUMB_TYPES))}"
+    try:
+        b = thumb_bytes(t)
+    except (binascii.Error, ValueError):
+        return "index.thumb.data is not base64"
+    if not b or len(b) > THUMB_MAX:
+        return f"index.thumb is {len(b)} bytes (1 to {THUMB_MAX})"
+    if hashlib.sha256(b).hexdigest() != t["sha256"].lower():
+        return "index.thumb.data does not hash to index.thumb.sha256"
+    magic = THUMB_TYPES[t["mime"]][1]
+    if not b.startswith(magic) or (t["mime"] == "image/webp" and b[8:12] != b"WEBP"):
+        return f"index.thumb.data is not {t['mime']}"
+    return ""
 
 
 def _document(row: dict) -> tuple[Document | None, str]:
@@ -435,6 +568,11 @@ def parse(data: object) -> Manifest:
     m.refusals += [("entities", why) for why in problems]
     m.passages, problems = PS.parse(data.get("passages"), {d.slug: d for d in m.documents}, dict(m.excluded))
     m.refusals += [("passages", why) for why in problems]
+    sg = site.index.get("suggest") or {}
+    m.refusals += [("site.index.suggest", f"recent_docs names {s!r}, which is not a document")
+                   for s in sg.get("recent_docs", []) if s not in seen]
+    m.refusals += [("site.index.suggest", f"rank names {r['slug']!r}, which is not a document")
+                   for r in sg.get("rank", []) if r["slug"] not in seen]
     return m
 
 

@@ -7,7 +7,9 @@ the room under `pagefind/` (plan 2026-10-13-unified-reading-room-frontend,
 Task 10; matrix rows index-fulltext-search, index-suggest).
 
     records(m, at)     what is indexed, per record: title, summary, citation,
-                       agency, group (agency/collection), facets, date, and the
+                       agency, group (agency/collection), the public notes the
+                       record page shows (display.notes; dd's live search reads
+                       them too), facets, date, and the
                        page texts from pages.json (plan D6 allows page text),
                        or, for a record with no pages, its search_text
     record_html(rec)   that record as the HTML Pagefind reads. Pure, so the
@@ -101,6 +103,7 @@ def records(m: Manifest, at: str) -> list[dict]:
             "agency": _masked(d.agency),
             "date": d.date,
             "group": _masked(d.index.get("group", "")),
+            "notes": _masked(d.display.get("notes", "")),
             "facets": dict(sorted(d.index.get("facets", {}).items())),
             "pages": [{"n": p.n, "anchor": f"page-{p.n}" if anchors else "", "text": _masked(p.text)}
                       for p in d.pages],
@@ -116,13 +119,14 @@ def _e(s: str) -> str:
 def record_html(rec: dict) -> str:
     """One record as the page Pagefind indexes (never served).
 
-    Searchable: title, summary, citation, agency, group, each page's text and
+    Searchable: title, summary, citation, agency, group, notes, each page's text and
     the record's search_text (no heading, so a hit there reports the record).
     Filters (group and every facet) and the date sort sit in an ignored block,
     so they narrow and order results without adding words.
     """
     body = [f"<h1>{_e(rec['title'])}</h1>"]
-    body += [f"<p>{_e(rec[k])}</p>" for k in ("summary", "citation", "agency", "group", "text") if rec.get(k)]
+    body += [f"<p>{_e(rec[k])}</p>" for k in ("summary", "citation", "agency", "group", "notes", "text")
+             if rec.get(k)]
     meta = [f'<span data-pagefind-meta="title">{_e(rec["title"])}</span>']
     if rec["group"]:
         meta.append(f'<span data-pagefind-filter="group">{_e(rec["group"])}</span>')

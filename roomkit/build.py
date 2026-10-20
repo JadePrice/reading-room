@@ -11,6 +11,7 @@ order. Same manifest and engine, same bytes.
     404.html                         what a missing path gets, without WordPress
     <slug>/index.html                one page per document (reader + no-JS fallback + citation)
     <slug>/pages.<hash>.json         page texts, when the manifest carries them
+    assets/thumbs/<slug>.<hash>.<ext>  a card's thumbnail, when the manifest carries it (index.thumb)
     assets/room.<hash>.css           the shared styles, the room's chrome, the site pack's tokens (templates/room/)
     assets/room.<hash>.js            index filters and the light/dark toggle
     assets/rr-config.<hash>.js       window.rrReaderConfig for the engine
@@ -20,6 +21,9 @@ order. Same manifest and engine, same bytes.
     entities/index.html, entity/<type>/<slug>/index.html
                                      the site's entity index and pages, at their live paths
                                      (pack features.entities, manifest `entities`; entities.py)
+    <facet>/<value>/index.html       one page per facet value, linked from the index's browse block
+                                     (pack features.facet-pages, site.index.browse; browse.py)
+    sitemap.xml                      every page above by its live URL (pack features.sitemaps)
     pagefind/...                     the Pagefind index over every record (same switch; search.py)
     citations.json                   GG's curated citations by stable_key, and each page's site
                                      citation in pages.json (pack features.passage-cite,
@@ -47,6 +51,7 @@ import json
 import re
 from pathlib import Path
 
+from . import browse as B
 from . import css as CSS
 from . import entities as E
 from . import pack as P
@@ -63,6 +68,7 @@ from .manifest import (
     Document,
     Manifest,
     ManifestError,
+    thumb_bytes,
     validate_room_path,
 )
 
@@ -156,13 +162,21 @@ def _doc_page(doc: Document, m: Manifest, at: str, noindex: bool, pack: dict) ->
     return _page("room/document.html", V.doc_view(doc, m, at, pack), at, head, scripts, pack)
 
 
-def _index_page(m: Manifest, at: str, noindex: bool, pack: dict) -> str:
+def _index_page(m: Manifest, at: str, noindex: bool, pack: dict, facet_pages: list[dict]) -> str:
     s = m.site
     canonical = s.base_url + s.room_path
     title = s.index.get("title") or s.title
     head = V.head(title, noindex, canonical, V.social(title, s.index.get("lede", ""), canonical, "", s.title))
     scripts = [f"{at}assets/room-search.js"] if S.enabled(pack) else []
-    return _page("room/index.html", V.index_view(m, at, pack), at, head, scripts, pack)
+    return _page("room/index.html", V.index_view(m, at, pack, facet_pages, B.heading(m)), at, head, scripts, pack)
+
+
+def _facet_page(p: dict, m: Manifest, at: str, noindex: bool, pack: dict) -> str:
+    s = m.site
+    canonical = s.base_url + s.room_path + p["path"]
+    head = V.head(f"{p['title']} | {s.title}", noindex, canonical,
+                  V.social(p["title"], "", canonical, "", s.title))
+    return _page("room/facet.html", V.facet_view(p, m, at, pack), at, head, [], pack)
 
 
 def _entity_index_page(m: Manifest, at: str, noindex: bool, pack: dict) -> str:
@@ -185,12 +199,15 @@ def _404_page(m: Manifest, at: str, pack: dict) -> str:
     return _page("room/404.html", V.not_found_view(m, at, pack), at, head, [], pack)
 
 
-def _htaccess(at: str) -> str:
+def _htaccess(at: str, images: bool = False) -> str:
+    # Thumbnails are hashed assets too; their extensions are named only in a room
+    # that ships them, so a room without changes no byte.
+    exts = "css|js|json" + ("|jpg|png|webp" if images else "")
     return "\n".join([
         "# Written by roomkit. Cache policy: build.py module docstring.",
         f"ErrorDocument 404 {at}404.html",
         "<IfModule mod_headers.c>",
-        '<FilesMatch "\\.[0-9a-f]{12}\\.(css|js|json)$">',
+        f'<FilesMatch "\\.[0-9a-f]{{12}}\\.({exts})$">',
         f'Header set Cache-Control "{CACHE_ASSET}"',
         "</FilesMatch>",
         '<FilesMatch "\\.html$">',
@@ -260,21 +277,35 @@ def render(m: Manifest, engine: Path = ENGINE, mount: str | None = None, noindex
     # Without the pack's entities switch the room never sees the block: no pages,
     # no links into them, no stylesheet (entities.gate). The same for passages.
     m = PS.gate(E.gate(m, pack), pack)
+    facet_pages: list[dict] = []
+    if B.facet_pages_on(pack) and m.site.index.get("browse"):
+        problems = B.problems(m)
+        if problems:
+            raise ValueError("browse refused:\n" + "\n".join(f"   {x}" for x in problems))
+        facet_pages = B.pages(m)
     files: dict[str, bytes] = {
         "assets/rr-config.js": _config(at, m.passages["api"] if m.passages else "").encode(),
-        HTACCESS: _htaccess(at).encode(),
+        HTACCESS: _htaccess(at, any(V.thumb_path(d) for d in m.documents)).encode(),
         **_engine_files(engine),
     }
+    for d in m.documents:
+        if V.thumb_path(d):
+            files[V.thumb_path(d)] = thumb_bytes(d.index["thumb"])
     search = S.enabled(pack)
     files["assets/room.css"] = (R.ROOM_CSS + R.chrome_css(pack) + (R.SEARCH_CSS if search else "")
-                                + (R.ENTITIES_CSS if m.entities else "") + CSS.theme_css(pack)).encode()
+                                + (R.ENTITIES_CSS if m.entities else "") + (R.BROWSE_CSS if facet_pages else "")
+                                + CSS.theme_css(pack)).encode()
     files["assets/room.js"] = R.ROOM_JS.encode()
     if search:
         files["assets/room-search.js"] = R.ROOM_SEARCH_JS.encode()
         # Pagefind names its own files (content hashes inside pagefind/); they are
         # not fingerprinted again, or its loader could not find them.
         files.update(S.index_files(m, at, indexer))
-    files["index.html"] = _index_page(m, at, noindex, pack).encode()
+    files["index.html"] = _index_page(m, at, noindex, pack, facet_pages).encode()
+    for p in facet_pages:
+        files[p["path"] + "index.html"] = _facet_page(p, m, at, noindex, pack).encode()
+    if B.sitemap_on(pack):
+        files[B.SITEMAP] = B.sitemap_xml(B.urls(m, facet_pages)).encode()
     files["404.html"] = _404_page(m, at, pack).encode()
     if m.entities:
         if m.entities["index"]:

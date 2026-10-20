@@ -78,6 +78,53 @@ function roomkit_dd_view_url(array $doc, string $inline_url): string {
 $SC = 'Deflock_Reading_Room_Shortcode';
 $card_date = new ReflectionMethod($SC, 'format_date');
 $card_date->setAccessible(true);
+// The card thumbnail, copied into the room (manifest index.thumb): the preview the
+// /thumb/ route serves, read from the plugin's cache without get_thumbnail_path(),
+// which builds the cache when it is missing (a write). Its size order, repeated.
+$previews = new ReflectionMethod($S, 'get_private_preview_paths');
+$previews->setAccessible(true);
+function roomkit_dd_thumb(ReflectionMethod $previews, array $doc): ?array {
+    $cached = $previews->invoke(null, (int) ($doc['attachment_id'] ?? 0));
+    foreach (['thumbnail', 'medium', 'large', 'full'] as $size) {
+        if (!empty($cached[$size])) {
+            $bytes = (string) file_get_contents((string) $cached[$size]);
+            $mime = (string) wp_check_filetype(wp_basename((string) $cached[$size]), null)['type'];
+            return ['mime' => $mime !== '' ? $mime : 'image/jpeg', 'sha256' => hash('sha256', $bytes),
+                    'data' => base64_encode($bytes)];
+        }
+    }
+    return null;
+}
+function roomkit_dd_suggest(array $archive): array {
+    $s = $archive['suggestions'];
+    $m = $archive['messages'];
+    $items = fn(array $list) => array_values(array_map(fn($it) => array_filter([
+        'label' => (string) $it['label'],
+        'query' => (string) $it['query'],
+        'count' => isset($it['count']) ? (int) $it['count'] : null,
+    ], fn($v) => $v !== null && $v !== ''), $list));
+    return [
+        'labels' => ['top' => $m['topMatches'], 'recent_docs' => $m['recentDocuments'], 'recent_searches' => $m['recentSearches']],
+        'top' => (int) $archive['maxResults'],
+        'recent_docs' => array_map(fn($d) => basename(rtrim((string) wp_parse_url((string) $d['url'], PHP_URL_PATH), '/')), $s['recentDocs']),
+        'groups' => [
+            ['label' => $m['featuredQueries'], 'items' => $items($s['featuredQueries']), 'empty' => 6, 'typing' => 0],
+            ['label' => $m['suggestedAgencies'], 'items' => $items($s['agencies']), 'empty' => 4, 'typing' => 4],
+            ['label' => $m['suggestedVendors'], 'items' => $items($s['vendors']), 'empty' => 4, 'typing' => 4],
+            ['label' => $m['suggestedTypes'], 'items' => $items($s['docTypes']), 'empty' => 4, 'typing' => 4],
+            ['label' => $m['suggestedYears'], 'items' => $items($s['years']), 'empty' => 0, 'typing' => 4],
+        ],
+        // What the live panel's scoreDoc reads for each record (prepareDoc), so the
+        // room's top matches rank as live's do.
+        'rank' => array_map(fn($d) => [
+            'slug' => (string) $d['slug'], 'title' => (string) $d['title'], 'agency' => (string) $d['agency'],
+            'summary' => (string) $d['summary'], 'date' => (string) $d['date'], 'year' => (string) $d['year'],
+            'doc_type' => (string) $d['docType'],
+            'aliases' => array_values(array_map('strval', (array) $d['aliases'])),
+            'vendors' => array_values(array_map('strval', (array) $d['vendors'])),
+        ], $archive['docs']),
+    ];
+}
 $vendor_map = class_exists('Deflock_Reading_Room_Entities') ? Deflock_Reading_Room_Entities::approved_by_doc(['vendor']) : [];
 // These two lists live inline in Deflock_Reading_Room_Shortcode::render();
 // repeated here, and a drift shows as a category the live index groups differently.
@@ -92,6 +139,22 @@ $agency_aliases = [
     'University of Wisconsin Police Department' => 'UW-Madison Police Department',
     'Village of Maple Bluff PD' => 'Maple Bluff Police Department',
 ];
+
+// What the live index's finder narrows by (agency, document type, vendor, year), from
+// the shortcode's own payload builder fed what render() feeds it, so each record's
+// facet pages hold what live filtering by that value holds (browse.py).
+$payload = new ReflectionMethod($SC, 'build_archive_search_payload');
+$payload->setAccessible(true);
+$browse_by_slug = [];
+$archive = $payload->invoke(null, $S::get_docs(['visibility' => 'public', 'limit' => 200]), $categories, $agency_aliases, '');
+foreach ($archive['docs'] as $p) {
+    $browse_by_slug[(string) $p['slug']] = array_filter([
+        'agency' => array_values(array_filter([(string) $p['agency']])),
+        'type' => array_values(array_filter([(string) $p['docType']])),
+        'vendor' => array_values(array_unique(array_filter(array_map('strval', (array) $p['vendors'])))),
+        'year' => array_values(array_filter([(string) $p['year']])),
+    ]);
+}
 
 $docs = [];
 $problems = [];
@@ -202,9 +265,21 @@ foreach ((array) $rows as $doc) {
     $row_index = [
         'group' => $agency_c,
         'facets' => (object) array_filter(['year' => strlen($date) >= 4 && $date !== '0000-00-00' ? substr($date, 0, 4) : '']),
+        'browse' => (object) ($browse_by_slug[$slug] ?? []),
         'card_date' => $date !== '' && $date !== '0000-00-00' ? $card_date->invoke(null, $date) : '',
-        'thumb_url' => (int) ($doc['attachment_id'] ?? 0) > 0 ? $S::get_thumbnail_url($doc, 'thumbnail') : '',
     ];
+    // A card shows a thumbnail when the record has an attachment (the shortcode's test).
+    // Cached: the room's own copy. Not cached: a PDF's is rendered on its first request,
+    // so the card keeps the live route; anything else has none (live answers 404, a
+    // broken image), so the card shows none.
+    if ((int) ($doc['attachment_id'] ?? 0) > 0) {
+        $thumb = roomkit_dd_thumb($previews, $doc);
+        if ($thumb !== null) {
+            $row_index['thumb'] = $thumb;
+        } elseif ($ext === 'pdf') {
+            $row_index['thumb_url'] = $S::get_thumbnail_url($doc, 'thumbnail');
+        }
+    }
     // --- end display fields ---
 
     $row = [
@@ -326,6 +401,20 @@ try {
             'group_label' => 'Agency',
             'empty_group_text' => 'No records have been released for this agency yet.',
             'facets' => [['name' => 'year', 'label' => 'Year']],
+            // The finder's suggestion panel, from the same payload (manifest site.index.suggest).
+            // The counts per group are the archive script's renderEmptyState and
+            // renderQueryState (assets/js/deflock-reading-room.js), repeated.
+            'suggest' => roomkit_dd_suggest($archive),
+            // No live page words these; the room's own copy, kept here with the site's.
+            'browse' => [
+                'heading' => 'Browse records by',
+                'facets' => [
+                    ['name' => 'agency', 'label' => 'Agency', 'title' => 'Records from {value}'],
+                    ['name' => 'type', 'label' => 'Record type', 'title' => 'Record type: {value}'],
+                    ['name' => 'vendor', 'label' => 'Vendor', 'title' => 'Records naming {value}'],
+                    ['name' => 'year', 'label' => 'Year', 'title' => 'Records from {value}'],
+                ],
+            ],
         ],
     ],
     'exported_by' => 'roomkit/exporters/deflockdane.php',

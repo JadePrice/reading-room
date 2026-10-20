@@ -136,3 +136,5 @@ SEARCH_CSS = (TEMPLATES / "room" / "search.css").read_text(encoding="utf-8")
 # Entity index and entity pages (pack features.entities), styled by entities.css.
 # Without the feature it does not ship.
 ENTITIES_CSS = (TEMPLATES / "room" / "entities.css").read_text(encoding="utf-8")
+# The index's browse block and the facet pages (pack features.facet-pages; browse.py).
+BROWSE_CSS = (TEMPLATES / "room" / "browse.css").read_text(encoding="utf-8")
