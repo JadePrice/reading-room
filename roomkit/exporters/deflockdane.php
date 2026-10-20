@@ -95,7 +95,7 @@ function roomkit_dd_thumb(ReflectionMethod $previews, array $doc): ?array {
     }
     return null;
 }
-function roomkit_dd_suggest(array $archive): array {
+function roomkit_dd_suggest(array $archive, array $status_count = ['status' => [], 'kind' => []]): array {
     $s = $archive['suggestions'];
     $m = $archive['messages'];
     $items = fn(array $list) => array_values(array_map(fn($it) => array_filter([
@@ -103,12 +103,28 @@ function roomkit_dd_suggest(array $archive): array {
         'query' => (string) $it['query'],
         'count' => isset($it['count']) ? (int) $it['count'] : null,
     ], fn($v) => $v !== null && $v !== ''), $list));
+    // The room's own groups: each item sets the finder's Status or Record kind filter.
+    $status_groups = [];
+    foreach (['status' => ['Status', ['Current', 'Past', 'Unknown']],
+              'kind' => ['Record kind', ['Surveillance monitoring', 'Procurement']]] as $facet => [$label, $order]) {
+        $opts = [];
+        foreach ($order as $v) {
+            if (isset($status_count[$facet][$v])) {
+                $opts[] = ['label' => $v === 'Unknown' ? 'Status unknown' : $v, 'facet' => $facet, 'value' => $v,
+                            'count' => $status_count[$facet][$v]];
+            }
+        }
+        if ($opts) {
+            $status_groups[] = ['label' => $label, 'items' => $opts, 'empty' => 3, 'typing' => 3];
+        }
+    }
     return [
         'labels' => ['top' => $m['topMatches'], 'recent_docs' => $m['recentDocuments'], 'recent_searches' => $m['recentSearches']],
         'top' => (int) $archive['maxResults'],
         'recent_docs' => array_map(fn($d) => basename(rtrim((string) wp_parse_url((string) $d['url'], PHP_URL_PATH), '/')), $s['recentDocs']),
         'groups' => [
             ['label' => $m['featuredQueries'], 'items' => $items($s['featuredQueries']), 'empty' => 6, 'typing' => 0],
+            ...$status_groups,
             ['label' => $m['suggestedAgencies'], 'items' => $items($s['agencies']), 'empty' => 4, 'typing' => 4],
             ['label' => $m['suggestedVendors'], 'items' => $items($s['vendors']), 'empty' => 4, 'typing' => 4],
             ['label' => $m['suggestedTypes'], 'items' => $items($s['docTypes']), 'empty' => 4, 'typing' => 4],
@@ -158,6 +174,10 @@ foreach ($archive['docs'] as $p) {
 
 $docs = [];
 $problems = [];
+// Each record's status and kind as its page words them (Template::record_status,
+// plugin 0.9.0); null for a record never classified, or on an older plugin.
+$status_of = fn(array $doc) => method_exists($T, 'record_status') ? $T::record_status($doc) : null;
+$status_count = ['status' => [], 'kind' => []];
 foreach ((array) $rows as $doc) {
     $slug = (string) $doc['slug'];
     $path = $S::get_file_path($doc);
@@ -219,6 +239,7 @@ foreach ((array) $rows as $doc) {
         'label' => (string) $v['label'],
         'url' => home_url('/reading-room/entity/vendor/' . rawurlencode((string) $v['slug']) . '/'),
     ], $vendor_map[(int) $doc['id']] ?? []);
+    $st = $status_of($doc);
     $row_display = [
         'released' => $date !== '' && $date !== '0000-00-00' ? $T::format_display_date($date) : '',
         'details' => [
@@ -226,6 +247,10 @@ foreach ((array) $rows as $doc) {
             ['label' => 'Document date', 'value' => $T::format_display_date($date)],
             ['label' => 'Contract start', 'value' => $T::format_display_date((string) ($doc['contract_start'] ?? ''))],
             ['label' => 'Contract end', 'value' => $T::format_display_date((string) ($doc['contract_end'] ?? ''))],
+            ...($st !== null ? [
+                array_filter(['label' => 'Status', 'value' => $st['status'], 'note' => $st['basis']], fn($v) => $v !== ''),
+                ['label' => 'Record kind', 'value' => $st['kind']],
+            ] : []),
             $source_url !== ''
                 ? ['label' => 'Source', 'value' => $source_label ?: $source_url, 'url' => $source_url]
                 : ['label' => 'Source', 'value' => $source_label ?: 'Not listed yet'],
@@ -268,6 +293,20 @@ foreach ((array) $rows as $doc) {
         'browse' => (object) ($browse_by_slug[$slug] ?? []),
         'card_date' => $date !== '' && $date !== '0000-00-00' ? $card_date->invoke(null, $date) : '',
     ];
+    if ($st !== null) {
+        $row_index['badge'] = $st['label'] === 'Unknown' ? 'Status unknown' : $st['label'];
+        $row_index['badge_kind'] = strtolower($st['label']);
+        $row_index['badge_sr'] = 'Status: ';
+        // The end a current record is winding down to, and the monitoring subgroup.
+        $row_index['meta'] = array_values(array_filter([
+            $st['status'] !== $st['label'] ? 'Ending ' . $T::format_display_date((string) $doc['status_until']) : '',
+            $st['kind'] === 'Surveillance monitoring' ? $st['kind'] : '',
+        ]));
+        $row_index['facets'] = (object) ((array) $row_index['facets'] + ['status' => $st['label'], 'kind' => $st['kind']]);
+        $row_index['browse'] = (object) ((array) $row_index['browse'] + ['status' => [$st['label']], 'kind' => [$st['kind']]]);
+        $status_count['status'][$st['label']] = ($status_count['status'][$st['label']] ?? 0) + 1;
+        $status_count['kind'][$st['kind']] = ($status_count['kind'][$st['kind']] ?? 0) + 1;
+    }
     // A card shows a thumbnail when the record has an attachment (the shortcode's test).
     // Cached: the room's own copy. Not cached: a PDF's is rendered on its first request,
     // so the card keeps the live route; anything else has none (live answers 404, a
@@ -400,11 +439,14 @@ try {
             'groups' => $categories,
             'group_label' => 'Agency',
             'empty_group_text' => 'No records have been released for this agency yet.',
-            'facets' => [['name' => 'year', 'label' => 'Year']],
+            'facets' => array_merge($status_count['status'] ? [
+                ['name' => 'status', 'label' => 'Status'],
+                ['name' => 'kind', 'label' => 'Record kind'],
+            ] : [], [['name' => 'year', 'label' => 'Year']]),
             // The finder's suggestion panel, from the same payload (manifest site.index.suggest).
             // The counts per group are the archive script's renderEmptyState and
             // renderQueryState (assets/js/deflock-reading-room.js), repeated.
-            'suggest' => roomkit_dd_suggest($archive),
+            'suggest' => roomkit_dd_suggest($archive, $status_count),
             // No live page words these; the room's own copy, kept here with the site's.
             'browse' => [
                 'heading' => 'Browse records by',
@@ -413,6 +455,10 @@ try {
                     ['name' => 'type', 'label' => 'Record type', 'title' => 'Record type: {value}'],
                     ['name' => 'vendor', 'label' => 'Vendor', 'title' => 'Records naming {value}'],
                     ['name' => 'year', 'label' => 'Year', 'title' => 'Records from {value}'],
+                    ...($status_count['status'] ? [
+                        ['name' => 'status', 'label' => 'Status', 'title' => 'Status: {value}', 'room_only' => true],
+                        ['name' => 'kind', 'label' => 'Record kind', 'title' => 'Record kind: {value}', 'room_only' => true],
+                    ] : []),
                 ],
             ],
         ],

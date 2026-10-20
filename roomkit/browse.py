@@ -85,6 +85,7 @@ def pages(m) -> list[dict]:
             s = slugify(v)
             out.append({"name": f["name"], "label": f["label"], "value": v, "slug": s,
                         "path": f"{f['name']}/{s}/", "title": f["title"].replace("{value}", v),
+                        "room_only": bool(f.get("room_only")),
                         "docs": members[v]})
     return out
 

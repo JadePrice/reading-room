@@ -544,7 +544,10 @@ def _suggest() -> dict:
             "groups": [{"label": "Try searching", "items": [{"label": "Retention", "query": WORD}], "empty": 6, "typing": 0},
                        {"label": "Agencies", "items": [{"label": "Test Agency", "query": "Test Agency", "count": 1},
                                                        {"label": "</script><!-- x", "query": "x"}],
-                        "empty": 1, "typing": 4}],
+                        "empty": 1, "typing": 4},
+                       # Sets the finder's Year filter (dd's Status and Record kind groups); shown only while typing.
+                       {"label": "Years", "items": [{"label": "Year 2026", "facet": "year", "value": "2026", "count": 1}],
+                        "empty": 0, "typing": 2}],
             # What dd's scoreDoc reads. ZEBRA is in no indexed text: only the scorer can find it.
             "rank": [_rank("camera-contract", "Camera Contract", agency="Test Agency", summary=f"Memo on {ZEBRA}",
                            date="2026-01-31", year="2026", doc_type="contract"),
@@ -577,6 +580,9 @@ def _with_suggest(sg: object = None) -> dict:
     (lambda s: s["groups"][0].update(empty=-1), "a group is not"),
     (lambda s: s["groups"][1]["items"][0].update(count=0), "an item is not"),
     (lambda s: s["groups"][1]["items"][0].update(url="https://x"), "an item is not"),
+    (lambda s: s["groups"][2]["items"][0].pop("value"), "an item is not"),
+    (lambda s: s["groups"][2]["items"][0].update(query="2026"), "an item is not"),
+    (lambda s: s["groups"][2]["items"][0].update(facet="status"), "sets the filter 'status', which site.index.facets"),
 ])
 def test_a_site_panel_the_room_cannot_draw_is_refused(mutate, why):
     sg = _suggest()
@@ -671,6 +677,22 @@ def _top(site_room, text) -> list[str]:
     top = dict(_panel(page)).get("Top matches", [])
     page.close()
     return top
+
+
+def test_a_site_suggestion_can_set_one_of_the_finders_filters(site_room):
+    b, base = site_room
+    page, _ = _open(b, base)
+    q = page.get_by_role("combobox", name="Search records")
+    q.press_sequentially("2026", delay=20)
+    page.wait_for_function("() => Array.from(document.querySelectorAll('#room-suggest .room__suggest-h'))"
+                           ".some(h => h.textContent === 'Years')")
+    assert dict(_panel(page))["Years"] == ["Year 2026"]
+    page.get_by_role("option", name=re.compile("^Year 2026")).click()
+    # The filter is set and the text cleared: the records of that year, not a search for "2026".
+    assert page.locator("#room-f-year").input_value() == "2026" and q.input_value() == ""
+    page.wait_for_function("() => document.querySelector('[data-room-count]').textContent === '1 of 5 records match'")
+    assert [a.inner_text() for a in page.locator(".room__card:not([hidden]) .room__card-title a").all()] == ["Camera Contract"]
+    page.close()
 
 
 def test_top_matches_are_the_sites_own_ranking(site_room):

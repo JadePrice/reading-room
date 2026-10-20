@@ -34,7 +34,8 @@ should hold is the failure this kit exists to prevent.
         "index": {"group": "...", "card_date": "...", "thumb_url": "...",
                   "thumb": {"mime": "image/jpeg", "sha256": "...", "data": "<base64>"},
                   "meta": ["..."], "facets": {"<name>": "<value>"},
-                  "browse": {"<name>": ["<value>", ...]}}           (optional)
+                  "browse": {"<name>": ["<value>", ...]},
+                  "badge": "...", "badge_kind": "<slug>", "badge_sr": "..."}  (optional)
       }],
       "excluded": [{"slug": "...", "problem": "..."}],                 (optional)
       "entities": {"index": {...}, "pages": [...]}                     (optional; entities.py)
@@ -55,6 +56,12 @@ that get a page per value (pack features.facet-pages; browse.py), each
 document's `index.browse` the values it is listed under (a list: a record can
 name two vendors). `title` is the page's heading with `{value}` where the value
 goes, as the site words it. Separate from `facets`, the finder's selects.
+A facet with `"room_only": true` is one the site's own index does not narrow
+by, so parity.facet_pages reports its pages instead of comparing them.
+
+`index.badge` is the card's badge as the site words it (`badge_kind` a slug for
+its modifier class, `badge_sr` the screen-reader prefix), drawn as the record
+page's `display.badge` is.
 
 `index.thumb` is the card's thumbnail itself, so the room serves its own copy
 (`assets/thumbs/<slug>.<hash>.<ext>`) instead of pointing at a route only the
@@ -68,7 +75,8 @@ THUMB_MAX bytes. A row has `thumb` or `thumb_url`, not both.
     {"labels": {"top": "Top matches", "recent_docs": "...", "recent_searches": "..."},
      "top": 6,                                      how many top matches to show
      "recent_docs": ["<slug>", ...],                the site's recent documents, its order
-     "groups": [{"label": "Try searching", "items": [{"label", "query", "count"?}],
+     "groups": [{"label": "Try searching", "items": [{"label", "query", "count"?}
+                                                    or {"label", "facet", "value", "count"?}],
                  "empty": 6, "typing": 0}],         how many with no text / matching the text
      "rank": [{"slug", "title", "agency", "summary", "date", "year", "doc_type",
                "aliases": [...], "vendors": [...]}]}   optional: what the site's own
@@ -76,7 +84,8 @@ THUMB_MAX bytes. A row has `thumb` or `thumb_url`, not both.
 
 With no text: recent documents, recent searches, then each group with `empty`
 items; while typing: top matches, then each group's items whose label or query
-holds the text. Choosing an item searches its `query`. Without the block the
+holds the text. Choosing an item searches its `query`, or sets the finder's
+`facet` select (a name in site.index.facets) to `value`. Without the block the
 panel draws its groups from the finder's selects. roomkit composes none of it.
 With `rank`, top matches are the site's own field scorer over those rows
 (room-search.js `rankDocs`, ported from dd's deflock-reading-room.js scoreDoc)
@@ -262,14 +271,22 @@ def _site(raw: object) -> Site:
         bf = browse.get("facets") if isinstance(browse, dict) else None
         if not (isinstance(browse.get("heading") if isinstance(browse, dict) else None, str) and isinstance(bf, list) and bf
                 and all(isinstance(f, dict) and SLUG.match(str(f.get("name", ""))) and isinstance(f.get("label"), str)
-                        and isinstance(f.get("title"), str) and "{value}" in f["title"] for f in bf)):
-            raise ManifestError("site.index.browse needs a heading and facets of {slug name, label, title with {value}}")
+                        and isinstance(f.get("title"), str) and "{value}" in f["title"]
+                        and isinstance(f.get("room_only", False), bool) for f in bf)):
+            raise ManifestError("site.index.browse needs a heading and facets of "
+                                "{slug name, label, title with {value}, room_only?: bool}")
         if len({f["name"] for f in bf}) != len(bf):
             raise ManifestError("site.index.browse names a facet twice")
     if "suggest" in index:
         why = _suggest_problem(index["suggest"])
         if why:
             raise ManifestError(f"site.index.suggest: {why}")
+        names = {f["name"] for f in facets}
+        for g in index["suggest"]["groups"]:
+            for it in g["items"]:
+                if "facet" in it and it["facet"] not in names:
+                    raise ManifestError(f"site.index.suggest: group {g['label']!r} sets the filter {it['facet']!r}, "
+                                        "which site.index.facets does not have")
     return Site(name, title, base, path, template, index)
 
 
@@ -296,10 +313,12 @@ def _suggest_problem(sg: object) -> str:
                 and isinstance(g["items"], list)):
             return "a group is not {label, items, empty: 0-50, typing: 0-50}"
         for it in g["items"]:
-            if not (isinstance(it, dict) and set(it) <= {"label", "query", "count"}
-                    and all(isinstance(it.get(k), str) and it[k].strip() for k in ("label", "query"))
+            # An item runs a query, or sets one of the finder's filters to a value.
+            need = ("label", "facet", "value") if isinstance(it, dict) and "facet" in it else ("label", "query")
+            if not (isinstance(it, dict) and set(it) <= {*need, "count"}
+                    and all(isinstance(it.get(k), str) and it[k].strip() for k in need)
                     and ("count" not in it or (_is_int(it["count"]) and it["count"] > 0))):
-                return f"group {g['label']!r}: an item is not {{label, query, count?}}"
+                return f"group {g['label']!r}: an item is not {{label, query, count?}} or {{label, facet, value, count?}}"
     if "rank" in sg:
         rows = sg["rank"]
         if not isinstance(rows, list):
@@ -406,6 +425,10 @@ def _index(raw: object) -> tuple[dict, str]:
     if not (isinstance(browse, dict) and all(SLUG.match(k) and isinstance(v, list) and all(isinstance(x, str) for x in v)
                                              for k, v in browse.items())):
         return {}, "index.browse is not {slug: [string]}"
+    if not all(isinstance(raw.get(k, ""), str) for k in ("badge", "badge_sr")):
+        return {}, "index.badge and index.badge_sr are not strings"
+    if raw.get("badge_kind") and not (isinstance(raw["badge_kind"], str) and SLUG.match(raw["badge_kind"])):
+        return {}, "index.badge_kind is not a slug"
     if raw.get("thumb_url") and not _url_ok(raw["thumb_url"]):
         return {}, f"index.thumb_url {raw['thumb_url']!r} is not https:// or a same-host path"
     if "thumb" in raw:

@@ -3,7 +3,7 @@
 {% from "room/partials/macros.html" import crumbs, toggle, root %}
 {% from "room/partials/card.html" import card %}
 {{ root("index", theme_key) }}
-<div class="room__shell" data-room-facet-page="{{ facet.key }}">
+<div class="room__shell" data-room-facet-page="{{ facet.key }}"{% if facet.room_only %} data-room-facet-own{% endif %}>
 <div class="room__topline">{{ crumbs(facet.crumbs) }}{{ toggle(toggle_on) }}</div>
 <header class="room__head">
 <p class="room__eyebrow">{{ facet.eyebrow }}</p>

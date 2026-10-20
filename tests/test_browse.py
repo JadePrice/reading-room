@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import copy
 import json
+import re
 from pathlib import Path
 
 import pytest
@@ -136,6 +137,7 @@ def test_a_browse_block_that_cannot_be_built_is_refused(mutate, says):
     {"heading": "x", "facets": [{"name": "agency", "label": "A", "title": "no placeholder"}]},
     {"heading": "x", "facets": [{"name": "a", "label": "A", "title": "{value}"}] * 2},
     {"facets": [{"name": "a", "label": "A", "title": "{value}"}]},
+    {"heading": "x", "facets": [{"name": "a", "label": "A", "title": "{value}", "room_only": "yes"}]},
 ])
 def test_a_malformed_site_browse_block_is_a_manifest_error(bad):
     raw = _raw()
@@ -224,6 +226,60 @@ def test_facet_parity_names_a_missing_facet_and_an_unlinked_page(tmp_path):
     idx.write_text(idx.read_text().replace('href="/reading-room/year/2024/"', 'href="#"'))
     kinds = {(d["kind"], d.get("value")) for d in BP.compare_facets(_live(), BP.room_facets(room))["differences"]}
     assert kinds == {("unlinked", "2024")}
+
+
+def _with_status(raw: dict | None = None) -> dict:
+    """dd's status facet: the room's own (room_only), with a badge on each card."""
+    raw = raw or _raw()
+    raw["site"]["index"]["browse"]["facets"].append(
+        {"name": "status", "label": "Status", "title": "Status: {value}", "room_only": True})
+    for d in raw["documents"]:
+        if d["slug"] in MEMBERS:
+            st = "Past" if d["slug"] == "site-photo" else "Current"
+            d["index"]["browse"]["status"] = [st]
+            d["index"].update(badge=st, badge_kind=st.lower(), badge_sr="Status: ")
+    return raw
+
+
+def test_a_room_only_facet_is_reported_not_a_difference(tmp_path):
+    room = _built(tmp_path, raw=_with_status())
+    assert 'data-room-facet-own' in (room / "status" / "current" / "index.html").read_text()
+    assert 'data-room-facet-own' not in (room / "year" / "2024" / "index.html").read_text()
+    rep = BP.compare_facets(_live(), BP.room_facets(room))
+    assert rep["ok"], rep["differences"]
+    assert rep["room_only"] == {"status": 2} and rep["pages"] == 9
+    assert "(the room's own, not on live's index: status)" in BP.text(rep)
+    # Not marked, the same pages are an extra facet; and the room's own must still be linked.
+    raw = _with_status()
+    raw["site"]["index"]["browse"]["facets"][-1].pop("room_only")
+    other = tmp_path / "other"
+    B.write(_render(raw), other)
+    assert [d["kind"] for d in BP.compare_facets(_live(), BP.room_facets(other))["differences"]] == ["extra-facet"]
+    idx = room / "index.html"
+    idx.write_text(idx.read_text().replace('href="/reading-room/status/past/"', 'href="#"'))
+    assert [(d["kind"], d["value"]) for d in BP.compare_facets(_live(), BP.room_facets(room))["differences"]] == [
+        ("unlinked", "past")]
+
+
+def test_a_card_shows_its_badge_on_the_index_and_its_facet_pages():
+    files = _render(_with_status())
+    card = ('<p class="room__card-meta"><span class="room__badge room__badge--current">'
+            '<span class="room__sr">Status: </span>Current</span> Contract &middot; 12 pages</p>')
+    assert card in files["index.html"].decode() and card in files["status/current/index.html"].decode()
+    # The badge is in the card's filter text, so typing "past" finds the past record.
+    assert re.search(r'data-room-text="[^"]*\bpast\b[^"]*" data-room-group="Test Agency"', files["index.html"].decode())
+    # A row without one draws as before.
+    assert b"room__badge" not in _render(_raw())["index.html"]
+
+
+@pytest.mark.parametrize("bad, says", [
+    ({"badge": 1}, "index.badge and index.badge_sr are not strings"),
+    ({"badge": "Current", "badge_kind": "Not A Slug"}, "index.badge_kind is not a slug"),
+])
+def test_a_card_badge_that_is_not_text_is_refused(bad, says):
+    raw = _raw()
+    raw["documents"][0]["index"].update(bad)
+    assert parse(raw).refusals[0][1] == says
 
 
 # --- parity.sitemaps -----------------------------------------------------------------

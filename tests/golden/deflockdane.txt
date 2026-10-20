@@ -55,7 +55,7 @@ Header set Cache-Control "public, max-age=0, s-maxage=3600, must-revalidate"
 </body>
 </html>
 
-=== assets/room-search.a5c48a96956c.js ===
+=== assets/room-search.92cc316f4cd7.js ===
 (function () {
   "use strict";
   // The index's finder when the pack turns corpus search on (search.py). Text is
@@ -363,13 +363,16 @@ Header set Cache-Control "public, max-age=0, s-maxage=3600, must-revalidate"
     return SITE.groups.map(function (g) {
       var n = text ? g.typing : g.empty;
       var items = text ? g.items.filter(function (it) {
-        var hay = it.label + " " + it.query;
+        var hay = it.label + " " + (it.facet ? it.value : it.query);
         return (RANKED ? norm(hay) : hay.toLowerCase()).indexOf(lc) !== -1;
       }) : g.items;
       return { label: g.label, items: items.slice(0, n).map(function (it) {
-        return { kind: "query", value: it.query, label: it.label,
-                 note: typeof it.count === "number" ? " (" + it.count + " " + count.getAttribute(it.count === 1 ? "data-room-one" : "data-room-other") + ")" : "" };
-      }) };
+        var note = typeof it.count === "number" ? " (" + it.count + " " + count.getAttribute(it.count === 1 ? "data-room-one" : "data-room-other") + ")" : "";
+        // A facet item sets that filter, as the finder's own facet suggestions do.
+        var sel = it.facet ? facets.filter(function (s) { return s.getAttribute("data-room-facet") === it.facet; })[0] : null;
+        if (it.facet) { return sel ? { kind: "facet", select: sel, value: it.value, label: it.label, note: note } : null; }
+        return { kind: "query", value: it.query, label: it.label, note: note };
+      }).filter(Boolean) };
     });
   }
   function siteJobs(pf, text) {
@@ -1191,7 +1194,7 @@ whitespace &amp; &lt;tags&gt; and &quot;quotes&quot;.</p></div></li></ul>
 <p class="room-chrome__text">Deflock Dane (CC) Creative Commons 2026 unless otherwise noted</p>
 </div>
 </footer>
-<script src="/rr-staging/assets/room-search.a5c48a96956c.js"></script>
+<script src="/rr-staging/assets/room-search.92cc316f4cd7.js"></script>
 <script src="/rr-staging/assets/room.d1fbddb77323.js"></script>
 </body>
 </html>
@@ -1304,7 +1307,7 @@ whitespace &amp; &lt;tags&gt; and &quot;quotes&quot;.</p></div></li></ul>
 === room.lock.json ===
 {
  "assets": {
-  "assets/room-search.js": "assets/room-search.a5c48a96956c.js",
+  "assets/room-search.js": "assets/room-search.92cc316f4cd7.js",
   "assets/room.css": "assets/room.3feaa9a9b1b2.css",
   "assets/room.js": "assets/room.d1fbddb77323.js",
   "assets/rr-config.js": "assets/rr-config.caeb82f2bf0d.js",
@@ -1322,7 +1325,7 @@ whitespace &amp; &lt;tags&gt; and &quot;quotes&quot;.</p></div></li></ul>
  "engine": "0.0.0-golden",
  "files": {
   "404.html": "952723013ef3fc0c82c6c152a71dea513d18a51270c9a89edd21b99e61120775",
-  "assets/room-search.a5c48a96956c.js": "a5c48a96956c79d7cc11322141c7b4748e1fc2ecf68b120c7c30bdf261d90678",
+  "assets/room-search.92cc316f4cd7.js": "92cc316f4cd73e9b4546f29462adea25369b8c7ea6adcb68238fe00a1cadea47",
   "assets/room.3feaa9a9b1b2.css": "3feaa9a9b1b2c7696893f08542b052ecca4ec2cd00f7d1010b3d1e6a704e85fe",
   "assets/room.d1fbddb77323.js": "d1fbddb77323272b5e106f05ae1b29e7a85ee52da1c4e5cfa10dbb28effc3770",
   "assets/rr-config.caeb82f2bf0d.js": "caeb82f2bf0d1247acaccbcaafc59d016778d6e2cbeb4623cd6d27aefd09f2fe",
@@ -1338,7 +1341,7 @@ whitespace &amp; &lt;tags&gt; and &quot;quotes&quot;.</p></div></li></ul>
   "camera-contract/index.html": "a0a9e5749200bfe924403e4565520399ff4dd4e75de9fcf71f715062352b7ac0",
   "camera-contract/pages.c605fd0398f8.json": "c605fd0398f8496a9f7b8fc77f1cbf423a9cbd094d125778c807cb93e474cf8f",
   "data-dump/index.html": "3f66d4361d2e260a5567e1659acf0989617768c2c5c9b041a8669f0eb562d50f",
-  "index.html": "b79e8e08a753ebd22d902d3c2b8452096bf81b5410759142a7df658dc5bd3b06",
+  "index.html": "c4721cc2417a67e4d2b09c82563a10718b0f731739a1126ec4519a3e196f97da",
   "memo-text/index.html": "8fb0c6096cebfa65702283679c7a9a451a603541524600bea05f4afc93d5f381",
   "memo-text/pages.acc2f3a668b0.json": "acc2f3a668b0b6317d9a08dd645da822989b54268f52f02285fd5aed68f918c8",
   "pagefind/input.json": "94584e3322c286d17a283f1052e9c69b9e89bad3070dd335bc2cb8cc016d7001",

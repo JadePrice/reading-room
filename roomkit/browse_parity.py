@@ -19,7 +19,10 @@ index's browse block (`data-room-browse`), which must link every facet page.
 
 `ok` only when every live facet is built, with the same values, every value's
 page holds the same records, and the index links every page. A room facet live
-does not have is `extra`, which is not ok.
+does not have is `extra`, which is not ok, unless the manifest marks it
+`room_only` (its pages carry `data-room-facet-own`): the site's index does not
+narrow by it, so there is nothing live to compare. Those are counted under
+`room_only`, and still must be linked from the index.
 
 **parity.sitemaps** (matrix row sitemaps). Live input: the site's sitemap
 provider files as fetched (dd: Yoast's `deflock_rr_document-sitemap.xml` and
@@ -79,6 +82,7 @@ class _Room(HTMLParser):
     def __init__(self) -> None:
         super().__init__(convert_charrefs=True)
         self.key = ""
+        self.own = False
         self.cards: list[str] = []
         self.browse: list[str] = []
         self._title = self._browse = False
@@ -87,6 +91,7 @@ class _Room(HTMLParser):
         a = dict(attrs)
         if "data-room-facet-page" in a:
             self.key = a["data-room-facet-page"] or ""
+            self.own = "data-room-facet-own" in a
         if "data-room-browse" in a:
             self._browse = True
         cls = (a.get("class") or "").split()
@@ -122,14 +127,18 @@ def room_facets(room: Path) -> dict:
     index's browse links (room-relative paths)."""
     at = _mount(room)
     facets: dict[str, dict[str, list[str]]] = {}
+    own: set[str] = set()
     for page in sorted(room.glob("*/*/index.html")):
         p = _parse(page)
         if not p.key:
             continue
         name, slug = p.key.split("/", 1)
         facets.setdefault(name, {})[slug] = sorted(h[len(at):].strip("/") for h in p.cards if h.startswith(at))
+        if p.own:
+            own.add(name)
     index = _parse(room / "index.html")
-    return {"facets": facets, "linked": sorted(h[len(at):] for h in index.browse if h.startswith(at))}
+    return {"facets": facets, "own": sorted(own),
+            "linked": sorted(h[len(at):] for h in index.browse if h.startswith(at))}
 
 
 def compare_facets(live: dict, room: dict) -> dict:
@@ -151,7 +160,8 @@ def compare_facets(live: dict, room: dict) -> dict:
                 diffs.append({"kind": "members", "facet": name, "value": v,
                               "missing": sorted(set(members) - set(built[s])),
                               "extra": sorted(set(built[s]) - set(members))})
-    for name in sorted(set(rf) - set(live["facets"])):
+    own = set(room.get("own", [])) - set(live["facets"])
+    for name in sorted(set(rf) - set(live["facets"]) - own):
         diffs.append({"kind": "extra-facet", "facet": name})
     for name, built in sorted(rf.items()):
         for s in sorted(built):
@@ -160,6 +170,7 @@ def compare_facets(live: dict, room: dict) -> dict:
     pages = sum(len(v) for v in rf.values())
     return {"check": "facet_pages", "site": live.get("site", ""), "fetched": live.get("fetched", ""),
             "facets": {n: len(v) for n, v in sorted(rf.items())}, "pages": pages,
+            "room_only": {n: len(rf[n]) for n in sorted(own)},
             "differences": diffs, "ok": not diffs}
 
 
@@ -231,6 +242,8 @@ def text(rep: dict) -> str:
         return "\n".join([head, *body])
     head = (f"parity.facet_pages {'OK' if rep['ok'] else 'DIFFERENT'}: {rep['pages']} pages, "
             + ", ".join(f"{n} {c}" for n, c in rep["facets"].items()))
+    if rep.get("room_only"):
+        head += " (the room's own, not on live's index: " + ", ".join(rep["room_only"]) + ")"
     body = []
     for d in rep["differences"]:
         line = f"   {d['kind']} {d['facet']}" + (f" {d['value']!r}" if "value" in d else "")

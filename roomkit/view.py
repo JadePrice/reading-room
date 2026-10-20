@@ -175,12 +175,14 @@ def thumb_path(doc: Document) -> str:
 def _card(doc: Document, at: str) -> dict:
     ix = doc.index
     blob = " ".join([doc.title, doc.summary, doc.agency, ix.get("group", ""), ix.get("card_date", ""),
-                     *ix.get("meta", []), *ix.get("facets", {}).values()]).lower()
+                     *ix.get("meta", []), *ix.get("facets", {}).values(),
+                     *([ix["badge"]] if ix.get("badge") else [])]).lower()
     return {"text": re.sub(r"\s+", " ", blob).strip(), "group": ix.get("group", ""),
             "facets": [{"name": k, "value": v} for k, v in sorted(ix.get("facets", {}).items())],
             "url": f"{at}{doc.slug}/", "thumb_url": at + thumb_path(doc) if ix.get("thumb") else ix.get("thumb_url", ""),
             "date": doc.date, "card_date": ix.get("card_date", ""),
-            "title": doc.title, "meta": list(ix.get("meta", [])), "summary": doc.summary}
+            "title": doc.title, "meta": list(ix.get("meta", [])), "summary": doc.summary,
+            "badge": ix.get("badge", ""), "badge_kind": ix.get("badge_kind", ""), "badge_sr": ix.get("badge_sr", "")}
 
 
 def _suggest(m: Manifest, at: str) -> str:
@@ -270,7 +272,7 @@ def facet_view(p: dict, m: Manifest, at: str, pack: dict) -> dict:
     labels = pack.get("labels", {})
     n = len(p["docs"])
     return {**_chrome(pack, at), "layout": pack["layout"]["style"], "facet": {
-        "key": f"{p['name']}/{p['slug']}",
+        "key": f"{p['name']}/{p['slug']}", "room_only": p["room_only"],
         "crumbs": [{"label": labels.get("room", "Reading Room"), "url": at}, {"label": p["title"], "url": ""}],
         "eyebrow": p["label"], "title": p["title"], "count": n,
         "records_noun": _noun(n, labels["record_singular"], labels["record_plural"]),

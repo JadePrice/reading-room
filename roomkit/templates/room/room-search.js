@@ -305,13 +305,16 @@
     return SITE.groups.map(function (g) {
       var n = text ? g.typing : g.empty;
       var items = text ? g.items.filter(function (it) {
-        var hay = it.label + " " + it.query;
+        var hay = it.label + " " + (it.facet ? it.value : it.query);
         return (RANKED ? norm(hay) : hay.toLowerCase()).indexOf(lc) !== -1;
       }) : g.items;
       return { label: g.label, items: items.slice(0, n).map(function (it) {
-        return { kind: "query", value: it.query, label: it.label,
-                 note: typeof it.count === "number" ? " (" + it.count + " " + count.getAttribute(it.count === 1 ? "data-room-one" : "data-room-other") + ")" : "" };
-      }) };
+        var note = typeof it.count === "number" ? " (" + it.count + " " + count.getAttribute(it.count === 1 ? "data-room-one" : "data-room-other") + ")" : "";
+        // A facet item sets that filter, as the finder's own facet suggestions do.
+        var sel = it.facet ? facets.filter(function (s) { return s.getAttribute("data-room-facet") === it.facet; })[0] : null;
+        if (it.facet) { return sel ? { kind: "facet", select: sel, value: it.value, label: it.label, note: note } : null; }
+        return { kind: "query", value: it.query, label: it.label, note: note };
+      }).filter(Boolean) };
     });
   }
   function siteJobs(pf, text) {
