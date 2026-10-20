@@ -336,7 +336,7 @@ rows:
   live: "dd record pages show Status (current / past / unknown, with its basis and as-of date) and Record kind (procurement / surveillance monitoring); live's index has no status filter"
   disposition: static
   sites:
-    deflockdane: {need: required, status: partial}     # built; live-page parity pending the plugin deploy
+    deflockdane: {need: required, status: done}        # parity.details 68/68, facet pages 38 OK, 2026-10-20
     glassgovernment: {need: n/a, status: missing}
   # 2026-10-20, the user's go on the reviewed status table: plugin 0.9.0 (DB 0.5.0) stores
   # record_status, status_until, record_kind, status_basis, status_as_of; the record page draws
@@ -345,6 +345,9 @@ rows:
   # (index.badge), Status and Record kind finder filters, facet pages marked room_only
   # (parity.facet_pages reports them, live has nothing to compare), and suggestion items that
   # set those filters (site.index.suggest items {label, facet, value, count?}).
+  # dd done after the plugin deploy and the table's apply (68 rows, by slug): `parity --pages`
+  # 68/68 with the new rows, facet pages status 3 / kind 2 reported room-only, axe 0 on 124 pages
+  # light/dark at 1280 and 375, and choosing "Past" in the panel leaves the 10 past records.
   acceptance: "every record's Status and Record kind rows equal live's page; each card's badge, filters and status facet pages hold the records with that status"
   check: parity.details
 
