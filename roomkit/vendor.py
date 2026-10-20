@@ -34,7 +34,7 @@ ROOT = Path(__file__).resolve().parent
 REPO = ROOT.parents[1]
 PIN = "VENDORED.json"
 CORE_MODULES = ("__init__.py", "manifest.py", "entities.py", "passages.py", "view.py", "room.py", "css.py", "color.py", "pack.py",
-                "search.py")
+                "search.py", "browse.py")
 CORE_TREES = ("templates/room",)
 CORE_FILES = ("packs/pack.schema.json",)
 

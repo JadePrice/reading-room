@@ -60,9 +60,11 @@ The reading room is meant to become the Civica reading room, so the part that re
 | `view.py` | manifest + pack -> the plain view-model dicts | manifest |
 | `room.py` | the Jinja environment and a thin render call | view, manifest |
 | `pack.py` | load and check a site pack, one function per check | color, css |
+| `search.py` | corpus search: what Pagefind indexes, the pinned indexer, the pack switch | manifest |
+| `browse.py` | facet pages and the sitemap: which pages, their records, the pack switches | entities, view |
 | `templates/room/`, `packs/pack.schema.json` | the markup; the pack's structure | |
 
-Around it, the roomkit-only parts: `build.py` (the static tree, fingerprints, lock), `cli.py`, `parity.py`, `search_parity.py`, `entity_parity.py`, `passage_parity.py`, `vendor.py`, and the pack importer: `tokens_css.py` (read a design-tokens file: top-level `:root`, `var()` resolved, duplicates and variants named) and `pack_import.py` (map -> pack tokens, each non-site value with its why).
+Around it, the roomkit-only parts: `build.py` (the static tree, fingerprints, lock), `cli.py`, `parity.py`, `search_parity.py`, `entity_parity.py`, `passage_parity.py`, `browse_parity.py`, `thumb_parity.py`, `vendor.py`, and the pack importer: `tokens_css.py` (read a design-tokens file: top-level `:root`, `var()` resolved, duplicates and variants named) and `pack_import.py` (map -> pack tokens, each non-site value with its why).
 
 **Civica carries a verbatim copy, pinned** (decided 2026-10-13: vendored copy plus a drift check). `vendor write` copies the core into a package directory and records `VENDORED.json` (source commit, sha256 per file); it refuses while a core file has uncommitted changes. `vendor check` is read-only and names files `modified` in the copy (fix upstream, never in the copy), `missing`, or `behind` the source; exit 1 on any. Files in the destination outside the core (a tenant's pack) are left alone. A test imports a copy under another package name and holds it to the same bytes as roomkit (`tests/roomkit/test_vendor.py`).
 
