@@ -326,22 +326,26 @@ def _diff_json(exp, act, path="") -> list[str]:
 
 
 def check_jsonld(expected: dict | None, html: str) -> list[str]:
-    """Check that the schema.org JSON-LD object matches expected key for key."""
-    problems = []
-    m = JSONLD_RE.search(html)
-    if not m:
-        if expected:
-            problems.append("no jsonld script tag")
-        return problems
+    """Check that the document's schema.org JSON-LD object matches expected key for key.
+
+    Site-wide blocks (a bare `@graph` of WebSite/Organization, as Yoast prints on
+    every dd page ahead of the record's own block) are not the document's and are
+    skipped; the document block is the one with a top-level `@type`.
+    """
+    blocks = []
+    for m in JSONLD_RE.finditer(html):
+        try:
+            block = json.loads(m.group(1).strip())
+        except json.JSONDecodeError as e:
+            return [f"malformed jsonld: {e}"]
+        if not (isinstance(block, dict) and "@graph" in block and "@type" not in block):
+            blocks.append(block)
+    if not blocks:
+        return ["no jsonld script tag"] if expected else []
     if not expected:
-        problems.append("unexpected jsonld script tag")
-        return problems
-    raw_json = m.group(1).strip()
-    try:
-        actual = json.loads(raw_json)
-    except json.JSONDecodeError as e:
-        problems.append(f"malformed jsonld: {e}")
-        return problems
+        return ["unexpected jsonld script tag"]
+    want = expected.get("@type")
+    actual = next((b for b in blocks if isinstance(b, dict) and b.get("@type") == want), blocks[0])
     return _diff_json(expected, actual)
 
 

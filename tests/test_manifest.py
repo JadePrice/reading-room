@@ -497,6 +497,20 @@ def test_check_jsonld_parity():
         "jsonld name 'Camera Contract' != 'Different Title'"
     ]
 
+    # dd live pages print Yoast's site-wide @graph block before the record's own
+    site_graph = {"@context": "https://schema.org",
+                  "@graph": [{"@type": "WebSite"}, {"@type": "Organization"}]}
+    html_yoast = (f'<script type="application/ld+json">{json.dumps(site_graph)}</script>'
+                  + html_gg)
+    assert P.check_jsonld(jsonld_gg, html_yoast) == []
+    assert P.check_jsonld(wrong_name, html_yoast) == [
+        "jsonld name 'Camera Contract' != 'Different Title'"
+    ]
+    # a site-wide block alone is not the document's JSON-LD
+    html_site_only = f'<script type="application/ld+json">{json.dumps(site_graph)}</script>'
+    assert P.check_jsonld(None, html_site_only) == []
+    assert P.check_jsonld(jsonld_gg, html_site_only) == ["no jsonld script tag"]
+
 
 def test_mask_sensitive_ssn():
     from roomkit.search import REDACTED_SSN, mask_sensitive
