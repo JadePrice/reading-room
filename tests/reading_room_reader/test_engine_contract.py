@@ -63,7 +63,7 @@ def test_vendored_pdfjs_is_the_pinned_upstream_build():
     # (pdfjs-dist 3.11.174). A re-vendor changes the README table and this
     # together, or fails here.
     readme = (ENGINE / "README.md").read_text()
-    recorded = dict(re.findall(r"^\| `(pdf[\w.]+\.js)` \| `([0-9a-f]{64})` \|$", readme, re.M))
+    recorded = dict(re.findall(r"^\| `(pdf[\w.]+\.js)` \| `([0-9a-f]{64})` \|$", readme, re.MULTILINE))
     vendored = {p.name: hashlib.sha256(p.read_bytes()).hexdigest()
                 for p in (ENGINE / "vendor" / "pdfjs").glob("*.js")}
     assert recorded and recorded == vendored
@@ -80,6 +80,6 @@ def test_sync_writes_a_manifest_that_verifies(tmp_path):
     assert (assets / "vendor" / "pdfjs" / "pdf.min.js").is_file()
     check = subprocess.run(
         "sha256sum -c MANIFEST.sha256 2>/dev/null || shasum -a 256 -c MANIFEST.sha256",
-        shell=True, cwd=out, capture_output=True, text=True,
+        shell=True, cwd=out, capture_output=True, text=True, check=False,
     )
     assert check.returncode == 0, check.stdout + check.stderr

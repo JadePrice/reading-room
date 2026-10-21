@@ -73,7 +73,7 @@ console.log("chunks=" + chunks.length + " longest=" + longest);
 """
     run = subprocess.run(
         [node, "-e", harness, str(ALOUD)],
-        capture_output=True, text=True,
+        capture_output=True, text=True, check=False,
     )
     assert run.returncode == 0, run.stderr
 
@@ -93,7 +93,7 @@ def _run_node_harness(body):
     )
     run = subprocess.run(
         [node, "-e", harness, str(ALOUD)],
-        capture_output=True, text=True,
+        capture_output=True, text=True, check=False,
     )
     assert run.returncode == 0, run.stderr
 
