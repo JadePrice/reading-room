@@ -1,8 +1,8 @@
 {#- The content element of one page of one topic (pack features.topics): its
     heading block, its records in the site's order with their meta and summary,
     and the site's numbered paging. Every word and link is the export's
-    (topics.py). The site's in-topic ?s= filter is not rendered: the room cannot
-    answer it yet (parity-matrix.yaml topics). -#}
+    (topics.py). The in-topic filter, when the pack turns server-search on, is the
+    site's own GET form to the topic's live URL: its server answers, not the room. -#}
 {% from "room/partials/macros.html" import root, link, crumbs, toggle %}
 {{ root("topic", theme_key) }}
 {% with t = topic %}
@@ -15,6 +15,12 @@
 {% endif %}
 <h1 class="room__title">{{ t.title }}</h1>
 <p class="room__tsub">{{ t.subtitle }}</p>
+{% if t.search %}
+<form class="room__search room__search--server room__tsearch" role="search" action="{{ t.search.action }}" method="get">
+<div class="room__field room__field--q"><label for="room-tq">{{ t.search.label }}</label>
+<input type="search" id="room-tq" name="{{ t.search.param }}" placeholder="{{ t.search.placeholder }}"></div>
+</form>
+{% endif %}
 </header>
 {% if not t.documents %}
 <p class="room__section-empty">{{ t.empty_text }}</p>

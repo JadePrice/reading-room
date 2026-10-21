@@ -22,6 +22,13 @@
 {% if index.collections_grid %}
 {% include "room/partials/collections-grid.html" %}
 {% endif %}
+{% if index.server_search %}{% with ss = index.server_search %}
+<noscript><form class="room__search room__search--server" role="search" action="{{ ss.action }}" method="get">
+<div class="room__field room__field--q"><label for="room-nojs-q">{{ ss.label }}</label>
+<input type="search" id="room-nojs-q" name="{{ ss.param }}" placeholder="{{ ss.placeholder }}"></div>
+<div class="room__field room__field--buttons"><button type="submit" class="room__btn">{{ ss.button }}</button></div>
+</form></noscript>
+{% endwith %}{% endif %}
 {# With corpus search (index.search), room-search.js owns the finder: text search
     over the room's Pagefind index, suggestions as a combobox. Without it, room.js. #}
 <section class="room__finder" aria-label="Find a record"{% if index.search %} data-room-search data-room-pagefind="{{ index.search.pagefind_url }}" data-room-recent-key="{{ index.search.recent_key }}"{% else %} data-room-finder{% endif %} hidden>

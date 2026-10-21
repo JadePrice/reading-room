@@ -947,7 +947,8 @@ function roomkit_gg_topic_page(string $topic, int $topic_page, int $total, int $
         ], fn($v) => $v !== '' && $v !== null),
     ];
     if ($total > $per_page) {
-        $page['search'] = ['label' => 'Filter documents', 'placeholder' => 'Filter within this topic…'];
+        // archive-ggrr-topic.php .ggrr-search-form: name="s", answered by get_documents_by_topic($topic, ..., $search).
+        $page['search'] = ['label' => 'Filter documents', 'placeholder' => 'Filter within this topic…', 'param' => 's'];
     }
     $page['documents'] = array_map(function ($doc) use ($T) {
         $collection = (string) ($doc['collection'] ?? '');
@@ -1080,6 +1081,10 @@ try {
         'index' => [
             'eyebrow' => 'Public records, served whole',
             'title' => 'The Reading Room',
+            // The no-JS search form (templates/index-ggrr-reading-room.php .ggrr-rr-nojs-form):
+            // the server answers /library/?q= with ggrr_reading_room_documents(null, $q).
+            'server_search' => ['action' => home_url('/library/'), 'param' => 'q', 'label' => 'Search records',
+                                'placeholder' => 'Search by title, agency, collection, or type…', 'button' => 'Search'],
             'groups' => array_values(array_unique($group_order)),
             'group_label' => 'Collection',
             // The live index's span (ggrr_holdings_summary), which counts more than the dated records.

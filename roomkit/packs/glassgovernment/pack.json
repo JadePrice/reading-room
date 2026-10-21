@@ -58,6 +58,7 @@
     "toggle": "ggrr-theme"
   },
   "features": {
+    "server-search": true,
     "entities": true,
     "facet-pages": true,
     "sitemaps": true,

@@ -18,7 +18,7 @@ Header set Cache-Control "public, max-age=0, s-maxage=3600, must-revalidate"
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex, nofollow">
 <title>Not found | Archive</title>
-<link rel="stylesheet" href="/archive/assets/room.454560f5d4b6.css">
+<link rel="stylesheet" href="/archive/assets/room.38b70159621c.css">
 </head>
 <body class="room-plain">
 <a class="room__skip" href="#room-content">Skip to main content</a>
@@ -75,7 +75,7 @@ Header set Cache-Control "public, max-age=0, s-maxage=3600, must-revalidate"
 <meta name="description" content="A synthetic chart image.">
 <meta property="og:description" content="A synthetic chart image.">
 <meta name="twitter:card" content="summary">
-<link rel="stylesheet" href="/archive/assets/room.454560f5d4b6.css">
+<link rel="stylesheet" href="/archive/assets/room.38b70159621c.css">
 </head>
 <body class="room-plain">
 <a class="room__skip" href="#room-content">Skip to main content</a>
@@ -159,7 +159,7 @@ Header set Cache-Control "public, max-age=0, s-maxage=3600, must-revalidate"
 </body>
 </html>
 
-=== assets/room.454560f5d4b6.css ===
+=== assets/room.38b70159621c.css ===
 /* roomkit shared reading-room styles. Tokens come from the site's theme. */
 #room-content{--room-page-bg:transparent;--room-page-ink:#1d1b18;--room-page-ink-soft:#5b5650;--room-page-link:#1f4e8c;
 --room-surface:#fff;--room-surface-sunk:#f4f2ee;--room-ink:#1d1b18;--room-ink-soft:#57524b;--room-rule:#d9d4cc;
@@ -243,6 +243,7 @@ line-height:1.6;padding:24px 16px 64px;outline:none}
 /* index */
 #room-content .room__finder{background:var(--room-surface);color:var(--room-ink);border:1px solid var(--room-rule);border-radius:var(--room-radius);padding:16px 20px;margin-bottom:24px}
 #room-content .room__search{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:12px 16px;align-items:end}
+#room-content .room__search--server{margin-bottom:16px}
 #room-content .room__field{display:grid;gap:4px;min-width:0}
 #room-content .room__field--q{grid-column:1/-1}
 #room-content .room__field select{width:100%}
@@ -514,7 +515,7 @@ window.rrReaderConfig = {"docSearchUrl": "", "passageUrl": "", "pdfJsUrl": "/arc
 <meta name="description" content="A synthetic download-only file.">
 <meta property="og:description" content="A synthetic download-only file.">
 <meta name="twitter:card" content="summary">
-<link rel="stylesheet" href="/archive/assets/room.454560f5d4b6.css">
+<link rel="stylesheet" href="/archive/assets/room.38b70159621c.css">
 </head>
 <body class="room-plain">
 <a class="room__skip" href="#room-content">Skip to main content</a>
@@ -606,7 +607,7 @@ window.rrReaderConfig = {"docSearchUrl": "", "passageUrl": "", "pdfJsUrl": "/arc
 <meta name="description" content="A synthetic capture of a guidance page.">
 <meta property="og:description" content="A synthetic capture of a guidance page.">
 <meta name="twitter:card" content="summary">
-<link rel="stylesheet" href="/archive/assets/room.454560f5d4b6.css">
+<link rel="stylesheet" href="/archive/assets/room.38b70159621c.css">
 </head>
 <body class="room-plain">
 <a class="room__skip" href="#room-content">Skip to main content</a>
@@ -718,7 +719,7 @@ window.rrReaderConfig = {"docSearchUrl": "", "passageUrl": "", "pdfJsUrl": "/arc
 <meta name="description" content="Five made-up records, for proving the room needs no template change.">
 <meta property="og:description" content="Five made-up records, for proving the room needs no template change.">
 <meta name="twitter:card" content="summary">
-<link rel="stylesheet" href="/archive/assets/room.454560f5d4b6.css">
+<link rel="stylesheet" href="/archive/assets/room.38b70159621c.css">
 </head>
 <body class="room-plain">
 <a class="room__skip" href="#room-content">Skip to main content</a>
@@ -806,7 +807,7 @@ window.rrReaderConfig = {"docSearchUrl": "", "passageUrl": "", "pdfJsUrl": "/arc
 <meta name="description" content="A synthetic HTML snapshot.">
 <meta property="og:description" content="A synthetic HTML snapshot.">
 <meta name="twitter:card" content="summary">
-<link rel="stylesheet" href="/archive/assets/room.454560f5d4b6.css">
+<link rel="stylesheet" href="/archive/assets/room.38b70159621c.css">
 </head>
 <body class="room-plain">
 <a class="room__skip" href="#room-content">Skip to main content</a>
@@ -905,7 +906,7 @@ window.rrReaderConfig = {"docSearchUrl": "", "passageUrl": "", "pdfJsUrl": "/arc
 <meta name="description" content="A synthetic fact sheet that was taken down.">
 <meta property="og:description" content="A synthetic fact sheet that was taken down.">
 <meta name="twitter:card" content="summary">
-<link rel="stylesheet" href="/archive/assets/room.454560f5d4b6.css">
+<link rel="stylesheet" href="/archive/assets/room.38b70159621c.css">
 </head>
 <body class="room-plain">
 <a class="room__skip" href="#room-content">Skip to main content</a>
@@ -998,7 +999,7 @@ window.rrReaderConfig = {"docSearchUrl": "", "passageUrl": "", "pdfJsUrl": "/arc
 === room.lock.json ===
 {
  "assets": {
-  "assets/room.css": "assets/room.454560f5d4b6.css",
+  "assets/room.css": "assets/room.38b70159621c.css",
   "assets/room.js": "assets/room.70941fc296c3.js",
   "assets/rr-config.js": "assets/rr-config.5798b6ad9e97.js",
   "assets/vendor/pdfjs/pdf.min.js": "assets/vendor/pdfjs/pdf.min.1a12e2ef3e98.js",
@@ -1013,9 +1014,9 @@ window.rrReaderConfig = {"docSearchUrl": "", "passageUrl": "", "pdfJsUrl": "/arc
  "documents": 5,
  "engine": "0.0.0-golden",
  "files": {
-  "404.html": "18620ce1afc29a9f9c7b2adfb29d5f98e2f715318911ed95269ea70343e62c20",
-  "archived-chart/index.html": "0373f25ae7e11ab307d78f38df942af756dacf7d9bf0c604bf286ab18f494bba",
-  "assets/room.454560f5d4b6.css": "454560f5d4b603dfaf48866bb4dbdf38c21c6726e5e2386387fa503a031f9e91",
+  "404.html": "b739afd3603c105eab63ba4898efab0dd43749007e7ea48bb260513a8cfb5979",
+  "archived-chart/index.html": "8b0caff59dfd87d366ed7136359c67b735b143dee21bd4832e17e780ac80b17f",
+  "assets/room.38b70159621c.css": "38b70159621cf74aa058d00373657d13081dec41f6a968ec979beb8efbcaa7c7",
   "assets/room.70941fc296c3.js": "70941fc296c37829bdec22b961f1bba291bf29409ce22b41a4ba1472e1fca226",
   "assets/rr-config.5798b6ad9e97.js": "5798b6ad9e971b0cabd4dab3bac04542bfb4e383c13cb0cc9f8ba5b4f13ecf40",
   "assets/vendor/pdfjs/pdf.min.1a12e2ef3e98.js": "1a12e2ef3e989e0b5d86cbf5cb4f66f95f3bfeecd532a71f8da22ef8de46d824",
@@ -1026,12 +1027,12 @@ window.rrReaderConfig = {"docSearchUrl": "", "passageUrl": "", "pdfJsUrl": "/arc
   "assets/vendor/rr-reader/modules/rr-reader-pdf.3930bcfcf48b.js": "3930bcfcf48be14c49f9f13a1461e2c9c94dadd652ec33578dfbad7403aae564",
   "assets/vendor/rr-reader/modules/rr-reader-text.83792d749e4d.js": "83792d749e4da7e8689c24e28f6b30b6a66e5992f10e8363db80f6c1ebb65139",
   "assets/vendor/rr-reader/rr-reader.6cd02f3098f6.js": "6cd02f3098f69c3aa84eb84835199edce2e35c9e200a2b7152b6845e6afd5dec",
-  "dataset-export/index.html": "27e2d15a6db7bc09b4a93e6bc37089c780a9b96184e0d93b95d80c995ccd3035",
-  "guidance-page-capture/index.html": "d7f36296694b2a5f6c56963bce1eb4536e9125d915cf1e4c7935ad7393f8e719",
+  "dataset-export/index.html": "99620f7cebc7d4dad6f1a2d99254127a7a2606fcb2bfae078314b0b2f21ab64b",
+  "guidance-page-capture/index.html": "5dea6da5a03193b3a39e9a0416a5c3854f74e43e4957edc9f3de7b6a065fb5ff",
   "guidance-page-capture/pages.e6637a9750e8.json": "e6637a9750e8d4d050588528f2d6f9da20be13d93be7f6376e39fdb2f9364ebc",
-  "index.html": "01b69ff907bf344454ea795b596cf6f19dcaa638dfe2d4994834dbd7411fa8ea",
-  "page-text-snapshot/index.html": "79acec6893c50f3d3b2ef775ef49d0a9425b8267552521eae33d360ce3370ce2",
-  "removed-fact-sheet/index.html": "54e9cfa9a55f0fd7343440b65c7253365c666fed57e60b4688f37eeda6ac118f"
+  "index.html": "dbf0a3c4be2d35005d956147ea9d01096f47a464b745fa3be6978c99966f1b07",
+  "page-text-snapshot/index.html": "93e6aeb1d452734417e3bd080410dba5f37c9c154dfe757bbbcadb6733664935",
+  "removed-fact-sheet/index.html": "4c78f6de3f84093190be14efe84d0c0e30195490c115eaf90d85750e8bb69188"
  },
  "mount": "/archive/",
  "noindex": false,

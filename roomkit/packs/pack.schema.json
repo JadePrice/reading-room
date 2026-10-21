@@ -343,7 +343,7 @@
         },
         "topics": {
           "type": "boolean",
-          "description": "GG's topics page and every page of every topic (/page/N/ as live) at their live paths, from the manifest's `topics` block (topics.py). Every word, row and paging link comes from the export. Off: no topic page and no topics.css. The in-topic ?s= filter is not rendered (parity-matrix.yaml topics)."
+          "description": "GG's topics page and every page of every topic (/page/N/ as live) at their live paths, from the manifest's `topics` block (topics.py). Every word, row and paging link comes from the export. Off: no topic page and no topics.css. The in-topic ?s= filter is the site's server's, rendered with features.server-search."
         },
         "entities": {
           "type": "boolean",
@@ -372,6 +372,10 @@
         "facet-pages": {
           "type": "boolean",
           "description": "A page per value of each facet the manifest's site.index.browse names, at <room>/<facet>/<value>/, linked from a browse block on the index: the way to narrow the list without JavaScript (browse.py). Off: no facet page, no browse block, no browse.css."
+        },
+        "server-search": {
+          "type": "boolean",
+          "description": "The site's own search for readers without JavaScript, from the manifest's site.index.server_search (and a topic page's search.param): a plain GET form to the URL the site's server answers (GG /library/?q= and /library/topics/<topic>/?s=, dd /reading-room/?rr_search=). The room answers nothing; after cutover the host must keep sending those queries to the site's server. Off: no such form."
         },
         "sitemaps": {
           "type": "boolean",

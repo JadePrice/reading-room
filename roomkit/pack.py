@@ -66,6 +66,7 @@ FEATURE_ROWS = {
     "corpus-search": ("index-fulltext-search", "index-suggest"),
     "facet-pages": ("index-facet-pages",),
     "sitemaps": ("sitemaps",),
+    "server-search": ("server-search",),
     "machine-text": ("machine-text",),
     "csp": (),  # a header the room sends, not a surface WordPress had; no matrix row
 }

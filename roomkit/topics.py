@@ -16,8 +16,11 @@ The manifest block (optional):
       "pages": [{
         "slug", "page": 1.., "url", "head_title", "title", "subtitle", "empty_text",
         "crumbs"?: [{label, url}], "back"?: {label, url}, "eyebrow"?,
-        "search"?: {"label", "placeholder"},     (live shows it past one page; the room
-                                                  renders it only once it can answer it)
+        "search"?: {"label", "placeholder", "param"?},  (live shows it past one page; with
+                                                  param and pack features.server-search the
+                                                  room renders it as a GET form to the
+                                                  topic's live URL, which the site's server
+                                                  answers; the room answers nothing)
         "documents": [{"slug", "title", "url", "badge"?, "badge_kind"?, "badge_sr"?,
                        "date"?, "collection"?: {label, url}, "reading_time"?, "agency"?,
                        "summary"?}],
@@ -36,12 +39,14 @@ naming a topic with no page; a duplicate; missing or non-text strings.
 
 from __future__ import annotations
 
+import re
 from dataclasses import replace
 
 from . import entities as E
 from . import site_collections as CO
 
 FEATURE = "topics"
+PARAM = re.compile(r"^[a-z][a-z0-9_]{0,31}$")
 KINDS = ("prev", "page", "current", "dots", "next")
 _text, _url_ok, _strings, _links = E._text, E._url_ok, E._strings, E._links
 
@@ -90,8 +95,10 @@ def _page(p: dict, where: str, room: str, doc_slugs: set[str], problems: list[st
             _links(p["crumbs"][:-1], f"{where}.crumbs", problems, need_url=True)
             _links(p["crumbs"][-1:], f"{where}.crumbs", problems, need_url=False)
     s = p.get("search")
-    if s is not None and not (isinstance(s, dict) and _text(s.get("label")) and _text(s.get("placeholder"))):
-        problems.append(f"{where}.search is not {{label, placeholder}}")
+    if s is not None and not (isinstance(s, dict) and set(s) <= {"label", "placeholder", "param"}
+                              and _text(s.get("label")) and _text(s.get("placeholder"))
+                              and ("param" not in s or (isinstance(s["param"], str) and PARAM.match(s["param"])))):
+        problems.append(f"{where}.search is not {{label, placeholder, param?: a lowercase query name}}")
     if "jsonld" in p and not isinstance(p["jsonld"], dict):
         problems.append(f"{where}.jsonld is not an object")
     docs = p.get("documents")

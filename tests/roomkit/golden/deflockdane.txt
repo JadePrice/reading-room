@@ -18,7 +18,7 @@ Header set Cache-Control "public, max-age=0, s-maxage=3600, must-revalidate"
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex, nofollow">
 <title>Not found | Reading Room</title>
-<link rel="stylesheet" href="/rr-staging/assets/room.3feaa9a9b1b2.css">
+<link rel="stylesheet" href="/rr-staging/assets/room.c888b5d76f98.css">
 </head>
 <body class="room-plain">
 <a class="room__skip" href="#room-content">Skip to content</a>
@@ -447,213 +447,6 @@ Header set Cache-Control "public, max-age=0, s-maxage=3600, must-revalidate"
   run(false);
 }());
 
-=== assets/room.3feaa9a9b1b2.css ===
-/* roomkit shared reading-room styles. Tokens come from the site's theme. */
-#room-content{--room-page-bg:transparent;--room-page-ink:#1d1b18;--room-page-ink-soft:#5b5650;--room-page-link:#1f4e8c;
---room-surface:#fff;--room-surface-sunk:#f4f2ee;--room-ink:#1d1b18;--room-ink-soft:#57524b;--room-rule:#d9d4cc;
---room-link:#1f4e8c;--room-accent:#1d1b18;--room-on-accent:#fff;--room-focus:#b3541e;
---room-font-body:inherit;--room-font-display:inherit;--room-font-mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
---room-radius:12px;--room-radius-pill:999px;--room-measure:68ch}
-#room-content{display:block;background:var(--room-page-bg);color:var(--room-page-ink);font-family:var(--room-font-body);
-line-height:1.6;padding:24px 16px 64px;outline:none}
-#room-content *,#room-content *::before,#room-content *::after{box-sizing:border-box}
-#room-content [hidden]{display:none!important}
-#room-content .room__shell{max-width:1200px;margin:0 auto}
-#room-content a{color:var(--room-page-link);text-decoration:underline;text-underline-offset:.15em}
-#room-content a:focus-visible,#room-content button:focus-visible,#room-content input:focus-visible,#room-content select:focus-visible{outline:3px solid var(--room-focus);outline-offset:2px}
-#room-content h1,#room-content h2,#room-content h3{font-family:var(--room-font-display);color:inherit;line-height:1.2;margin:0}
-#room-content p{margin:0;color:inherit}
-#room-content ul,#room-content ol{margin:0;padding:0;list-style:none}
-#room-content .room__sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
-#room-content .room__topline{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px;margin-bottom:24px}
-#room-content .room__crumbs ol{display:flex;flex-wrap:wrap;gap:4px 0;font-size:.9rem;color:var(--room-page-ink-soft)}
-#room-content .room__crumbs li+li::before{content:"/";margin:0 .5em;opacity:.7}
-#room-content .room__crumbs a{color:var(--room-page-link)}
-#room-content .room__head{max-width:var(--room-measure);margin-bottom:24px}
-#room-content .room__eyebrow{font-size:.8rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--room-page-ink-soft);margin-bottom:8px}
-#room-content .room__eyebrow a{color:inherit}
-#room-content .room__title{font-size:clamp(1.8rem,1.2rem + 2.4vw,2.8rem);color:var(--room-page-ink);margin-bottom:12px;overflow-wrap:anywhere}
-#room-content .room__badge{display:inline-block;vertical-align:middle;font-family:var(--room-font-body);font-size:.75rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:2px 8px;border:1px solid currentColor;border-radius:4px;color:var(--room-page-ink-soft)}
-#room-content .room__released{font-weight:600;color:var(--room-page-ink-soft);margin-bottom:12px}
-#room-content .room__lede{font-size:1.05rem;color:var(--room-page-ink)}
-#room-content .room__stats{display:flex;flex-wrap:wrap;gap:8px 24px;margin-top:16px;color:var(--room-page-ink-soft)}
-#room-content .room__stat{font-family:var(--room-font-display);font-size:1.4rem;font-weight:700;color:var(--room-page-ink);margin-right:.25em}
-#room-content .room__head-link{margin-top:12px;color:var(--room-page-ink-soft)}
-#room-content .room__notice{max-width:var(--room-measure);margin:0 0 24px;padding:14px 18px;border-left:4px solid var(--room-accent);background:var(--room-surface);color:var(--room-ink);border-radius:4px}
-#room-content .room__notice h2{font-size:.85rem;letter-spacing:.06em;text-transform:uppercase;margin-bottom:6px}
-#room-content .room__notice p{font-size:.95rem}
-#room-content .room__notice-report{margin-top:8px;color:var(--room-ink-soft)}
-#room-content .room__jump{margin-bottom:24px}
-#room-content .room__jump ul{display:flex;flex-wrap:wrap;gap:8px}
-#room-content .room__jump-label{font-size:.8rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--room-page-ink-soft);margin-bottom:8px}
-#room-content .room__jump a{display:inline-flex;align-items:center;min-height:44px;padding:8px 16px;border:1px solid var(--room-rule);border-radius:var(--room-radius-pill);background:var(--room-surface);color:var(--room-link);text-decoration:none;font-weight:600}
-#room-content .room__jump a:hover{text-decoration:underline}
-#room-content .room__body{display:grid;gap:24px;grid-template-columns:minmax(0,1fr)}
-@media (min-width:960px){#room-content .room__body{grid-template-columns:minmax(0,1fr) 360px;align-items:start}}
-#room-content .room__reader,#room-content .room__panel{background:var(--room-surface);color:var(--room-ink);border:1px solid var(--room-rule);border-radius:var(--room-radius);padding:20px}
-#room-content .room__reader a,#room-content .room__panel a{color:var(--room-link)}
-#room-content .room__reader-h,#room-content .room__panel h2{font-size:1.15rem;margin-bottom:12px;color:var(--room-ink)}
-#room-content .room__rail{display:grid;gap:16px;grid-template-columns:minmax(0,1fr);min-width:0}
-#room-content .room__panel,#room-content .room__reader{min-width:0}
-#room-content .room__dl{display:grid;gap:12px;margin:0}
-#room-content .room__dl dt{font-size:.8rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--room-ink-soft)}
-#room-content .room__dl dd{margin:2px 0 0;color:var(--room-ink);overflow-wrap:anywhere}
-#room-content .room__hash{font-family:var(--room-font-mono);font-size:.82rem;word-break:break-all;color:var(--room-ink);background:none}
-#room-content .room__note{display:block;font-size:.85rem;color:var(--room-ink-soft);margin-top:2px}
-#room-content .room__actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:16px}
-#room-content .room__archive{margin-top:12px}
-#room-content .rr-reader{--rr-paper:var(--room-surface);--rr-paper-raised:var(--room-surface);--rr-paper-sunk:var(--room-surface-sunk);
---rr-ink:var(--room-ink);--rr-ink-soft:var(--room-ink-soft);--rr-ink-faint:var(--room-ink-soft);--rr-rule:var(--room-rule);
---rr-accent:var(--room-link);--rr-focus:var(--room-focus);--rr-mono:var(--room-font-mono)}
-#room-content .room__btn{display:inline-flex;align-items:center;justify-content:center;min-height:44px;padding:8px 18px;border:2px solid var(--room-accent);border-radius:var(--room-radius-pill);background:var(--room-accent);color:var(--room-on-accent);font:inherit;font-weight:700;text-decoration:none;cursor:pointer}
-#room-content .room__btn--ghost{background:transparent;color:var(--room-ink)}
-#room-content .room__topline .room__btn--ghost{color:var(--room-page-ink);border-color:var(--room-page-ink-soft)}
-#room-content a.room__btn{color:var(--room-on-accent)}
-#room-content a.room__btn--ghost{color:var(--room-ink)}
-#room-content .room__btn:hover{text-decoration:underline}
-#room-content .room__cite-text{font-size:.92rem;color:var(--room-ink);padding:10px 12px;border-left:3px solid var(--room-rule);background:var(--room-surface-sunk);border-radius:0 6px 6px 0;overflow-wrap:anywhere;margin-bottom:10px}
-#room-content .room__cite-copy[data-copied="1"]{border-color:var(--room-link);color:var(--room-link)}
-#room-content .room__blurb{font-size:.85rem;color:var(--room-ink-soft);margin:-6px 0 10px}
-#room-content .room__chips{display:flex;flex-wrap:wrap;gap:6px}
-#room-content .room__links{display:grid;gap:8px}
-#room-content .room__item{display:inline-flex;flex-wrap:wrap;align-items:baseline;gap:2px 8px;max-width:100%;color:var(--room-ink)}
-#room-content .room__chips .room__item{padding:4px 10px;border:1px solid var(--room-rule);border-left-width:3px;border-radius:4px;background:var(--room-surface-sunk);text-decoration:none}
-#room-content .room__chips a.room__item:hover{border-color:var(--room-link)}
-#room-content a.room__item .room__item-label{color:var(--room-link);text-decoration:underline}
-#room-content .room__item-kind{font-size:.72rem;letter-spacing:.05em;text-transform:uppercase;color:var(--room-ink-soft)}
-#room-content .room__item-quote{flex-basis:100%;font-size:.8rem;font-style:italic;color:var(--room-ink-soft);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
-#room-content .room__item-meta{flex-basis:100%;font-size:.8rem;color:var(--room-ink-soft)}
-#room-content .room__notes{font-size:.95rem;overflow-wrap:anywhere}
-#room-content .room__panel,#room-content .room__lede,#room-content .room__card{overflow-wrap:anywhere}
-#room-content .room__view-note{font-size:.85rem;color:var(--room-ink-soft);margin-top:10px}
-#room-content .rr-reader__fallback-links{display:flex;flex-wrap:wrap;gap:8px}
-#room-content .rr-reader__object{display:block;width:100%;min-height:78vh;margin-top:12px;border:1px solid var(--room-rule);background:#fff}
-/* index */
-#room-content .room__finder{background:var(--room-surface);color:var(--room-ink);border:1px solid var(--room-rule);border-radius:var(--room-radius);padding:16px 20px;margin-bottom:24px}
-#room-content .room__search{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:12px 16px;align-items:end}
-#room-content .room__field{display:grid;gap:4px;min-width:0}
-#room-content .room__field--q{grid-column:1/-1}
-#room-content .room__field select{width:100%}
-#room-content .room__jump summary{cursor:pointer;min-height:44px;display:flex;align-items:center;font-weight:700;color:var(--room-page-link)}
-#room-content .room__jump details ul{margin-top:8px}
-#room-content .room__field label{font-size:.8rem;font-weight:700;letter-spacing:.04em;color:var(--room-ink-soft)}
-#room-content .room__field input,#room-content .room__field select{min-height:44px;padding:8px 12px;border:1px solid var(--room-ink-soft);border-radius:8px;background:var(--room-surface);color:var(--room-ink);font:inherit;max-width:100%}
-#room-content .room__field--buttons{display:flex;gap:8px}
-#room-content .room__count{margin-top:12px;font-size:.9rem;color:var(--room-ink-soft)}
-#room-content .room__section{margin-bottom:40px;scroll-margin-top:16px}
-#room-content .room__section-h{font-size:1.4rem;color:var(--room-page-ink);padding-bottom:8px;border-bottom:1px solid var(--room-rule);margin-bottom:16px}
-#room-content .room__section-n{font-family:var(--room-font-body);font-size:.85rem;font-weight:600;color:var(--room-page-ink-soft);margin-left:.4em}
-#room-content .room__section-empty{color:var(--room-page-ink-soft)}
-#room-content .room__cards--cards{display:grid;gap:16px;grid-template-columns:repeat(auto-fill,minmax(260px,1fr))}
-#room-content .room__cards--rows{display:grid;gap:0;border-top:1px solid var(--room-rule)}
-#room-content .room__card{background:var(--room-surface);color:var(--room-ink);border:1px solid var(--room-rule);border-radius:var(--room-radius);padding:16px;display:flex;flex-direction:column;gap:12px}
-#room-content .room__cards--rows .room__card{border-width:0 0 1px;border-radius:0;padding:14px 4px;background:transparent;color:var(--room-page-ink)}
-#room-content .room__cards--rows .room__card-title a{color:var(--room-page-link)}
-#room-content .room__cards--rows .room__card-date,#room-content .room__cards--rows .room__card-meta,#room-content .room__cards--rows .room__card-summary{color:var(--room-page-ink-soft)}
-#room-content .room__thumb{display:flex;justify-content:center;padding:10px;background:var(--room-surface-sunk);border-radius:8px}
-#room-content .room__thumb img{display:block;width:auto;max-width:100%;height:150px;object-fit:contain;border-radius:4px;box-shadow:0 1px 4px rgba(0,0,0,.15)}
-#room-content .room__card-body{display:grid;gap:6px}
-#room-content .room__card-date,#room-content .room__card-meta{font-size:.85rem;color:var(--room-ink-soft)}
-#room-content .room__card-title{font-size:1.05rem;font-family:var(--room-font-body);font-weight:700}
-#room-content .room__card-title a{color:var(--room-link)}
-#room-content .room__card-summary{font-size:.92rem;color:var(--room-ink);display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden}
-#room-content .room__empty{padding:20px;background:var(--room-surface);color:var(--room-ink);border:1px solid var(--room-rule);border-radius:var(--room-radius)}
-@media (max-width:600px){#room-content{padding:16px 16px 48px}#room-content .room__reader,#room-content .room__panel{padding:16px}
-#room-content .room__jump ul{flex-direction:column}#room-content .room__jump a{width:100%}}
-@media print{#room-content .room__jump,#room-content .room__finder,#room-content .room__toggle{display:none!important}}
-/* roomkit: the room's own header, navigation and footer.
-   Every rule is scoped under body.room-plain and every color is a --room-* token (the pack's;
-   css.theme_css puts them on the body too).
-   The wide-screen rules are chrome-wide.css: room.chrome_css() wraps them in a media query at the
-   pack's chrome.inline_from, because a media query cannot read a custom property. */
-body.room-plain{--room-font-body:inherit;--room-font-display:inherit;--room-radius:12px;--room-radius-pill:999px;
-margin:0;background:var(--room-page-bg);color:var(--room-page-ink);font-family:var(--room-font-body);line-height:1.6}
-body.room-plain .room__skip{position:absolute;left:-9999px;top:0;z-index:1000;padding:12px 16px;background:var(--room-accent);color:var(--room-on-accent);border-radius:var(--room-radius);font-weight:700}
-body.room-plain .room__skip:focus{left:16px;top:16px}
-body.room-plain .room__skip:focus,body.room-plain .room-chrome a:focus-visible,body.room-plain .room-chrome summary:focus-visible{outline:3px solid var(--room-focus);outline-offset:2px}
-body.room-plain .room-chrome{background:var(--room-page-bg);color:var(--room-page-ink)}
-body.room-plain .room-chrome *,body.room-plain .room-chrome *::before,body.room-plain .room-chrome *::after{box-sizing:border-box}
-body.room-plain .room-chrome a{color:var(--room-page-link);text-underline-offset:.15em}
-body.room-plain .room-chrome ul{margin:0;padding:0;list-style:none}
-body.room-plain .room-chrome p{margin:0}
-body.room-plain .room-chrome__bar{max-width:1232px;margin:0 auto;padding:12px 16px;display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px 24px}
-body.room-plain .room-chrome--head{border-bottom:1px solid var(--room-rule)}
-/* The site name never wraps (it is one line at every width); the tagline may. The brand cannot shrink
-   below the name, and the nav never shrinks, so its links never wrap into a second row: a nav too wide
-   for the row moves below instead, which pack.chrome.inline_from is measured to prevent. */
-body.room-plain .room-chrome__brand{display:flex;flex-direction:column;flex:1 1 10rem}
-body.room-plain .room-chrome__home{font-family:var(--room-font-display);font-size:1.25rem;font-weight:700;line-height:1.2;text-decoration:none;color:var(--room-page-ink);white-space:nowrap}
-body.room-plain .room-chrome a.room-chrome__home{color:var(--room-page-ink)}
-body.room-plain .room-chrome__home:hover{text-decoration:underline}
-body.room-plain .room-chrome__tagline{font-size:.85rem;color:var(--room-page-ink-soft)}
-body.room-plain .room-chrome summary{cursor:pointer;min-height:44px;display:flex;align-items:center;gap:.5em;list-style:none}
-body.room-plain .room-chrome summary::-webkit-details-marker{display:none}
-/* display:flex drops the disclosure marker, so every summary draws its own caret: it says "opens". */
-body.room-plain .room-chrome summary::after{content:"";flex:none;width:.45em;height:.45em;border-right:2px solid currentColor;border-bottom:2px solid currentColor;transform:translateY(-20%) rotate(45deg)}
-body.room-plain .room-chrome details[open]>summary::after{transform:translateY(20%) rotate(-135deg)}
-body.room-plain .room-chrome__group>details>summary{color:var(--room-page-link);text-decoration:underline;text-underline-offset:.15em}
-body.room-plain .room-chrome__menu-label{padding:8px 16px;border:1px solid var(--room-page-ink-soft);border-radius:var(--room-radius-pill);font-weight:700}
-body.room-plain .room-chrome__menu[open]{flex-basis:100%}
-body.room-plain .room-chrome__links{padding-top:8px}
-body.room-plain .room-chrome__links a{display:flex;align-items:center;min-height:44px;padding:4px 0}
-body.room-plain .room-chrome__group ul{padding-left:16px}
-body.room-plain .room-chrome__nav{flex:0 0 auto}
-body.room-plain .room-chrome__nav:has(.room-chrome__menu[open]){flex-basis:100%}
-body.room-plain .room-chrome__notice{max-width:1232px;margin:0 auto;padding:8px 16px;background:var(--room-surface-sunk);color:var(--room-ink)}
-body.room-plain .room-chrome__notice a{color:var(--room-link)}
-body.room-plain .room-chrome--foot{border-top:1px solid var(--room-rule);font-size:.9rem;color:var(--room-page-ink-soft)}
-body.room-plain .room-chrome--foot .room-chrome__bar{display:block;padding:24px 16px 32px}
-body.room-plain .room-chrome__col{margin-bottom:16px}
-body.room-plain .room-chrome__col ul{display:flex;flex-wrap:wrap;gap:4px 20px}
-body.room-plain .room-chrome__col a{display:inline-flex;align-items:center;min-height:44px}
-body.room-plain .room-chrome__col-h{font-family:var(--room-font-display);font-size:.8rem;letter-spacing:.1em;text-transform:uppercase;margin:0 0 4px;color:var(--room-page-ink)}
-body.room-plain .room-chrome__text+.room-chrome__text{margin-top:8px}
-@media print{body.room-plain .room-chrome__nav{display:none}}
-/* Buttons: hover swaps fill and outline, from tokens, the same for every pack. Both states are
-   pairs pack.py already holds to 4.5:1 (ink on surface, on-accent on accent), and the fill
-   change is accent against surface, which it holds to 3:1. */
-body.room-plain #room-content .room__btn:hover{background:var(--room-surface);border-color:var(--room-accent);color:var(--room-ink)}
-body.room-plain #room-content .room__btn--ghost:hover{background:var(--room-accent);border-color:var(--room-accent);color:var(--room-on-accent)}
-@supports selector(::details-content){@media (min-width:55em){
-/* roomkit: the room's header at and above the pack's chrome.inline_from.
-   room.chrome_css() emits this inside
-     @supports selector(::details-content){@media (min-width:<chrome.inline_from>){ ... }}
-   A media query cannot use var(), so the width comes from pack data when the stylesheet is built.
-   Only where ::details-content exists can a closed <details> show its content; elsewhere the menu
-   stays a disclosure at every width. Dropdowns open toward the start from their summary's end, so a
-   group near the end of the row stays inside the header's content box (the nav sits at the end). */
-body.room-plain .room-chrome summary.room-chrome__menu-label{display:none}
-body.room-plain .room-chrome__menu::details-content{content-visibility:visible}
-body.room-plain .room-chrome__links{display:flex;flex-wrap:wrap;align-items:center;gap:0 16px;padding-top:0}
-body.room-plain .room-chrome__group{position:relative}
-body.room-plain .room-chrome__group ul{position:absolute;z-index:10;top:100%;right:0;left:auto;min-width:16rem;max-width:min(24rem,calc(100vw - 32px));padding:8px 16px;background:var(--room-surface);color:var(--room-ink);border:1px solid var(--room-rule);border-radius:var(--room-radius)}
-body.room-plain .room-chrome__group ul a{color:var(--room-link)}
-}}
-/* corpus search (pack features.corpus-search): the suggestion list and the text results. Tokens only. */
-#room-content .room__combo{position:relative}
-#room-content .room__combo input{width:100%}
-#room-content .room__suggest{position:absolute;z-index:20;left:0;right:0;top:calc(100% + 4px);max-height:min(60vh,26rem);overflow-y:auto;padding:6px 0;background:var(--room-surface);color:var(--room-ink);border:1px solid var(--room-ink-soft);border-radius:8px;box-shadow:0 6px 20px rgba(0,0,0,.18)}
-#room-content .room__suggest-group+.room__suggest-group{border-top:1px solid var(--room-rule);margin-top:4px;padding-top:4px}
-#room-content .room__suggest-h{padding:6px 14px 2px;font-size:.75rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--room-ink-soft)}
-#room-content .room__suggest-opt{display:flex;flex-wrap:wrap;align-items:baseline;gap:0 .3em;min-height:44px;padding:10px 14px;cursor:pointer;color:var(--room-ink);overflow-wrap:anywhere;border-left:3px solid transparent}
-#room-content .room__suggest-opt:hover{background:var(--room-surface-sunk)}
-#room-content .room__suggest-opt[aria-selected="true"]{background:var(--room-surface-sunk);border-left-color:var(--room-focus);outline:2px solid var(--room-focus);outline-offset:-2px}
-#room-content .room__suggest-note{color:var(--room-ink-soft);font-size:.85rem}
-#room-content .room__results{margin-bottom:24px}
-#room-content .room__results-list{display:grid;gap:12px}
-#room-content .room__result{background:var(--room-surface);color:var(--room-ink);border:1px solid var(--room-rule);border-radius:var(--room-radius);padding:16px;display:grid;gap:6px;overflow-wrap:anywhere}
-#room-content .room__result a{color:var(--room-link)}
-#room-content .room__result-title{font-family:var(--room-font-body);font-size:1.05rem;font-weight:700}
-#room-content .room__result-meta{font-size:.85rem;color:var(--room-ink-soft)}
-#room-content .room__result-excerpt,#room-content .room__result-pages{font-size:.92rem;color:var(--room-ink)}
-#room-content .room__result mark{background:var(--room-surface-sunk);color:var(--room-ink);font-weight:700;text-decoration:underline;text-decoration-color:var(--room-focus);text-underline-offset:.15em}
-#room-content .room__result-pages{display:grid;gap:4px;padding-left:12px;border-left:3px solid var(--room-rule)}
-#room-content .room__result-pages a{font-weight:700}
-#room-content .room__result-page-ex{color:var(--room-ink-soft)}
-#room-content .room__more{margin-top:12px}
-#room-content,body.room-plain{--room-accent:#f59e0b;--room-focus:#f59e0b;--room-font-body:system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;--room-font-display:Georgia, "Times New Roman", "Book Antiqua", Palatino, serif;--room-font-mono:"Courier New", Courier, "Lucida Console", monospace;--room-ink:#dce3ed;--room-ink-soft:#7a8799;--room-link:#60a5fa;--room-on-accent:#0b0a06;--room-page-bg:transparent;--room-page-ink:#dce3ed;--room-page-ink-soft:#7a8799;--room-page-link:#60a5fa;--room-radius:6px;--room-rule:#3a4455;--room-surface:#10131a;--room-surface-sunk:#181d26;}
-body.room-plain{background:#08090b}
-
 === assets/room.70941fc296c3.js ===
 (function () {
   "use strict";
@@ -783,6 +576,214 @@ body.room-plain{background:#08090b}
   run(false);
 }());
 
+=== assets/room.c888b5d76f98.css ===
+/* roomkit shared reading-room styles. Tokens come from the site's theme. */
+#room-content{--room-page-bg:transparent;--room-page-ink:#1d1b18;--room-page-ink-soft:#5b5650;--room-page-link:#1f4e8c;
+--room-surface:#fff;--room-surface-sunk:#f4f2ee;--room-ink:#1d1b18;--room-ink-soft:#57524b;--room-rule:#d9d4cc;
+--room-link:#1f4e8c;--room-accent:#1d1b18;--room-on-accent:#fff;--room-focus:#b3541e;
+--room-font-body:inherit;--room-font-display:inherit;--room-font-mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+--room-radius:12px;--room-radius-pill:999px;--room-measure:68ch}
+#room-content{display:block;background:var(--room-page-bg);color:var(--room-page-ink);font-family:var(--room-font-body);
+line-height:1.6;padding:24px 16px 64px;outline:none}
+#room-content *,#room-content *::before,#room-content *::after{box-sizing:border-box}
+#room-content [hidden]{display:none!important}
+#room-content .room__shell{max-width:1200px;margin:0 auto}
+#room-content a{color:var(--room-page-link);text-decoration:underline;text-underline-offset:.15em}
+#room-content a:focus-visible,#room-content button:focus-visible,#room-content input:focus-visible,#room-content select:focus-visible{outline:3px solid var(--room-focus);outline-offset:2px}
+#room-content h1,#room-content h2,#room-content h3{font-family:var(--room-font-display);color:inherit;line-height:1.2;margin:0}
+#room-content p{margin:0;color:inherit}
+#room-content ul,#room-content ol{margin:0;padding:0;list-style:none}
+#room-content .room__sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+#room-content .room__topline{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px;margin-bottom:24px}
+#room-content .room__crumbs ol{display:flex;flex-wrap:wrap;gap:4px 0;font-size:.9rem;color:var(--room-page-ink-soft)}
+#room-content .room__crumbs li+li::before{content:"/";margin:0 .5em;opacity:.7}
+#room-content .room__crumbs a{color:var(--room-page-link)}
+#room-content .room__head{max-width:var(--room-measure);margin-bottom:24px}
+#room-content .room__eyebrow{font-size:.8rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--room-page-ink-soft);margin-bottom:8px}
+#room-content .room__eyebrow a{color:inherit}
+#room-content .room__title{font-size:clamp(1.8rem,1.2rem + 2.4vw,2.8rem);color:var(--room-page-ink);margin-bottom:12px;overflow-wrap:anywhere}
+#room-content .room__badge{display:inline-block;vertical-align:middle;font-family:var(--room-font-body);font-size:.75rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:2px 8px;border:1px solid currentColor;border-radius:4px;color:var(--room-page-ink-soft)}
+#room-content .room__released{font-weight:600;color:var(--room-page-ink-soft);margin-bottom:12px}
+#room-content .room__lede{font-size:1.05rem;color:var(--room-page-ink)}
+#room-content .room__stats{display:flex;flex-wrap:wrap;gap:8px 24px;margin-top:16px;color:var(--room-page-ink-soft)}
+#room-content .room__stat{font-family:var(--room-font-display);font-size:1.4rem;font-weight:700;color:var(--room-page-ink);margin-right:.25em}
+#room-content .room__head-link{margin-top:12px;color:var(--room-page-ink-soft)}
+#room-content .room__notice{max-width:var(--room-measure);margin:0 0 24px;padding:14px 18px;border-left:4px solid var(--room-accent);background:var(--room-surface);color:var(--room-ink);border-radius:4px}
+#room-content .room__notice h2{font-size:.85rem;letter-spacing:.06em;text-transform:uppercase;margin-bottom:6px}
+#room-content .room__notice p{font-size:.95rem}
+#room-content .room__notice-report{margin-top:8px;color:var(--room-ink-soft)}
+#room-content .room__jump{margin-bottom:24px}
+#room-content .room__jump ul{display:flex;flex-wrap:wrap;gap:8px}
+#room-content .room__jump-label{font-size:.8rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--room-page-ink-soft);margin-bottom:8px}
+#room-content .room__jump a{display:inline-flex;align-items:center;min-height:44px;padding:8px 16px;border:1px solid var(--room-rule);border-radius:var(--room-radius-pill);background:var(--room-surface);color:var(--room-link);text-decoration:none;font-weight:600}
+#room-content .room__jump a:hover{text-decoration:underline}
+#room-content .room__body{display:grid;gap:24px;grid-template-columns:minmax(0,1fr)}
+@media (min-width:960px){#room-content .room__body{grid-template-columns:minmax(0,1fr) 360px;align-items:start}}
+#room-content .room__reader,#room-content .room__panel{background:var(--room-surface);color:var(--room-ink);border:1px solid var(--room-rule);border-radius:var(--room-radius);padding:20px}
+#room-content .room__reader a,#room-content .room__panel a{color:var(--room-link)}
+#room-content .room__reader-h,#room-content .room__panel h2{font-size:1.15rem;margin-bottom:12px;color:var(--room-ink)}
+#room-content .room__rail{display:grid;gap:16px;grid-template-columns:minmax(0,1fr);min-width:0}
+#room-content .room__panel,#room-content .room__reader{min-width:0}
+#room-content .room__dl{display:grid;gap:12px;margin:0}
+#room-content .room__dl dt{font-size:.8rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--room-ink-soft)}
+#room-content .room__dl dd{margin:2px 0 0;color:var(--room-ink);overflow-wrap:anywhere}
+#room-content .room__hash{font-family:var(--room-font-mono);font-size:.82rem;word-break:break-all;color:var(--room-ink);background:none}
+#room-content .room__note{display:block;font-size:.85rem;color:var(--room-ink-soft);margin-top:2px}
+#room-content .room__actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:16px}
+#room-content .room__archive{margin-top:12px}
+#room-content .rr-reader{--rr-paper:var(--room-surface);--rr-paper-raised:var(--room-surface);--rr-paper-sunk:var(--room-surface-sunk);
+--rr-ink:var(--room-ink);--rr-ink-soft:var(--room-ink-soft);--rr-ink-faint:var(--room-ink-soft);--rr-rule:var(--room-rule);
+--rr-accent:var(--room-link);--rr-focus:var(--room-focus);--rr-mono:var(--room-font-mono)}
+#room-content .room__btn{display:inline-flex;align-items:center;justify-content:center;min-height:44px;padding:8px 18px;border:2px solid var(--room-accent);border-radius:var(--room-radius-pill);background:var(--room-accent);color:var(--room-on-accent);font:inherit;font-weight:700;text-decoration:none;cursor:pointer}
+#room-content .room__btn--ghost{background:transparent;color:var(--room-ink)}
+#room-content .room__topline .room__btn--ghost{color:var(--room-page-ink);border-color:var(--room-page-ink-soft)}
+#room-content a.room__btn{color:var(--room-on-accent)}
+#room-content a.room__btn--ghost{color:var(--room-ink)}
+#room-content .room__btn:hover{text-decoration:underline}
+#room-content .room__cite-text{font-size:.92rem;color:var(--room-ink);padding:10px 12px;border-left:3px solid var(--room-rule);background:var(--room-surface-sunk);border-radius:0 6px 6px 0;overflow-wrap:anywhere;margin-bottom:10px}
+#room-content .room__cite-copy[data-copied="1"]{border-color:var(--room-link);color:var(--room-link)}
+#room-content .room__blurb{font-size:.85rem;color:var(--room-ink-soft);margin:-6px 0 10px}
+#room-content .room__chips{display:flex;flex-wrap:wrap;gap:6px}
+#room-content .room__links{display:grid;gap:8px}
+#room-content .room__item{display:inline-flex;flex-wrap:wrap;align-items:baseline;gap:2px 8px;max-width:100%;color:var(--room-ink)}
+#room-content .room__chips .room__item{padding:4px 10px;border:1px solid var(--room-rule);border-left-width:3px;border-radius:4px;background:var(--room-surface-sunk);text-decoration:none}
+#room-content .room__chips a.room__item:hover{border-color:var(--room-link)}
+#room-content a.room__item .room__item-label{color:var(--room-link);text-decoration:underline}
+#room-content .room__item-kind{font-size:.72rem;letter-spacing:.05em;text-transform:uppercase;color:var(--room-ink-soft)}
+#room-content .room__item-quote{flex-basis:100%;font-size:.8rem;font-style:italic;color:var(--room-ink-soft);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+#room-content .room__item-meta{flex-basis:100%;font-size:.8rem;color:var(--room-ink-soft)}
+#room-content .room__notes{font-size:.95rem;overflow-wrap:anywhere}
+#room-content .room__panel,#room-content .room__lede,#room-content .room__card{overflow-wrap:anywhere}
+#room-content .room__view-note{font-size:.85rem;color:var(--room-ink-soft);margin-top:10px}
+#room-content .rr-reader__fallback-links{display:flex;flex-wrap:wrap;gap:8px}
+#room-content .rr-reader__object{display:block;width:100%;min-height:78vh;margin-top:12px;border:1px solid var(--room-rule);background:#fff}
+/* index */
+#room-content .room__finder{background:var(--room-surface);color:var(--room-ink);border:1px solid var(--room-rule);border-radius:var(--room-radius);padding:16px 20px;margin-bottom:24px}
+#room-content .room__search{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:12px 16px;align-items:end}
+#room-content .room__search--server{margin-bottom:16px}
+#room-content .room__field{display:grid;gap:4px;min-width:0}
+#room-content .room__field--q{grid-column:1/-1}
+#room-content .room__field select{width:100%}
+#room-content .room__jump summary{cursor:pointer;min-height:44px;display:flex;align-items:center;font-weight:700;color:var(--room-page-link)}
+#room-content .room__jump details ul{margin-top:8px}
+#room-content .room__field label{font-size:.8rem;font-weight:700;letter-spacing:.04em;color:var(--room-ink-soft)}
+#room-content .room__field input,#room-content .room__field select{min-height:44px;padding:8px 12px;border:1px solid var(--room-ink-soft);border-radius:8px;background:var(--room-surface);color:var(--room-ink);font:inherit;max-width:100%}
+#room-content .room__field--buttons{display:flex;gap:8px}
+#room-content .room__count{margin-top:12px;font-size:.9rem;color:var(--room-ink-soft)}
+#room-content .room__section{margin-bottom:40px;scroll-margin-top:16px}
+#room-content .room__section-h{font-size:1.4rem;color:var(--room-page-ink);padding-bottom:8px;border-bottom:1px solid var(--room-rule);margin-bottom:16px}
+#room-content .room__section-n{font-family:var(--room-font-body);font-size:.85rem;font-weight:600;color:var(--room-page-ink-soft);margin-left:.4em}
+#room-content .room__section-empty{color:var(--room-page-ink-soft)}
+#room-content .room__cards--cards{display:grid;gap:16px;grid-template-columns:repeat(auto-fill,minmax(260px,1fr))}
+#room-content .room__cards--rows{display:grid;gap:0;border-top:1px solid var(--room-rule)}
+#room-content .room__card{background:var(--room-surface);color:var(--room-ink);border:1px solid var(--room-rule);border-radius:var(--room-radius);padding:16px;display:flex;flex-direction:column;gap:12px}
+#room-content .room__cards--rows .room__card{border-width:0 0 1px;border-radius:0;padding:14px 4px;background:transparent;color:var(--room-page-ink)}
+#room-content .room__cards--rows .room__card-title a{color:var(--room-page-link)}
+#room-content .room__cards--rows .room__card-date,#room-content .room__cards--rows .room__card-meta,#room-content .room__cards--rows .room__card-summary{color:var(--room-page-ink-soft)}
+#room-content .room__thumb{display:flex;justify-content:center;padding:10px;background:var(--room-surface-sunk);border-radius:8px}
+#room-content .room__thumb img{display:block;width:auto;max-width:100%;height:150px;object-fit:contain;border-radius:4px;box-shadow:0 1px 4px rgba(0,0,0,.15)}
+#room-content .room__card-body{display:grid;gap:6px}
+#room-content .room__card-date,#room-content .room__card-meta{font-size:.85rem;color:var(--room-ink-soft)}
+#room-content .room__card-title{font-size:1.05rem;font-family:var(--room-font-body);font-weight:700}
+#room-content .room__card-title a{color:var(--room-link)}
+#room-content .room__card-summary{font-size:.92rem;color:var(--room-ink);display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden}
+#room-content .room__empty{padding:20px;background:var(--room-surface);color:var(--room-ink);border:1px solid var(--room-rule);border-radius:var(--room-radius)}
+@media (max-width:600px){#room-content{padding:16px 16px 48px}#room-content .room__reader,#room-content .room__panel{padding:16px}
+#room-content .room__jump ul{flex-direction:column}#room-content .room__jump a{width:100%}}
+@media print{#room-content .room__jump,#room-content .room__finder,#room-content .room__toggle{display:none!important}}
+/* roomkit: the room's own header, navigation and footer.
+   Every rule is scoped under body.room-plain and every color is a --room-* token (the pack's;
+   css.theme_css puts them on the body too).
+   The wide-screen rules are chrome-wide.css: room.chrome_css() wraps them in a media query at the
+   pack's chrome.inline_from, because a media query cannot read a custom property. */
+body.room-plain{--room-font-body:inherit;--room-font-display:inherit;--room-radius:12px;--room-radius-pill:999px;
+margin:0;background:var(--room-page-bg);color:var(--room-page-ink);font-family:var(--room-font-body);line-height:1.6}
+body.room-plain .room__skip{position:absolute;left:-9999px;top:0;z-index:1000;padding:12px 16px;background:var(--room-accent);color:var(--room-on-accent);border-radius:var(--room-radius);font-weight:700}
+body.room-plain .room__skip:focus{left:16px;top:16px}
+body.room-plain .room__skip:focus,body.room-plain .room-chrome a:focus-visible,body.room-plain .room-chrome summary:focus-visible{outline:3px solid var(--room-focus);outline-offset:2px}
+body.room-plain .room-chrome{background:var(--room-page-bg);color:var(--room-page-ink)}
+body.room-plain .room-chrome *,body.room-plain .room-chrome *::before,body.room-plain .room-chrome *::after{box-sizing:border-box}
+body.room-plain .room-chrome a{color:var(--room-page-link);text-underline-offset:.15em}
+body.room-plain .room-chrome ul{margin:0;padding:0;list-style:none}
+body.room-plain .room-chrome p{margin:0}
+body.room-plain .room-chrome__bar{max-width:1232px;margin:0 auto;padding:12px 16px;display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px 24px}
+body.room-plain .room-chrome--head{border-bottom:1px solid var(--room-rule)}
+/* The site name never wraps (it is one line at every width); the tagline may. The brand cannot shrink
+   below the name, and the nav never shrinks, so its links never wrap into a second row: a nav too wide
+   for the row moves below instead, which pack.chrome.inline_from is measured to prevent. */
+body.room-plain .room-chrome__brand{display:flex;flex-direction:column;flex:1 1 10rem}
+body.room-plain .room-chrome__home{font-family:var(--room-font-display);font-size:1.25rem;font-weight:700;line-height:1.2;text-decoration:none;color:var(--room-page-ink);white-space:nowrap}
+body.room-plain .room-chrome a.room-chrome__home{color:var(--room-page-ink)}
+body.room-plain .room-chrome__home:hover{text-decoration:underline}
+body.room-plain .room-chrome__tagline{font-size:.85rem;color:var(--room-page-ink-soft)}
+body.room-plain .room-chrome summary{cursor:pointer;min-height:44px;display:flex;align-items:center;gap:.5em;list-style:none}
+body.room-plain .room-chrome summary::-webkit-details-marker{display:none}
+/* display:flex drops the disclosure marker, so every summary draws its own caret: it says "opens". */
+body.room-plain .room-chrome summary::after{content:"";flex:none;width:.45em;height:.45em;border-right:2px solid currentColor;border-bottom:2px solid currentColor;transform:translateY(-20%) rotate(45deg)}
+body.room-plain .room-chrome details[open]>summary::after{transform:translateY(20%) rotate(-135deg)}
+body.room-plain .room-chrome__group>details>summary{color:var(--room-page-link);text-decoration:underline;text-underline-offset:.15em}
+body.room-plain .room-chrome__menu-label{padding:8px 16px;border:1px solid var(--room-page-ink-soft);border-radius:var(--room-radius-pill);font-weight:700}
+body.room-plain .room-chrome__menu[open]{flex-basis:100%}
+body.room-plain .room-chrome__links{padding-top:8px}
+body.room-plain .room-chrome__links a{display:flex;align-items:center;min-height:44px;padding:4px 0}
+body.room-plain .room-chrome__group ul{padding-left:16px}
+body.room-plain .room-chrome__nav{flex:0 0 auto}
+body.room-plain .room-chrome__nav:has(.room-chrome__menu[open]){flex-basis:100%}
+body.room-plain .room-chrome__notice{max-width:1232px;margin:0 auto;padding:8px 16px;background:var(--room-surface-sunk);color:var(--room-ink)}
+body.room-plain .room-chrome__notice a{color:var(--room-link)}
+body.room-plain .room-chrome--foot{border-top:1px solid var(--room-rule);font-size:.9rem;color:var(--room-page-ink-soft)}
+body.room-plain .room-chrome--foot .room-chrome__bar{display:block;padding:24px 16px 32px}
+body.room-plain .room-chrome__col{margin-bottom:16px}
+body.room-plain .room-chrome__col ul{display:flex;flex-wrap:wrap;gap:4px 20px}
+body.room-plain .room-chrome__col a{display:inline-flex;align-items:center;min-height:44px}
+body.room-plain .room-chrome__col-h{font-family:var(--room-font-display);font-size:.8rem;letter-spacing:.1em;text-transform:uppercase;margin:0 0 4px;color:var(--room-page-ink)}
+body.room-plain .room-chrome__text+.room-chrome__text{margin-top:8px}
+@media print{body.room-plain .room-chrome__nav{display:none}}
+/* Buttons: hover swaps fill and outline, from tokens, the same for every pack. Both states are
+   pairs pack.py already holds to 4.5:1 (ink on surface, on-accent on accent), and the fill
+   change is accent against surface, which it holds to 3:1. */
+body.room-plain #room-content .room__btn:hover{background:var(--room-surface);border-color:var(--room-accent);color:var(--room-ink)}
+body.room-plain #room-content .room__btn--ghost:hover{background:var(--room-accent);border-color:var(--room-accent);color:var(--room-on-accent)}
+@supports selector(::details-content){@media (min-width:55em){
+/* roomkit: the room's header at and above the pack's chrome.inline_from.
+   room.chrome_css() emits this inside
+     @supports selector(::details-content){@media (min-width:<chrome.inline_from>){ ... }}
+   A media query cannot use var(), so the width comes from pack data when the stylesheet is built.
+   Only where ::details-content exists can a closed <details> show its content; elsewhere the menu
+   stays a disclosure at every width. Dropdowns open toward the start from their summary's end, so a
+   group near the end of the row stays inside the header's content box (the nav sits at the end). */
+body.room-plain .room-chrome summary.room-chrome__menu-label{display:none}
+body.room-plain .room-chrome__menu::details-content{content-visibility:visible}
+body.room-plain .room-chrome__links{display:flex;flex-wrap:wrap;align-items:center;gap:0 16px;padding-top:0}
+body.room-plain .room-chrome__group{position:relative}
+body.room-plain .room-chrome__group ul{position:absolute;z-index:10;top:100%;right:0;left:auto;min-width:16rem;max-width:min(24rem,calc(100vw - 32px));padding:8px 16px;background:var(--room-surface);color:var(--room-ink);border:1px solid var(--room-rule);border-radius:var(--room-radius)}
+body.room-plain .room-chrome__group ul a{color:var(--room-link)}
+}}
+/* corpus search (pack features.corpus-search): the suggestion list and the text results. Tokens only. */
+#room-content .room__combo{position:relative}
+#room-content .room__combo input{width:100%}
+#room-content .room__suggest{position:absolute;z-index:20;left:0;right:0;top:calc(100% + 4px);max-height:min(60vh,26rem);overflow-y:auto;padding:6px 0;background:var(--room-surface);color:var(--room-ink);border:1px solid var(--room-ink-soft);border-radius:8px;box-shadow:0 6px 20px rgba(0,0,0,.18)}
+#room-content .room__suggest-group+.room__suggest-group{border-top:1px solid var(--room-rule);margin-top:4px;padding-top:4px}
+#room-content .room__suggest-h{padding:6px 14px 2px;font-size:.75rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--room-ink-soft)}
+#room-content .room__suggest-opt{display:flex;flex-wrap:wrap;align-items:baseline;gap:0 .3em;min-height:44px;padding:10px 14px;cursor:pointer;color:var(--room-ink);overflow-wrap:anywhere;border-left:3px solid transparent}
+#room-content .room__suggest-opt:hover{background:var(--room-surface-sunk)}
+#room-content .room__suggest-opt[aria-selected="true"]{background:var(--room-surface-sunk);border-left-color:var(--room-focus);outline:2px solid var(--room-focus);outline-offset:-2px}
+#room-content .room__suggest-note{color:var(--room-ink-soft);font-size:.85rem}
+#room-content .room__results{margin-bottom:24px}
+#room-content .room__results-list{display:grid;gap:12px}
+#room-content .room__result{background:var(--room-surface);color:var(--room-ink);border:1px solid var(--room-rule);border-radius:var(--room-radius);padding:16px;display:grid;gap:6px;overflow-wrap:anywhere}
+#room-content .room__result a{color:var(--room-link)}
+#room-content .room__result-title{font-family:var(--room-font-body);font-size:1.05rem;font-weight:700}
+#room-content .room__result-meta{font-size:.85rem;color:var(--room-ink-soft)}
+#room-content .room__result-excerpt,#room-content .room__result-pages{font-size:.92rem;color:var(--room-ink)}
+#room-content .room__result mark{background:var(--room-surface-sunk);color:var(--room-ink);font-weight:700;text-decoration:underline;text-decoration-color:var(--room-focus);text-underline-offset:.15em}
+#room-content .room__result-pages{display:grid;gap:4px;padding-left:12px;border-left:3px solid var(--room-rule)}
+#room-content .room__result-pages a{font-weight:700}
+#room-content .room__result-page-ex{color:var(--room-ink-soft)}
+#room-content .room__more{margin-top:12px}
+#room-content,body.room-plain{--room-accent:#f59e0b;--room-focus:#f59e0b;--room-font-body:system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;--room-font-display:Georgia, "Times New Roman", "Book Antiqua", Palatino, serif;--room-font-mono:"Courier New", Courier, "Lucida Console", monospace;--room-ink:#dce3ed;--room-ink-soft:#7a8799;--room-link:#60a5fa;--room-on-accent:#0b0a06;--room-page-bg:transparent;--room-page-ink:#dce3ed;--room-page-ink-soft:#7a8799;--room-page-link:#60a5fa;--room-radius:6px;--room-rule:#3a4455;--room-surface:#10131a;--room-surface-sunk:#181d26;}
+body.room-plain{background:#08090b}
+
 === assets/rr-config.caeb82f2bf0d.js ===
 window.rrReaderConfig = {"docSearchUrl": "", "passageUrl": "", "pdfJsUrl": "/rr-staging/assets/vendor/pdfjs/pdf.min.1a12e2ef3e98.js", "pdfWorkerUrl": "/rr-staging/assets/vendor/pdfjs/pdf.worker.min.e738705f74c2.js"};
 
@@ -829,7 +830,7 @@ whitespace &amp; &lt;tags&gt; and &quot;quotes&quot;.">
 whitespace &amp; &lt;tags&gt; and &quot;quotes&quot;.">
 <meta property="og:image" content="https://example.test/thumb/big.png">
 <meta name="twitter:card" content="summary_large_image">
-<link rel="stylesheet" href="/rr-staging/assets/room.3feaa9a9b1b2.css">
+<link rel="stylesheet" href="/rr-staging/assets/room.c888b5d76f98.css">
 </head>
 <body class="room-plain">
 <a class="room__skip" href="#room-content">Skip to content</a>
@@ -946,7 +947,7 @@ Three &amp; &lt;four&gt;</p>
 <meta property="og:description" content="The contract.">
 <meta name="twitter:card" content="summary">
 <script type="application/ld+json">{"@type": "DigitalDocument", "name": "<\/script><script>alert(1)"}</script>
-<link rel="stylesheet" href="/rr-staging/assets/room.3feaa9a9b1b2.css">
+<link rel="stylesheet" href="/rr-staging/assets/room.c888b5d76f98.css">
 </head>
 <body class="room-plain">
 <a class="room__skip" href="#room-content">Skip to content</a>
@@ -1075,7 +1076,7 @@ Line two</p>
 <meta property="og:title" content="Data Dump">
 <meta property="og:url" content="https://example.test/reading-room/data-dump/">
 <meta name="twitter:card" content="summary">
-<link rel="stylesheet" href="/rr-staging/assets/room.3feaa9a9b1b2.css">
+<link rel="stylesheet" href="/rr-staging/assets/room.c888b5d76f98.css">
 </head>
 <body class="room-plain">
 <a class="room__skip" href="#room-content">Skip to content</a>
@@ -1161,7 +1162,7 @@ Line two</p>
 <meta name="description" content="Browse.">
 <meta property="og:description" content="Browse.">
 <meta name="twitter:card" content="summary">
-<link rel="stylesheet" href="/rr-staging/assets/room.3feaa9a9b1b2.css">
+<link rel="stylesheet" href="/rr-staging/assets/room.c888b5d76f98.css">
 </head>
 <body class="room-plain">
 <a class="room__skip" href="#room-content">Skip to content</a>
@@ -1261,7 +1262,7 @@ whitespace &amp; &lt;tags&gt; and &quot;quotes&quot;.</p></div></li></ul>
 <meta name="description" content="Plain text memo.">
 <meta property="og:description" content="Plain text memo.">
 <meta name="twitter:card" content="summary">
-<link rel="stylesheet" href="/rr-staging/assets/room.3feaa9a9b1b2.css">
+<link rel="stylesheet" href="/rr-staging/assets/room.c888b5d76f98.css">
 </head>
 <body class="room-plain">
 <a class="room__skip" href="#room-content">Skip to content</a>
@@ -1354,7 +1355,7 @@ whitespace &amp; &lt;tags&gt; and &quot;quotes&quot;.</p></div></li></ul>
 {
  "assets": {
   "assets/room-search.js": "assets/room-search.92cc316f4cd7.js",
-  "assets/room.css": "assets/room.3feaa9a9b1b2.css",
+  "assets/room.css": "assets/room.c888b5d76f98.css",
   "assets/room.js": "assets/room.70941fc296c3.js",
   "assets/rr-config.js": "assets/rr-config.caeb82f2bf0d.js",
   "assets/vendor/pdfjs/pdf.min.js": "assets/vendor/pdfjs/pdf.min.1a12e2ef3e98.js",
@@ -1370,10 +1371,10 @@ whitespace &amp; &lt;tags&gt; and &quot;quotes&quot;.</p></div></li></ul>
  "documents": 5,
  "engine": "0.0.0-golden",
  "files": {
-  "404.html": "9b8fd52073590d07a3d8ebcb8ba53c165bd02f09bb56cbbba3f8a919e837e9fb",
+  "404.html": "a51a391d1c76cb1bb97c3324110d97cef90a4a6e65c8d87ce20b3add27c092b5",
   "assets/room-search.92cc316f4cd7.js": "92cc316f4cd73e9b4546f29462adea25369b8c7ea6adcb68238fe00a1cadea47",
-  "assets/room.3feaa9a9b1b2.css": "3feaa9a9b1b2c7696893f08542b052ecca4ec2cd00f7d1010b3d1e6a704e85fe",
   "assets/room.70941fc296c3.js": "70941fc296c37829bdec22b961f1bba291bf29409ce22b41a4ba1472e1fca226",
+  "assets/room.c888b5d76f98.css": "c888b5d76f989954f62beeabc93a53a23402dcbd7494e6d76c88681d78986465",
   "assets/rr-config.caeb82f2bf0d.js": "caeb82f2bf0d1247acaccbcaafc59d016778d6e2cbeb4623cd6d27aefd09f2fe",
   "assets/vendor/pdfjs/pdf.min.1a12e2ef3e98.js": "1a12e2ef3e989e0b5d86cbf5cb4f66f95f3bfeecd532a71f8da22ef8de46d824",
   "assets/vendor/pdfjs/pdf.worker.min.e738705f74c2.js": "e738705f74c22ec75eee1f7d8e6624c62966318aa98c9407bcc05f9b472b8aa1",
@@ -1383,20 +1384,20 @@ whitespace &amp; &lt;tags&gt; and &quot;quotes&quot;.</p></div></li></ul>
   "assets/vendor/rr-reader/modules/rr-reader-pdf.3930bcfcf48b.js": "3930bcfcf48be14c49f9f13a1461e2c9c94dadd652ec33578dfbad7403aae564",
   "assets/vendor/rr-reader/modules/rr-reader-text.83792d749e4d.js": "83792d749e4da7e8689c24e28f6b30b6a66e5992f10e8363db80f6c1ebb65139",
   "assets/vendor/rr-reader/rr-reader.6cd02f3098f6.js": "6cd02f3098f69c3aa84eb84835199edce2e35c9e200a2b7152b6845e6afd5dec",
-  "big-report/index.html": "99da4ba5ee1a911b7446412db241c0099d8d69bd471ddb1560e7c1776ab495a1",
-  "camera-contract/index.html": "8109422b324ae1abb21ba2d181a62a053488e1c0c9b7ddf800929fb5d4d8985f",
+  "big-report/index.html": "d7f4f3a383c3a92272c2c1eb9d27cb4ed3ace12f3d32053ac099063ecfe9fb9d",
+  "camera-contract/index.html": "5250a3165b0cda4325fb81258a125617a3752bac26d1ffb959b69718c754dc99",
   "camera-contract/pages.c605fd0398f8.json": "c605fd0398f8496a9f7b8fc77f1cbf423a9cbd094d125778c807cb93e474cf8f",
-  "data-dump/index.html": "0267848b0b14aead71b80479c7933ace1a927788dd5aaceb5381e52466e0eabf",
-  "index.html": "b1cb5065ff07572d0ec97a53c6c657f70af426a5381baab1a2130d05b7b89e8a",
-  "memo-text/index.html": "62bff07094063583d6b6cba7c04a26de7fdfb7edc4da10f991647572e9127b02",
+  "data-dump/index.html": "e0b0203d0a675ef45d76316fb614ac2a8989efea88770a7a5e01e957cc90d241",
+  "index.html": "36f59e449fc6849ba4b1711be5eb9c73d5772c0dc425d90ff8e3cf40e38654b8",
+  "memo-text/index.html": "fa7fbd049bec5f5b152579bc3a31ff8653dc9101655d661c2bf80d63d2b9bc31",
   "memo-text/pages.acc2f3a668b0.json": "acc2f3a668b0b6317d9a08dd645da822989b54268f52f02285fd5aed68f918c8",
   "pagefind/input.json": "94584e3322c286d17a283f1052e9c69b9e89bad3070dd335bc2cb8cc016d7001",
-  "site-photo/index.html": "9e03d59ae7b4c8c8477cbe51302c0c3af412d077a97e5e7cd81d29cdadef3cfa",
+  "site-photo/index.html": "3c4f956636f11267a3ca040d877046097f364be9d9590f9275233c87dfae2f72",
   "sitemap.xml": "8e774bab510574e456b7854b574d91830de644d4444becd64bc2d81e61cd8a76"
  },
  "mount": "/rr-staging/",
  "noindex": true,
- "pack": "6b915dab4e5d8f7f0d7ea1c95b3ddf31c306eb7abb40e13cdaa2d2f9134045df",
+ "pack": "3cfa1c1cddd272e6536baaba9938158175edb235f8ba51e8cf5145c29bc9afae",
  "roomkit": "0.3.0",
  "search": {
   "input": "e0175f6eb43d508b8b59179bb8cd99508c378c2c37504efe730b3e0fca3d5ac8",
@@ -1421,7 +1422,7 @@ whitespace &amp; &lt;tags&gt; and &quot;quotes&quot;.</p></div></li></ul>
 <meta property="og:title" content="Site Photo">
 <meta property="og:url" content="https://example.test/reading-room/site-photo/">
 <meta name="twitter:card" content="summary">
-<link rel="stylesheet" href="/rr-staging/assets/room.3feaa9a9b1b2.css">
+<link rel="stylesheet" href="/rr-staging/assets/room.c888b5d76f98.css">
 </head>
 <body class="room-plain">
 <a class="room__skip" href="#room-content">Skip to content</a>

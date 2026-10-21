@@ -440,6 +440,11 @@ try {
             'lede' => 'Browse released contracts and related records on Deflock Dane. Each record is meant to resolve to a stable on-site reading page instead of a third-party file host.',
             'groups' => $categories,
             'group_label' => 'Agency',
+            // The shortcode's search form (class-deflock-reading-room-shortcode.php): the server
+            // answers /reading-room/?rr_search= without JavaScript.
+            'server_search' => ['action' => home_url('/reading-room/'), 'param' => 'rr_search',
+                                'label' => 'Search reading room records',
+                                'placeholder' => 'Search contract text, agencies, or titles...', 'button' => 'Search'],
             'empty_group_text' => 'No records have been released for this agency yet.',
             'facets' => array_merge($status_count['status'] ? [
                 ['name' => 'status', 'label' => 'Status'],

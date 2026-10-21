@@ -103,6 +103,15 @@ With `rank`, top matches are the site's own field scorer over those rows
 (room-search.js `rankDocs`, ported from dd's deflock-reading-room.js scoreDoc)
 instead of Pagefind's relevance; a rank row naming no document is refused.
 
+`site.index.server_search` is the site's own search that works without
+JavaScript (pack features.server-search): {action, param, label, placeholder,
+button}, the form the site's server answers today (GG `/library/?q=`, dd
+`/reading-room/?rr_search=`, both WordPress). The room renders it in a
+<noscript> on the index; the answer comes from that URL, not from the room, so
+after cutover the host keeps sending those queries to the site's server.
+Refused: an action off `base_url`, with a query or fragment, or a param that is
+not a plain lowercase name.
+
 `search_text` is a record's text for corpus search alone, for a record the
 site can search but cannot export page by page (no complete 1..N run of
 pages). It is indexed (search.py) and never shown: no pages.json, no reader
@@ -366,7 +375,26 @@ def _site(raw: object) -> Site:
                 if "facet" in it and it["facet"] not in names:
                     raise ManifestError(f"site.index.suggest: group {g['label']!r} sets the filter {it['facet']!r}, "
                                         "which site.index.facets does not have")
+    if "server_search" in index:
+        why = _server_search_problem(index["server_search"], base)
+        if why:
+            raise ManifestError(f"site.index.server_search: {why}")
     return Site(name, title, base, path, template, index)
+
+
+PARAM = re.compile(r"^[a-z][a-z0-9_]{0,31}$")
+
+
+def _server_search_problem(ss: object, base: str) -> str:
+    """Why the no-JS search form cannot be rendered as written, or ""."""
+    keys = {"action", "param", "label", "placeholder", "button"}
+    if not (isinstance(ss, dict) and set(ss) == keys and all(isinstance(ss[k], str) and ss[k] for k in keys)):
+        return f"is not {{{', '.join(sorted(keys))}}}, every one a non-empty string"
+    if not (ss["action"].startswith(base + "/") and _url_ok(ss["action"]) and "?" not in ss["action"] and "#" not in ss["action"]):
+        return f"action {ss['action']!r} is not a URL on {base} without a query or fragment"
+    if not PARAM.match(ss["param"]):
+        return f"param {ss['param']!r} is not a lowercase query name"
+    return ""
 
 
 def _count(v: object, lo: int = 0) -> bool:

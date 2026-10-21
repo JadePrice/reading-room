@@ -18,7 +18,7 @@ Header set Cache-Control "public, max-age=0, s-maxage=3600, must-revalidate"
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex, nofollow">
 <title>Not found | Reading Room</title>
-<link rel="stylesheet" href="/reading-room/assets/room.8135576933a1.css">
+<link rel="stylesheet" href="/reading-room/assets/room.d88b00b26fb7.css">
 </head>
 <body class="room-plain">
 <a class="room__skip" href="#room-content">Skip to the content</a>
@@ -181,7 +181,7 @@ Header set Cache-Control "public, max-age=0, s-maxage=3600, must-revalidate"
   run(false);
 }());
 
-=== assets/room.8135576933a1.css ===
+=== assets/room.d88b00b26fb7.css ===
 /* roomkit shared reading-room styles. Tokens come from the site's theme. */
 #room-content{--room-page-bg:transparent;--room-page-ink:#1d1b18;--room-page-ink-soft:#5b5650;--room-page-link:#1f4e8c;
 --room-surface:#fff;--room-surface-sunk:#f4f2ee;--room-ink:#1d1b18;--room-ink-soft:#57524b;--room-rule:#d9d4cc;
@@ -265,6 +265,7 @@ line-height:1.6;padding:24px 16px 64px;outline:none}
 /* index */
 #room-content .room__finder{background:var(--room-surface);color:var(--room-ink);border:1px solid var(--room-rule);border-radius:var(--room-radius);padding:16px 20px;margin-bottom:24px}
 #room-content .room__search{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:12px 16px;align-items:end}
+#room-content .room__search--server{margin-bottom:16px}
 #room-content .room__field{display:grid;gap:4px;min-width:0}
 #room-content .room__field--q{grid-column:1/-1}
 #room-content .room__field select{width:100%}
@@ -413,7 +414,7 @@ whitespace &amp; &lt;tags&gt; and &quot;quotes&quot;.">
 whitespace &amp; &lt;tags&gt; and &quot;quotes&quot;.">
 <meta property="og:image" content="https://example.test/thumb/big.png">
 <meta name="twitter:card" content="summary_large_image">
-<link rel="stylesheet" href="/reading-room/assets/room.8135576933a1.css">
+<link rel="stylesheet" href="/reading-room/assets/room.d88b00b26fb7.css">
 </head>
 <body class="room-plain">
 <a class="room__skip" href="#room-content">Skip to the content</a>
@@ -526,7 +527,7 @@ Three &amp; &lt;four&gt;</p>
 <meta property="og:description" content="The contract.">
 <meta name="twitter:card" content="summary">
 <script type="application/ld+json">{"@type": "DigitalDocument", "name": "<\/script><script>alert(1)"}</script>
-<link rel="stylesheet" href="/reading-room/assets/room.8135576933a1.css">
+<link rel="stylesheet" href="/reading-room/assets/room.d88b00b26fb7.css">
 </head>
 <body class="room-plain">
 <a class="room__skip" href="#room-content">Skip to the content</a>
@@ -651,7 +652,7 @@ Line two</p>
 <meta property="og:title" content="Data Dump">
 <meta property="og:url" content="https://example.test/reading-room/data-dump/">
 <meta name="twitter:card" content="summary">
-<link rel="stylesheet" href="/reading-room/assets/room.8135576933a1.css">
+<link rel="stylesheet" href="/reading-room/assets/room.d88b00b26fb7.css">
 </head>
 <body class="room-plain">
 <a class="room__skip" href="#room-content">Skip to the content</a>
@@ -731,7 +732,7 @@ Line two</p>
 <meta property="og:title" content="Filler 0">
 <meta property="og:url" content="https://example.test/reading-room/filler-0/">
 <meta name="twitter:card" content="summary">
-<link rel="stylesheet" href="/reading-room/assets/room.8135576933a1.css">
+<link rel="stylesheet" href="/reading-room/assets/room.d88b00b26fb7.css">
 </head>
 <body class="room-plain">
 <a class="room__skip" href="#room-content">Skip to the content</a>
@@ -817,7 +818,7 @@ Line two</p>
 <meta property="og:title" content="Filler 1">
 <meta property="og:url" content="https://example.test/reading-room/filler-1/">
 <meta name="twitter:card" content="summary">
-<link rel="stylesheet" href="/reading-room/assets/room.8135576933a1.css">
+<link rel="stylesheet" href="/reading-room/assets/room.d88b00b26fb7.css">
 </head>
 <body class="room-plain">
 <a class="room__skip" href="#room-content">Skip to the content</a>
@@ -903,7 +904,7 @@ Line two</p>
 <meta property="og:title" content="Filler 2">
 <meta property="og:url" content="https://example.test/reading-room/filler-2/">
 <meta name="twitter:card" content="summary">
-<link rel="stylesheet" href="/reading-room/assets/room.8135576933a1.css">
+<link rel="stylesheet" href="/reading-room/assets/room.d88b00b26fb7.css">
 </head>
 <body class="room-plain">
 <a class="room__skip" href="#room-content">Skip to the content</a>
@@ -989,7 +990,7 @@ Line two</p>
 <meta property="og:title" content="Filler 3">
 <meta property="og:url" content="https://example.test/reading-room/filler-3/">
 <meta name="twitter:card" content="summary">
-<link rel="stylesheet" href="/reading-room/assets/room.8135576933a1.css">
+<link rel="stylesheet" href="/reading-room/assets/room.d88b00b26fb7.css">
 </head>
 <body class="room-plain">
 <a class="room__skip" href="#room-content">Skip to the content</a>
@@ -1075,7 +1076,7 @@ Line two</p>
 <meta property="og:title" content="Filler 4">
 <meta property="og:url" content="https://example.test/reading-room/filler-4/">
 <meta name="twitter:card" content="summary">
-<link rel="stylesheet" href="/reading-room/assets/room.8135576933a1.css">
+<link rel="stylesheet" href="/reading-room/assets/room.d88b00b26fb7.css">
 </head>
 <body class="room-plain">
 <a class="room__skip" href="#room-content">Skip to the content</a>
@@ -1161,7 +1162,7 @@ Line two</p>
 <meta property="og:title" content="Filler 5">
 <meta property="og:url" content="https://example.test/reading-room/filler-5/">
 <meta name="twitter:card" content="summary">
-<link rel="stylesheet" href="/reading-room/assets/room.8135576933a1.css">
+<link rel="stylesheet" href="/reading-room/assets/room.d88b00b26fb7.css">
 </head>
 <body class="room-plain">
 <a class="room__skip" href="#room-content">Skip to the content</a>
@@ -1247,7 +1248,7 @@ Line two</p>
 <meta property="og:title" content="Filler 6">
 <meta property="og:url" content="https://example.test/reading-room/filler-6/">
 <meta name="twitter:card" content="summary">
-<link rel="stylesheet" href="/reading-room/assets/room.8135576933a1.css">
+<link rel="stylesheet" href="/reading-room/assets/room.d88b00b26fb7.css">
 </head>
 <body class="room-plain">
 <a class="room__skip" href="#room-content">Skip to the content</a>
@@ -1333,7 +1334,7 @@ Line two</p>
 <meta property="og:title" content="Filler 7">
 <meta property="og:url" content="https://example.test/reading-room/filler-7/">
 <meta name="twitter:card" content="summary">
-<link rel="stylesheet" href="/reading-room/assets/room.8135576933a1.css">
+<link rel="stylesheet" href="/reading-room/assets/room.d88b00b26fb7.css">
 </head>
 <body class="room-plain">
 <a class="room__skip" href="#room-content">Skip to the content</a>
@@ -1419,7 +1420,7 @@ Line two</p>
 <meta property="og:title" content="Filler 8">
 <meta property="og:url" content="https://example.test/reading-room/filler-8/">
 <meta name="twitter:card" content="summary">
-<link rel="stylesheet" href="/reading-room/assets/room.8135576933a1.css">
+<link rel="stylesheet" href="/reading-room/assets/room.d88b00b26fb7.css">
 </head>
 <body class="room-plain">
 <a class="room__skip" href="#room-content">Skip to the content</a>
@@ -1505,7 +1506,7 @@ Line two</p>
 <meta property="og:title" content="Filler 9">
 <meta property="og:url" content="https://example.test/reading-room/filler-9/">
 <meta name="twitter:card" content="summary">
-<link rel="stylesheet" href="/reading-room/assets/room.8135576933a1.css">
+<link rel="stylesheet" href="/reading-room/assets/room.d88b00b26fb7.css">
 </head>
 <body class="room-plain">
 <a class="room__skip" href="#room-content">Skip to the content</a>
@@ -1593,7 +1594,7 @@ Line two</p>
 <meta name="description" content="Browse.">
 <meta property="og:description" content="Browse.">
 <meta name="twitter:card" content="summary">
-<link rel="stylesheet" href="/reading-room/assets/room.8135576933a1.css">
+<link rel="stylesheet" href="/reading-room/assets/room.d88b00b26fb7.css">
 </head>
 <body class="room-plain">
 <a class="room__skip" href="#room-content">Skip to the content</a>
@@ -1719,7 +1720,7 @@ whitespace &amp; &lt;tags&gt; and &quot;quotes&quot;.</p></div></li></ul>
 <meta name="description" content="Plain text memo.">
 <meta property="og:description" content="Plain text memo.">
 <meta name="twitter:card" content="summary">
-<link rel="stylesheet" href="/reading-room/assets/room.8135576933a1.css">
+<link rel="stylesheet" href="/reading-room/assets/room.d88b00b26fb7.css">
 </head>
 <body class="room-plain">
 <a class="room__skip" href="#room-content">Skip to the content</a>
@@ -1799,7 +1800,7 @@ whitespace &amp; &lt;tags&gt; and &quot;quotes&quot;.</p></div></li></ul>
 === room.lock.json ===
 {
  "assets": {
-  "assets/room.css": "assets/room.8135576933a1.css",
+  "assets/room.css": "assets/room.d88b00b26fb7.css",
   "assets/room.js": "assets/room.70941fc296c3.js",
   "assets/rr-config.js": "assets/rr-config.7854e4c23fe0.js",
   "assets/vendor/pdfjs/pdf.min.js": "assets/vendor/pdfjs/pdf.min.1a12e2ef3e98.js",
@@ -1815,9 +1816,9 @@ whitespace &amp; &lt;tags&gt; and &quot;quotes&quot;.</p></div></li></ul>
  "documents": 15,
  "engine": "0.0.0-golden",
  "files": {
-  "404.html": "5ce28c40406a55506add021589b070b4a2f4842e2087452b8a4a5c45ac69e681",
+  "404.html": "e06ca88b5d4fe6df30a157addbbfc7541ea8fc5d25407218c9be76bf4175d469",
   "assets/room.70941fc296c3.js": "70941fc296c37829bdec22b961f1bba291bf29409ce22b41a4ba1472e1fca226",
-  "assets/room.8135576933a1.css": "8135576933a197aa4e26090fd9f2448854109b2b945e9033e5cc6618bdfac1db",
+  "assets/room.d88b00b26fb7.css": "d88b00b26fb7398ef0a198db4835dad4d182d19d577590e0d70c7fd8ebe125b8",
   "assets/rr-config.7854e4c23fe0.js": "7854e4c23fe06763a344b77bf2696e0cd4fbece115d6a94af0f194087ab84541",
   "assets/vendor/pdfjs/pdf.min.1a12e2ef3e98.js": "1a12e2ef3e989e0b5d86cbf5cb4f66f95f3bfeecd532a71f8da22ef8de46d824",
   "assets/vendor/pdfjs/pdf.worker.min.e738705f74c2.js": "e738705f74c22ec75eee1f7d8e6624c62966318aa98c9407bcc05f9b472b8aa1",
@@ -1827,24 +1828,24 @@ whitespace &amp; &lt;tags&gt; and &quot;quotes&quot;.</p></div></li></ul>
   "assets/vendor/rr-reader/modules/rr-reader-pdf.3930bcfcf48b.js": "3930bcfcf48be14c49f9f13a1461e2c9c94dadd652ec33578dfbad7403aae564",
   "assets/vendor/rr-reader/modules/rr-reader-text.83792d749e4d.js": "83792d749e4da7e8689c24e28f6b30b6a66e5992f10e8363db80f6c1ebb65139",
   "assets/vendor/rr-reader/rr-reader.6cd02f3098f6.js": "6cd02f3098f69c3aa84eb84835199edce2e35c9e200a2b7152b6845e6afd5dec",
-  "big-report/index.html": "545c12eb161788525b91672f94dddf5b2bdd59309696d1b4ced131955f69ba75",
-  "camera-contract/index.html": "f77ac81167fb985c10cd10dfe8636ff39ce8e80b25a1fb770f2544fed27a9855",
+  "big-report/index.html": "3d93e854efdc9f8c98ea4b24091de1b0db853d8a6617267435d43221f1490b2d",
+  "camera-contract/index.html": "b471c9a3884d52cd5d4956c7c4520d4efd0481f263de8bc99323dca661189fef",
   "camera-contract/pages.c605fd0398f8.json": "c605fd0398f8496a9f7b8fc77f1cbf423a9cbd094d125778c807cb93e474cf8f",
-  "data-dump/index.html": "ab7d04a2925db4d94c3e6abfddf4fddb274e9620096e86502c0222ced25170f4",
-  "filler-0/index.html": "48dcd53dcb53d01111ac9c0241339acec4ae96b3196734441233f09e2926b01a",
-  "filler-1/index.html": "984d46359c69f5ff3e6f4edada273aff8adb7e14c73202f6ea1e1ee67e3d772d",
-  "filler-2/index.html": "8d92c33411bc38b9e1f08f4252d0db922dfd122fa6bf9c9a6d85ff98fb0e0487",
-  "filler-3/index.html": "e8f371680b06fce1399480e4012b0a5ccf12a3fc5bd5d4aea5ebd3ae0e0de1ea",
-  "filler-4/index.html": "41fc15bb77002d7169246177366f06f94f8ec2441c2db6187f90ed474122094a",
-  "filler-5/index.html": "e28d97836cf8cb4e0f2bf037ae2454a50a6fe75c8a60bb0269c9759dae1f7dd2",
-  "filler-6/index.html": "43a8ad8ccfc36bdeb7854a79eddf4bb75ec3c4c2fbf8fbf4a4b6ee7a73739b3c",
-  "filler-7/index.html": "a1ef7fb5be91a4c9f2e9ba147e4bef473cfa95242816cbb125a61afc250d04dc",
-  "filler-8/index.html": "9b973ebaa64c345a91444b360f643556b9e22c95f0c44046160783f17ad3cf37",
-  "filler-9/index.html": "a3b614f7137aa0c523093400c2adebf0c182bcb9ec65f9416b211e624c79b1db",
-  "index.html": "5b0872c3b547b1a09ebfe9b9060a6e5fed484e71e8b7e6f861f5a0677fab9796",
-  "memo-text/index.html": "1a1e3c8f38ca4eb048504838add6cab9b82a7a8a54c9ee992f74998e6c4e08ec",
+  "data-dump/index.html": "5f6dc075c368ba29612bab29685b1f0e79adc63253c454a969fe6ed34f12a897",
+  "filler-0/index.html": "1af6850c4dbc9a85743fdc843c0d99c2832ef71fec80f07e838680edd048497a",
+  "filler-1/index.html": "e06f31f33c3264e14383046fc72b77d966f18e409fc1d2088574d094fc532270",
+  "filler-2/index.html": "f7e20a25431a33ddb12da36056887395bfe6a8cc71d1679ed8e0a243a38215d6",
+  "filler-3/index.html": "ea317d4e3f0f9a96b352ff1bddabe6f071faeb09298733d3c101cd67be90247a",
+  "filler-4/index.html": "2f62ecbebc048681a9a2e6961e3546254ee66978e1879d909f28b93df77047c0",
+  "filler-5/index.html": "852e915cd99e307931c88e050f206a3dce1141d5b8410acc38de3b9aa1426088",
+  "filler-6/index.html": "763c21b0dfe4259112fa2041002e41b90ad7ec9dee8859d90cc68ae16bd8034b",
+  "filler-7/index.html": "21d2d05b7cc0316b8021790151ba0f0fab675f245ac9b32663fa579e96942e60",
+  "filler-8/index.html": "23dfb6a0fa86a60a0fb21d00d647715cf5a8d197079551ae27fd9312f8591e38",
+  "filler-9/index.html": "e6b0a8dfb725e5e0389afab75a5c76354bf7555da4984866e60f56ff8e1ddc43",
+  "index.html": "ce3e08bf688e4d5b3aacdf84f0db80f8e236fa29ec0ef12ece936dab321b5986",
+  "memo-text/index.html": "b9dadde66763ee339b846c09818cbd7807a4f514cb3d942aea9ffafea9688de1",
   "memo-text/pages.acc2f3a668b0.json": "acc2f3a668b0b6317d9a08dd645da822989b54268f52f02285fd5aed68f918c8",
-  "site-photo/index.html": "897a64559697e0a879b51fa6331c6cbfcf31ae4708fccfc45f172f0628f51417"
+  "site-photo/index.html": "e78e138e274b457d89c4374c052fd3a668c407573b4b607729f27f6725e6e283"
  },
  "mount": "/reading-room/",
  "noindex": false,
@@ -1868,7 +1869,7 @@ whitespace &amp; &lt;tags&gt; and &quot;quotes&quot;.</p></div></li></ul>
 <meta property="og:title" content="Site Photo">
 <meta property="og:url" content="https://example.test/reading-room/site-photo/">
 <meta name="twitter:card" content="summary">
-<link rel="stylesheet" href="/reading-room/assets/room.8135576933a1.css">
+<link rel="stylesheet" href="/reading-room/assets/room.d88b00b26fb7.css">
 </head>
 <body class="room-plain">
 <a class="room__skip" href="#room-content">Skip to the content</a>

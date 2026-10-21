@@ -290,6 +290,9 @@ def index_view(m: Manifest, at: str, pack: dict, facet_pages: list[dict] | None 
                    "recent_key": f"room-recent-searches:{at}",
                    # The site's suggestion panel (manifest site.index.suggest), for room-search.js.
                    "suggest": _suggest(m, at)} if S.enabled(pack) else None,
+        # The site's own search for readers without JavaScript (pack features.server-search):
+        # the form its server answers, rendered in a <noscript>; the room answers nothing.
+        "server_search": ix.get("server_search") if pack.get("features", {}).get("server-search") else None,
         # A select with fewer than two values could not narrow anything.
         "selects": [x for x in selects if len(x["values"]) >= 2],
         "sort": ix.get("sort"),
@@ -452,6 +455,10 @@ def topic_view(p: dict, m: Manifest, at: str, pack: dict) -> dict:
         "crumbs": _crumbs([{**c, "url": _rebase_url(c.get("url", ""), m, at)} for c in p.get("crumbs", [])]),
         "back": _back(p, m, at), "eyebrow": p.get("eyebrow", ""), "title": p["title"], "subtitle": p["subtitle"],
         "empty_text": p["empty_text"],
+        # The site's in-topic filter, answered by its server at the topic's live URL
+        # (pack features.server-search): live sends it to page 1 from every page.
+        "search": {**p["search"], "action": m.site.base_url + m.site.room_path + TP.page_path(p["slug"], 1)}
+        if p.get("search", {}).get("param") and pack.get("features", {}).get("server-search") else None,
         "documents": [{"slug": d["slug"], "title": d["title"], "url": _rebase_url(d["url"], m, at),
                        "badge": d.get("badge", ""), "badge_kind": d.get("badge_kind", ""), "badge_sr": d.get("badge_sr", ""),
                        "date": d.get("date", ""), "reading_time": d.get("reading_time", ""), "agency": d.get("agency", ""),

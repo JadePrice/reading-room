@@ -81,6 +81,7 @@ line-height:1.6;padding:24px 16px 64px;outline:none}
 /* index */
 #room-content .room__finder{background:var(--room-surface);color:var(--room-ink);border:1px solid var(--room-rule);border-radius:var(--room-radius);padding:16px 20px;margin-bottom:24px}
 #room-content .room__search{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:12px 16px;align-items:end}
+#room-content .room__search--server{margin-bottom:16px}
 #room-content .room__field{display:grid;gap:4px;min-width:0}
 #room-content .room__field--q{grid-column:1/-1}
 #room-content .room__field select{width:100%}

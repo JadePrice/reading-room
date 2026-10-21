@@ -379,8 +379,8 @@ rows:
   disposition: static
   sites:
     deflockdane: {need: n/a, status: missing}
-    glassgovernment: {need: required, status: partial}  # 2026-10-21, fresh export from the committed exporter (455 records), live pages fetched through the origin (Cloudflare's email obfuscation rewrites addresses at the edge): parity.topics 74/74 (the topics page and every topic page). Open: the in-topic ?s= filter (full-text, snippets, score order) is not rendered
-  acceptance: "same topics, members, order and paging URLs; in-topic search answers from the static index"
+    glassgovernment: {need: required, status: partial}  # 2026-10-21, fresh export from the committed exporter (455 records), live pages fetched through the origin (Cloudflare's email obfuscation rewrites addresses at the edge): parity.topics 74/74 (the topics page and every topic page). The in-topic ?s= filter is the server-search row (the site's server answers it; form rendered 2026-10-21)
+  acceptance: "same topics, members, order and paging URLs; in-topic search goes to the site's server (server-search row)"
   check: parity.topics
 
 - id: entities-index
@@ -484,6 +484,27 @@ rows:
   acceptance: "page citations byte-equal to the live page-scoped answer; live span quotes and keys resolve to the room's page text; curated citations equal to live"
   check: parity.passages
 
+- id: server-search
+  surface: index
+  live: "the site's search without JavaScript: GG /library/?q= (index-ggrr-reading-room.php .ggrr-rr-nojs-form) and /library/topics/<topic>/?s= (archive-ggrr-topic.php, topics past 50 records); dd /reading-room/?rr_search= (the shortcode's form)"
+  disposition: dynamic-api
+  sites:
+    deflockdane: {need: required, status: done}      # 2026-10-21: form rendered (test_server_search); live ?rr_search=flock answers "Found 54 results" through the origin
+    glassgovernment: {need: required, status: done}  # 2026-10-21: index and in-topic forms rendered (test_server_search); live ?q=flock "22 records matched", topics/historical/?s=panther "115 documents matched" of 284, through the origin
+  # 2026-10-21 (user: "search we want to work without js as an option"): pack
+  # features.server-search, on in GG's and dd's packs. The room renders the site's own
+  # GET form (manifest site.index.server_search; a topic page's search.param) to the
+  # site's live URL with the site's parameter, from any mount: in a <noscript> on the
+  # index (the Pagefind finder stays the JavaScript path), as a plain form on paged
+  # topics as live has it. The room answers nothing; the site's server does. Cutover
+  # requirement: the host must keep routing those URLs WITH that query (q, s,
+  # rr_search) to WordPress while serving the static room for the bare URL.
+  acceptance: "the form sends the site's parameter to the site's live URL without JavaScript, and that URL answers it"
+  # Checks: tests/roomkit/test_server_search.py (rendering, refusals, a browser with scripts
+  # off submits to the live URL, axe with and without scripts); a probe of each live URL
+  # through the origin.
+  check: browser
+
 - id: sitemaps
   surface: sitemaps
   live: "GG providers: document, entity, collection, topic, power-map. dd: document, entity"
@@ -504,13 +525,26 @@ rows:
 
 - id: machine-text
   surface: machine-text
-  live: "GG /library/documents.txt and /llms-full.txt"
   disposition: static
   sites:
     deflockdane: {need: n/a, status: missing}
-    glassgovernment: {need: required, status: partial}  # 2026-10-21, fresh export from the committed exporter (455 records), live pages fetched through the origin (Cloudflare's email obfuscation rewrites addresses at the edge): parity.machine_text, documents.txt 463/463 lines equal, the generated time aside. Open: /llms-full.txt is at the site root, outside the room's mount, so its disposition (WordPress keeps it, or a root file at cutover) is a decision to make
+    glassgovernment: {need: required, status: done}  # 2026-10-21, fresh export from the committed exporter (455 records), live pages fetched through the origin (Cloudflare's email obfuscation rewrites addresses at the edge): parity.machine_text, documents.txt 463/463 lines equal, the generated time aside. /llms-full.txt is its own row (llms-full)
+  live: "GG /library/documents.txt"
   acceptance: "same records and fields as live"
   check: parity.machine_text
+
+- id: llms-full
+  surface: machine-text
+  live: "GG /llms-full.txt at the site root (4,841 bytes, 2026-10-21): the site's summary for language-model crawlers"
+  disposition: stays-wordpress
+  sites:
+    deflockdane: {need: n/a, status: missing}
+    glassgovernment: {need: required, status: done}  # 2026-10-21: answers 200 from WordPress at the root, outside the room's mount; nothing for the room to build
+  # 2026-10-21, user: "llms-full should live out of the way": the room does not build it.
+  # It is outside the room's mount (/library/), so cutover leaves the URL with WordPress.
+  acceptance: "unchanged: WordPress keeps serving /llms-full.txt"
+  # Check: /llms-full.txt answers 200 through the origin, now and after cutover.
+  check: browser
 
 # --- served elsewhere or not public ------------------------------------------
 

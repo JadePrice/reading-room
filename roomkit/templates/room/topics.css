@@ -24,3 +24,4 @@
 #room-content .room__pager a,#room-content .room__pager span{display:inline-block;min-width:44px;min-height:44px;padding:10px 12px;text-align:center;border:1px solid var(--room-rule);border-radius:4px;color:var(--room-page-link)}
 #room-content .room__pager .room__pager-dots{border-color:transparent;color:var(--room-page-ink-soft)}
 #room-content .room__pager .room__pager-current{background:var(--room-accent);border-color:var(--room-accent);color:var(--room-on-accent)}
+#room-content .room__tsearch{margin-top:12px;max-width:28rem;grid-template-columns:1fr}

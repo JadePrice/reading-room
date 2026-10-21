@@ -108,6 +108,13 @@ Replaced on purpose since the pin:
                      74/74, documents.txt 463/463): GG's pack turns on
                      features.collections, machine-text and topics. The golden
                      manifest carries none of those blocks, so only the pack hash moved.
+    all four         2026-10-21, server search (pack features.server-search, the
+                     no-JS form to the site's own search): room.css gained one rule,
+                     `.room__search--server{margin-bottom:16px}`, so room.css, its
+                     fingerprinted name in every page and the lock moved; GG's and
+                     dd's packs turn the feature on, so their pack hash moved too.
+                     The golden manifest has no server_search block, so no page
+                     gained a form (tests/roomkit/test_server_search.py renders it).
 
     plain            packs/default, more than 12 groups (the jump list folds)
     deflockdane      dd pack, cards, empty groups shown, staging mount + noindex, nav groups

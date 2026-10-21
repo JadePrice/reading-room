@@ -20,8 +20,8 @@ same path twice, text that is empty, not text or over MAX_BYTES, and a link into
 the room that is not a record the room holds (`](<room><slug>/)`). A site whose
 file links a record the export left out is refused, not served with a dead link.
 
-/llms-full.txt is the site root's, outside the room's mount: not built here
-(parity-matrix.yaml machine-text).
+/llms-full.txt is the site root's, outside the room's mount: it stays with WordPress
+(parity-matrix.yaml llms-full, user 2026-10-21).
 """
 
 from __future__ import annotations
