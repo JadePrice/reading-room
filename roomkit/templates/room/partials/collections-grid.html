@@ -1,0 +1,29 @@
+{#- The collections table on the index (pack features.collections, manifest
+    collections.grid): eras, then groups, then one row per collection, in the
+    site's order. The sort select is hidden until room-collections.js runs; without
+    it the table reads in its grouped order. Each sources value is written twice:
+    the column on wide screens and a labelled line under the title on narrow ones,
+    and CSS shows exactly one, so it is read once. -#}
+{% with gr = index.collections_grid %}
+<section class="room__panel room__cgrid" aria-labelledby="room-cgrid-h" data-room-cgrid>
+<div class="room__cgrid-head"><h2 id="room-cgrid-h">{{ gr.heading }}</h2>
+{%- if gr.sort %}<div class="room__field" data-room-cgrid-sortbox hidden><label for="room-cgrid-sort">{{ gr.sort.label }}</label><select id="room-cgrid-sort" data-room-cgrid-sort>
+{%- for o in gr.sort.options %}<option value="{{ o.value }}">{{ o.label }}</option>{% endfor %}</select></div>{% endif %}</div>
+<div class="room__table-wrap"><table class="room__cgrid-table" aria-labelledby="room-cgrid-h">
+<thead><tr>{% for c in gr.columns %}<th scope="col">{{ c }}</th>{% endfor %}</tr></thead>
+<tbody>
+{% for e in gr.eras %}
+<tr class="room__cgrid-era" data-room-cgrid-head><th colspan="4" scope="rowgroup">{{ e.heading }}</th></tr>
+{% for g in e.groups %}
+<tr class="room__cgrid-group" data-room-cgrid-head><th colspan="4" scope="rowgroup">{{ g.heading }}</th></tr>
+{% for r in g.rows %}
+<tr data-room-collection="{{ r.slug }}" data-room-year="{{ r.year }}"><td class="room__cgrid-period">{{ r.years }}</td>
+<td class="room__cgrid-name"><a href="{{ r.url }}">{{ r.title }}</a>{% if r.sources_line %}<span class="room__cgrid-srcline">{{ r.sources_line }}</span>{% endif %}</td>
+<td class="room__cgrid-src">{% if r.sources %}{{ r.sources }}{% elif r.sources_empty %}<span class="room__sr">{{ r.sources_empty }}</span>{% endif %}</td>
+<td class="room__cgrid-blurb">{% if r.blurb %}{{ r.blurb }}{% elif r.blurb_empty %}<span class="room__sr">{{ r.blurb_empty }}</span>{% endif %}</td></tr>
+{% endfor %}
+{% endfor %}
+{% endfor %}
+</tbody></table></div>
+</section>
+{% endwith %}

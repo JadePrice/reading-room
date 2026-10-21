@@ -48,14 +48,23 @@
     "other_group": "Other records",
     "search_placeholder": "Title, agency, collection, vendor...",
     "record_singular": "record",
-    "record_plural": "records"
+    "record_plural": "records",
+    "stats_singular": "document",
+    "stats_plural": "documents"
   },
   "layout": {
     "style": "rows",
     "show_empty_groups": false,
     "toggle": "ggrr-theme"
   },
-  "features": {},
+  "features": {
+    "entities": true,
+    "facet-pages": true,
+    "sitemaps": true,
+    "collections": true,
+    "machine-text": true,
+    "topics": true
+  },
   "chrome": {
     "home": {
       "label": "Glass Government",

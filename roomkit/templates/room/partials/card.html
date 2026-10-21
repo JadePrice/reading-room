@@ -1,7 +1,9 @@
 {#- One record on the index, on one line. -#}
 {% macro card(c, layout) -%}
 <li class="room__card" data-room-text="{{ c.text }}" data-room-group="{{ c.group }}"
-{%- for f in c.facets %} data-room-f-{{ f.name }}="{{ f.value }}"{% endfor %}>
+{%- for f in c.facets %} data-room-f-{{ f.name }}="{{ f.value }}"{% endfor %}
+{%- for f in c.multi %} data-room-m-{{ f.name }}="{{ f.json }}"{% endfor %}
+{%- if c.multi or c.sortable %} data-room-date="{{ c.date }}" data-room-title="{{ c.sort_title }}"{% endif %}>
 {%- if layout == "cards" and c.thumb_url -%}
 <a class="room__thumb" href="{{ c.url }}" tabindex="-1" aria-hidden="true"><img src="{{ c.thumb_url }}" alt="" loading="lazy" decoding="async" width="116" height="150"></a>
 {%- endif -%}
@@ -12,8 +14,10 @@
 <p class="room__card-date">Date pending</p>
 {%- endif -%}
 <h3 class="room__card-title"><a href="{{ c.url }}">{{ c.title }}</a></h3>
-{%- if c.meta -%}
-<p class="room__card-meta">{% for x in c.meta %}{% if not loop.first %} &middot; {% endif %}{{ x }}{% endfor %}</p>
+{%- if c.badge or c.meta -%}
+<p class="room__card-meta">
+{%- if c.badge %}<span class="room__badge{% if c.badge_kind %} room__badge--{{ c.badge_kind }}{% endif %}">{% if c.badge_sr %}<span class="room__sr">{{ c.badge_sr }}</span>{% endif %}{{ c.badge }}</span>{% if c.meta %} {% endif %}{% endif -%}
+{% for x in c.meta %}{% if not loop.first %} &middot; {% endif %}{{ x }}{% endfor %}</p>
 {%- endif -%}
 {%- if c.summary -%}
 <p class="room__card-summary">{{ c.summary }}</p>

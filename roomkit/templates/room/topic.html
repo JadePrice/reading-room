@@ -1,0 +1,53 @@
+{#- The content element of one page of one topic (pack features.topics): its
+    heading block, its records in the site's order with their meta and summary,
+    and the site's numbered paging. Every word and link is the export's
+    (topics.py). The site's in-topic ?s= filter is not rendered: the room cannot
+    answer it yet (parity-matrix.yaml topics). -#}
+{% from "room/partials/macros.html" import root, link, crumbs, toggle %}
+{{ root("topic", theme_key) }}
+{% with t = topic %}
+<div class="room__shell" data-room-topic-page="{{ t.slug }}" data-room-topic-n="{{ t.page }}">
+<div class="room__topline">{{ crumbs(t.crumbs) }}
+{%- if t.back %}<p class="room__back">{{ link(t.back.label, t.back.url) }}</p>{% endif %}{{ toggle(toggle_on) }}</div>
+<header class="room__head">
+{% if t.eyebrow %}
+<p class="room__eyebrow">{{ t.eyebrow }}</p>
+{% endif %}
+<h1 class="room__title">{{ t.title }}</h1>
+<p class="room__tsub">{{ t.subtitle }}</p>
+</header>
+{% if not t.documents %}
+<p class="room__section-empty">{{ t.empty_text }}</p>
+{% else %}
+<ul class="room__trows">
+{% for d in t.documents %}
+<li class="room__trow" data-room-doc="{{ d.slug }}">
+<h2 class="room__trow-title"><a href="{{ d.url }}">{{ d.title }}</a>
+{%- if d.badge %} <span class="room__badge{% if d.badge_kind %} room__badge--{{ d.badge_kind }}{% endif %}">{% if d.badge_sr %}<span class="room__sr">{{ d.badge_sr }}</span>{% endif %}{{ d.badge }}</span>{% endif %}</h2>
+{% if d.date or d.collection or d.reading_time or d.agency %}
+<p class="room__trow-meta">
+{%- if d.date %}<span class="room__trow-date">{{ d.date }}</span>{% endif %}
+{%- if d.collection %}<span class="room__trow-collection">{{ link(d.collection.label, d.collection.url) }}</span>{% endif %}
+{%- if d.reading_time %}<span class="room__trow-time">{{ d.reading_time }}</span>{% endif %}
+{%- if d.agency %}<span class="room__trow-agency">{{ d.agency }}</span>{% endif %}</p>
+{% endif %}
+{% if d.summary %}
+<p class="room__trow-summary">{{ d.summary }}</p>
+{% endif %}
+</li>
+{% endfor %}
+</ul>
+{% endif %}
+{% if t.pagination %}
+<nav class="room__pager" aria-label="{{ t.pagination.label }}"><ul>
+{% for it in t.pagination.links %}
+{% if it.kind == "current" %}<li><span class="room__pager-current" aria-current="page">{{ it.label }}</span></li>
+{% elif it.kind == "dots" %}<li><span class="room__pager-dots">{{ it.label }}</span></li>
+{% else %}<li><a class="room__pager-{{ it.kind }}" href="{{ it.url }}">{{ it.label }}</a></li>
+{% endif %}
+{% endfor %}
+</ul></nav>
+{% endif %}
+</div>
+{% endwith %}
+</main>

@@ -274,6 +274,14 @@
           "$ref": "#/$defs/text",
           "description": "The jump list's visible label (\"Jump to jurisdiction:\"). The nav's accessible name is this text minus trailing punctuation."
         },
+        "stats_singular": {
+          "$ref": "#/$defs/text",
+          "description": "Optional: the noun beside the record count in the index header, when the site's header names them differently from its result count (GG: \"455 documents\" in the header, \"455 records\" in the count). Defaults to record_singular; set it with stats_plural."
+        },
+        "stats_plural": {
+          "$ref": "#/$defs/text",
+          "description": "Optional: stats_singular's plural. Defaults to record_plural."
+        },
         "search_placeholder": {
           "$ref": "#/$defs/text"
         },
@@ -326,10 +334,16 @@
       "description": "Surfaces the pack turns on. The template renders a surface only when the pack enables it and the manifest supports it.",
       "properties": {
         "collections": {
-          "type": "boolean"
+          "type": "boolean",
+          "description": "GG's collections page, collection pages and the index's collections table at their live paths, from the manifest's `collections` block (site_collections.py). Every word and list comes from the export. Off: no collection page, no table, no collections.css or room-collections.js."
+        },
+        "machine-text": {
+          "type": "boolean",
+          "description": "The site's plain-text record index (GG /library/documents.txt) as the exporter wrote it, from the manifest's `machine_text` block (machine_text.py), with a UTF-8 charset in .htaccess. Off: no file, and .htaccess unchanged."
         },
         "topics": {
-          "type": "boolean"
+          "type": "boolean",
+          "description": "GG's topics page and every page of every topic (/page/N/ as live) at their live paths, from the manifest's `topics` block (topics.py). Every word, row and paging link comes from the export. Off: no topic page and no topics.css. The in-topic ?s= filter is not rendered (parity-matrix.yaml topics)."
         },
         "entities": {
           "type": "boolean",
@@ -354,6 +368,18 @@
         "corpus-search": {
           "type": "boolean",
           "description": "A Pagefind index over every record's title, summary, citation, agency, group and page text, built into the room (pagefind/); the finder searches it and suggests from it. Needs the pinned Pagefind (search.py)."
+        },
+        "facet-pages": {
+          "type": "boolean",
+          "description": "A page per value of each facet the manifest's site.index.browse names, at <room>/<facet>/<value>/, linked from a browse block on the index: the way to narrow the list without JavaScript (browse.py). Off: no facet page, no browse block, no browse.css."
+        },
+        "sitemaps": {
+          "type": "boolean",
+          "description": "sitemap.xml at the room's root: every page the room serves by its live canonical URL (browse.py)."
+        },
+        "csp": {
+          "type": "boolean",
+          "description": "A Content-Security-Policy header in the room's .htaccess (build.py CSP): scripts, workers, frames and connections only from the room's own origin, no plugins beyond the PDF object. Off: no header, as before. Hosts that ignore .htaccess must send the same policy themselves."
         }
       }
     },

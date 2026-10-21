@@ -83,21 +83,11 @@ def key(type_: str, slug: str) -> str:
 
 
 def _url_ok(u: object) -> bool:
-    return isinstance(u, str) and (u.startswith("https://") or (u.startswith("/") and not u.startswith("//")))
-
-
-def _room_slug(url: str, room: str) -> str | None:
-    """The record slug a link into `room` names ('' for the room itself), or None
-    for a link to another site. Host case, percent-escapes and dot segments are
-    normalized first, so a non-canonical spelling of an internal URL is internal."""
-    u, r = urlsplit(url), urlsplit(room)
-    if u.netloc and u.netloc.lower().removesuffix(":443") != r.netloc.lower().removesuffix(":443"):
-        return None
-    path = posixpath.normpath("/" + unquote(u.path).lstrip("/"))
-    root = r.path.rstrip("/")
-    if path != root and not path.startswith(root + "/"):
-        return None
-    return path[len(root):].strip("/").split("/", 1)[0]
+    # https, or a path on the same host. A backslash or a control character is
+    # refused too: browsers strip tabs and newlines and read "/\\host" as "//host",
+    # so "/\\evil.example" would leave the site from a same-host-looking href.
+    return (isinstance(u, str) and not any(c == "\\" or c <= " " or c == "\x7f" for c in u)
+            and (u.startswith("https://") or (u.startswith("/") and not u.startswith("//"))))
 
 
 def _text(v: object, optional: bool = False) -> bool:
@@ -154,6 +144,20 @@ def _entity_ref(e: object, where: str, problems: list[str]) -> str:
         if k in e and not _text(e[k], optional=True):
             problems.append(f"{where} {e['type']}/{e['slug']}: {k} is not text")
     return key(e["type"], e["slug"])
+
+
+def _room_slug(url: str, room: str) -> str | None:
+    """The record slug a link into `room` names ('' for the room itself), or None
+    for a link to another site. Host case, percent-escapes and dot segments are
+    normalized first, so a non-canonical spelling of an internal URL is internal."""
+    u, r = urlsplit(url), urlsplit(room)
+    if u.netloc and u.netloc.lower().removesuffix(":443") != r.netloc.lower().removesuffix(":443"):
+        return None
+    path = posixpath.normpath("/" + unquote(u.path).lstrip("/"))
+    root = r.path.rstrip("/")
+    if path != root and not path.startswith(root + "/"):
+        return None
+    return path[len(root):].strip("/").split("/", 1)[0]
 
 
 def _page(p: dict, where: str, problems: list[str], room: str = "", doc_slugs: set[str] | None = None) -> None:

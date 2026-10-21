@@ -73,10 +73,12 @@
 {%- if row.note %}<span class="room__note">{{ row.note }}</span>{% endif %}</dd></div>
 {% endfor %}
 </dl>
+{% if doc.has_file %}
 <p class="room__actions">
 <a class="room__btn" href="{{ doc.file_url }}" target="_blank" rel="noopener">Open the {{ doc.file_kind }}<span class="room__sr"> in a new tab</span></a>
 <a class="room__btn room__btn--ghost" href="{{ doc.download_url }}">Download</a>
 </p>
+{% endif %}
 {% if doc.archive_url %}
 <p class="room__archive"><a href="{{ doc.archive_url }}">Permanent copy at the Internet Archive</a></p>
 {% endif %}

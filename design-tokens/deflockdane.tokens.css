@@ -1,0 +1,107 @@
+/* ============================================================
+   deflockdane.org — design tokens
+   Theme: deflock-child (Astra child)
+   Mood:  Dark investigative. Near-black surfaces, amber signal
+          accent, status-tier colors (green/yellow/red). System
+          fonts only (no CDN). 8px spacing grid. Captured 2026-06-14.
+   ============================================================ */
+
+:root {
+  /* Backgrounds (darkest -> raised) */
+  --dl-bg:   #08090b;   /* page */
+  --dl-bg-2: #10131a;   /* card / section */
+  --dl-bg-3: #181d26;   /* input */
+  --dl-bg-4: #1f2530;   /* hover */
+
+  /* Borders */
+  --dl-border:    #252c38;
+  --dl-border-hi: #3a4455;
+
+  /* Text */
+  --dl-text:       #dce3ed;
+  --dl-text-muted: #7a8799;
+  --dl-text-dim:   #4a5568;
+
+  /* Accent palette (each ships a low-alpha "dim" companion for tints) */
+  --dl-amber:      #f59e0b;  --dl-amber-dim:  rgba(245, 158, 11, .12);
+  --dl-red:        #ef4444;  --dl-red-dim:    rgba(239, 68, 68, .12);
+  --dl-blue:       #60a5fa;  --dl-blue-dim:   rgba(96, 165, 250, .12);
+  --dl-green:      #34d399;  --dl-green-dim:  rgba(52, 211, 153, .12);
+  --dl-purple:     #a78bfa;  --dl-purple-dim: rgba(167, 139, 250, .10);
+
+  /* Typography (system stacks — no webfont fetch) */
+  --dl-font-d: Georgia, "Times New Roman", "Book Antiqua", Palatino, serif;  /* display */
+  --dl-font-u: "Courier New", Courier, "Lucida Console", monospace;          /* ui/mono labels */
+  --dl-font-b: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; /* body */
+
+  /* Spacing — 8px grid */
+  --s1: 4px;  --s2: 8px;  --s3: 12px; --s4: 16px;
+  --s5: 24px; --s6: 32px; --s7: 48px; --s8: 64px;
+
+  /* Radii */
+  --r:  6px;
+  --rl: 12px;
+}
+
+/* Global focus ring (amber, 3px, offset) */
+:focus-visible {
+  outline: 3px solid var(--dl-amber);
+  outline-offset: 3px;
+  border-radius: 2px;
+}
+
+/* Body baseline */
+body.is-deflock-site {
+  background: var(--dl-bg);
+  color: var(--dl-text);
+  font-family: var(--dl-font-b);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Dark glassmorphic header recipe */
+.dl-header {
+  background: rgba(8, 9, 11, 0.94);
+  border-bottom: 1px solid var(--dl-border);
+  backdrop-filter: blur(12px);
+}
+
+/* === Graduated from harvest/ — DEPLOYED LIVE 2026-06-15 ===
+   Live deflockdane.org; backup .private/codex-backups/20260615T022344Z.
+   All high-contrast colors verified AAA (>=7:1) vs --dl-bg #08090b. */
+:root {
+  /* Cross-site tier contract — one vocabulary, dd brand colors.
+     Lets shared components reference --tier-* on any site. */
+  --tier-confirmed: var(--dl-green);   /* #34d399 — obtained / verified */
+  --tier-permitted: var(--dl-amber);   /* #f59e0b — requested / pending */
+  --tier-unlisted:  var(--dl-red);     /* #ef4444 — denied / withheld   */
+
+  --pill-confirmed-bg:     var(--dl-green-dim);
+  --pill-confirmed-border: var(--dl-green);
+  --pill-permitted-bg:     var(--dl-amber-dim);
+  --pill-permitted-border: var(--dl-amber);
+  --pill-unlisted-bg:      var(--dl-red-dim);
+  --pill-unlisted-border:  var(--dl-red);
+}
+
+/* High-contrast users: brighter text/accents, stronger borders.
+   Media-query-scoped — no effect on default rendering. */
+@media (prefers-contrast: more) {
+  :root {
+    --dl-text:       #f8fafc;
+    --dl-text-muted: #cbd5e1;
+    --dl-text-dim:   #94a3b8;
+    --dl-border:    #3a4455;
+    --dl-border-hi: #5a6a7d;
+    --dl-amber: #fbbf24;  --dl-amber-dim: rgba(251, 191, 36, .15);
+    --dl-red:   #f87171;  --dl-red-dim:   rgba(248, 113, 113, .15);
+    --dl-green: #34d399;  --dl-green-dim: rgba(52, 211, 153, .15);
+    --dl-blue:  #60a5fa;  --dl-blue-dim:  rgba(96, 165, 250, .15);
+
+    --tier-confirmed: #22c55e;
+    --tier-permitted: #fbbf24;
+    --tier-unlisted:  #f87171;
+    --pill-confirmed-bg: rgba(34, 197, 94, 0.15);  --pill-confirmed-border: #22c55e;
+    --pill-permitted-bg: rgba(251, 191, 36, 0.15); --pill-permitted-border: #fbbf24;
+    --pill-unlisted-bg:  rgba(248, 113, 113, 0.15); --pill-unlisted-border:  #f87171;
+  }
+}

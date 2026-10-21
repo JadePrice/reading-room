@@ -64,6 +64,10 @@ FEATURE_ROWS = {
     "read-aloud": ("read-aloud",),
     "passage-cite": ("passage-citations",),
     "corpus-search": ("index-fulltext-search", "index-suggest"),
+    "facet-pages": ("index-facet-pages",),
+    "sitemaps": ("sitemaps",),
+    "machine-text": ("machine-text",),
+    "csp": (),  # a header the room sends, not a surface WordPress had; no matrix row
 }
 
 
@@ -148,7 +152,7 @@ def file_problems(pack: dict, root: Path) -> list[str]:
 def feature_problems(pack: dict, matrix: list[dict]) -> list[str]:
     dropped = {r["id"] for r in matrix if r["disposition"] == "dropped"}
     return [f"features.{feat}: on, but the parity matrix drops {', '.join(FEATURE_ROWS[feat])}"
-            for feat, on in sorted(pack.get("features", {}).items()) if on and set(FEATURE_ROWS[feat]) <= dropped]
+            for feat, on in sorted(pack.get("features", {}).items()) if on and FEATURE_ROWS[feat] and set(FEATURE_ROWS[feat]) <= dropped]
 
 
 def validate(pack: object, root: Path | None = None, matrix: list[dict] | None = None) -> list[str]:

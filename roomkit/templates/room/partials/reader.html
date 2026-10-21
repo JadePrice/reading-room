@@ -14,7 +14,10 @@
           </noscript>
 {% endif %}
 {% endmacro %}
-{% if not r.mount %}
+{% if not r.has_file %}
+{% if r.no_file %}  <p class="room__empty">{{ r.no_file }}</p>
+{% endif %}
+{% elif not r.mount %}
   <div class="room__download">
 {{ links(r) }}  </div>
 {% else %}

@@ -119,25 +119,25 @@ def test_passage_unknown_error_rejected():
 
 
 def _built_pages():
-    """Every pages.json of a real build: the golden manifest, with page images and
-    OCR boxes on its first paged record."""
+    """Every pages.json of real builds: the golden manifest with GG's page citations
+    on, and a scan record with page images and OCR boxes."""
     from roomkit import build as B
     from roomkit.manifest import parse
+    from tests.roomkit import test_passages as TP
 
-    golden = Path(__file__).resolve().parents[1] / "golden"
-    raw = json.loads((golden / "manifest.json").read_text(encoding="utf-8"))
-    doc = next(d for d in raw["documents"] if d.get("pages"))
-    doc["pages"][0].update({
-        "image_url": "/reading-room/scan/page-1.webp",
+    raw = TP._raw()
+    raw["documents"][0]["pages"][0].update({
+        "image_url": "/library/scan/page-1.webp",
         "boxes": [{"box": [0.1, 0.2, 0.15, 0.4], "text": "Flock", "confidence": 0.95},
                   {"box": [0.5, 0.5, 0.6, 0.6]}],
     })
-    m = parse(raw)
-    assert not m.refusals, m.refusals
-    files = B.render(m, engine=golden / "engine")
+    files = TP._render(raw=raw)
     out = {p: json.loads(b) for p, b in files.items() if p.endswith(".json") and "/pages." in p}
     assert out
+    assert any("cite" in pg for d in out.values() for pg in d["pages"])
     assert any("boxes" in pg and "image_url" in pg for d in out.values() for pg in d["pages"])
+    plain = B.render(parse(TP._raw(passages=False)), engine=TP.ENGINE, pack=TP._pack(False))
+    out.update({"plain:" + p: json.loads(b) for p, b in plain.items() if p.endswith(".json") and "/pages." in p})
     return out
 
 

@@ -39,7 +39,12 @@
     "show_empty_groups": true,
     "toggle": ""
   },
-  "features": {},
+  "features": {
+    "corpus-search": true,
+    "entities": true,
+    "facet-pages": true,
+    "sitemaps": true
+  },
   "chrome": {
     "home": {
       "label": "Deflock Dane",

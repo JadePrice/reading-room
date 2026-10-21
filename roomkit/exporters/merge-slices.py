@@ -7,7 +7,7 @@ same site block and total, and their windows must cover 0..total with no gap
 and no overlap; anything else is refused (exit 1) and nothing is written. The
 merged manifest is what one unsliced export would have printed: documents and
 excluded in record order, no `slice` key. Every other key comes from the first
-piece (offset 0), which is the one that carries GG's `entities` block.
+piece (offset 0), which is the one that carries GG's `entities` and `collections` blocks.
 """
 
 from __future__ import annotations

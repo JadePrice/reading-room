@@ -4,8 +4,8 @@ Civica renders the same reading room (plan 2026-10-13-unified-reading-room-
 frontend, Milestone 6). LLM_WIKI stays canonical; Civica carries a verbatim
 copy of the core, pinned to a commit:
 
-    roomkit vendor write --to path/to/civica/app/room
-    roomkit vendor check --to path/to/civica/app/room [--json]
+    roomkit vendor write --to /srv/projects/civica/app/room
+    roomkit vendor check --to /srv/projects/civica/app/room [--json]
 
 `write` copies CORE and records VENDORED.json: the source commit and the sha256
 of every file. It refuses while a core file has uncommitted changes, because the
@@ -33,8 +33,8 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent
 REPO = ROOT.parents[1]
 PIN = "VENDORED.json"
-CORE_MODULES = ("__init__.py", "manifest.py", "entities.py", "passages.py", "view.py", "room.py", "css.py", "color.py", "pack.py",
-                "search.py")
+CORE_MODULES = ("__init__.py", "manifest.py", "entities.py", "site_collections.py", "machine_text.py", "topics.py", "passages.py", "view.py", "room.py", "css.py", "color.py", "pack.py",
+                "search.py", "browse.py")
 CORE_TREES = ("templates/room",)
 CORE_FILES = ("packs/pack.schema.json",)
 
@@ -76,7 +76,7 @@ def write(dest: Path, commit: str, src: Path = ROOT) -> dict:
         p = dest / rel
         p.parent.mkdir(parents=True, exist_ok=True)
         p.write_bytes(data)
-    pin = {"source": "LLM_WIKI scripts/roomkit", "commit": commit,
+    pin = {"source": "LLM_WIKI roomkit", "commit": commit,
            "files": {rel: _sha(data) for rel, data in files.items()}}
     (dest / PIN).write_text(json.dumps(pin, indent=1, sort_keys=True) + "\n", encoding="utf-8")
     return pin

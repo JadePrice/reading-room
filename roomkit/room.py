@@ -1,5 +1,6 @@
 """The one page template every reading room uses: document page, index, 404,
-and (pack features.entities) the entity index and entity pages.
+and (pack features.entities) the entity index and entity pages, (pack
+features.collections) the collections page and collection pages.
 
 Both sites' WordPress plugins grew their own templates around the shared
 reader engine (dd: deflock-reading-room, GG: gg-reading-room). This is the
@@ -93,6 +94,26 @@ def entity_main(page: dict, m: Manifest, at: str, pack: dict) -> str:
     return render("room/entity.html", V.entity_view(page, m, at, pack))
 
 
+def collections_index_main(m: Manifest, at: str, pack: dict) -> str:
+    """The collections page. `m` as site_collections.gate(m, pack) returns it."""
+    return render("room/collections.html", V.collections_index_view(m, at, pack))
+
+
+def collection_main(page: dict, m: Manifest, at: str, pack: dict) -> str:
+    """One collection page (an entry of m.collections["pages"])."""
+    return render("room/collection.html", V.collection_view(page, m, at, pack))
+
+
+def topics_index_main(m: Manifest, at: str, pack: dict) -> str:
+    """The topics page. `m` as topics.gate(m, pack) returns it."""
+    return render("room/topics.html", V.topics_index_view(m, at, pack))
+
+
+def topic_main(page: dict, m: Manifest, at: str, pack: dict) -> str:
+    """One page of one topic (an entry of m.topics["pages"])."""
+    return render("room/topic.html", V.topic_view(page, m, at, pack))
+
+
 def not_found_main(m: Manifest, at: str, pack: dict) -> str:
     return render("room/404.html", V.not_found_view(m, at, pack))
 
@@ -136,3 +157,12 @@ SEARCH_CSS = (TEMPLATES / "room" / "search.css").read_text(encoding="utf-8")
 # Entity index and entity pages (pack features.entities), styled by entities.css.
 # Without the feature it does not ship.
 ENTITIES_CSS = (TEMPLATES / "room" / "entities.css").read_text(encoding="utf-8")
+# The collections page, collection pages and the index's collections table (pack
+# features.collections), styled by collections.css; room-collections.js runs their
+# search, filters and sorts. Without the feature neither ships.
+COLLECTIONS_CSS = (TEMPLATES / "room" / "collections.css").read_text(encoding="utf-8")
+ROOM_COLLECTIONS_JS = (TEMPLATES / "room" / "room-collections.js").read_text(encoding="utf-8")
+# The topics page and topic pages (pack features.topics), styled by topics.css.
+TOPICS_CSS = (TEMPLATES / "room" / "topics.css").read_text(encoding="utf-8")
+# The index's browse block and the facet pages (pack features.facet-pages; browse.py).
+BROWSE_CSS = (TEMPLATES / "room" / "browse.css").read_text(encoding="utf-8")

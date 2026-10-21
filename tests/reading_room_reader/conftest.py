@@ -18,19 +18,13 @@ import json
 import shutil
 import threading
 import time
-from http.server import HTTPServer, SimpleHTTPRequestHandler, ThreadingHTTPServer
+from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
 import pytest
 
 REPO = Path(__file__).resolve().parents[2]
 ENGINE = REPO / "reading-room-reader"
-
-# Local test sites listen with a 128-connection backlog, not socketserver's 5:
-# Chromium opens many connections at once, and on a loaded machine the overflow
-# kept a page script from loading (LLM_WIKI tests/conftest.py, 2026-10-21).
-HTTPServer.request_queue_size = 128
-
 
 def axe_source() -> str:
     """axe-core 4.13.0, vendored and pinned in tests/vendor/ (see its README)."""

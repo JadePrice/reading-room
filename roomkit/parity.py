@@ -101,11 +101,8 @@ def check_details(expected_details: list[dict], html: str) -> list[str]:
         if exp_val not in live_val:
             problems.append(f"detail #{i} ({lab}) value {exp_val!r} not in {live_val!r}")
         note = exp.get("note")
-        if (
-            note
-            and str(note) not in live_val
-            and not (lab == "Permanent copy" and str(note) == "Verified present" and "verified" in live_val.lower())
-        ):
+        if (note and str(note) not in live_val
+                and not (lab == "Permanent copy" and str(note) == "Verified present" and "verified" in live_val.lower())):
             problems.append(f"detail #{i} ({lab}) note {note!r} not in {live_val!r}")
     return problems
 
@@ -118,12 +115,8 @@ def check_header_actions(expected_header: dict, html: str) -> list[str]:
         if str(m) not in text:
             problems.append(f"header meta {m!r} not in page")
     orig = expected_header.get("original_url")
-    if (
-        orig
-        and orig not in html
-        and f'href="{orig}"' not in html
-        and not (orig.endswith("?original=1") and "?original=1" in html)
-    ):
+    if (orig and orig not in html and f'href="{orig}"' not in html
+            and not (orig.endswith("?original=1") and "?original=1" in html)):
         problems.append(f"header original_url {orig!r} not in page")
     ia_url = expected_header.get("ia_url")
     if ia_url and ia_url not in html:
@@ -162,7 +155,11 @@ def check_badges_notice(display: dict, html: str) -> list[str]:
 
 
 def _plain(html: str) -> str:
-    """Strip tags first then unescape entities, preserving entity-encoded brackets."""
+    """Strip tags first then unescape entities, preserving entity-encoded brackets.
+
+    A <mark> sits inside a run of words (GG marks the matched label inside an
+    entity's quote), so it goes without a space; every other tag is a gap."""
+    html = re.sub(r"</?mark\b[^>]*>", "", html)
     return " ".join(unescape(re.sub(r"<[^>]+>", " ", html)).split())
 
 
@@ -262,14 +259,16 @@ def check_page(doc, html: str) -> list[str]:
     text = unescape(html)
     if doc.citation not in text:
         problems.append("citation differs")
-    if doc.ext in READER:
+    if doc.has_file and doc.ext in READER:
         m = READER_URL.search(html)
         want = doc.view_url or doc.file_url
         if not m:
             problems.append("no reader mount")
         elif unescape(m.group(1)) != want:
             problems.append(f"reader url {unescape(m.group(1))!r} != {want!r}")
-    if doc.download_url not in text:
+    if not doc.has_file and doc.display.get("no_file") and doc.display["no_file"] not in text:
+        problems.append("no-file notice absent")
+    if doc.has_file and doc.download_url not in text:
         problems.append("download url absent")
     if doc.display and doc.display.get("details"):
         problems.extend(check_details(doc.display["details"], html))
@@ -298,7 +297,7 @@ JSONLD_RE = re.compile(
 
 def _diff_json(exp, act, path="") -> list[str]:
     probs = []
-    if type(exp) is not type(act):
+    if type(exp) != type(act):
         probs.append(f"jsonld {path or 'root'} type {type(act).__name__} != {type(exp).__name__}")
         return probs
     if isinstance(exp, dict):

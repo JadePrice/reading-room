@@ -16,13 +16,39 @@
                                              room; exit 1 on any difference (entity_parity.py)
     parity --entities-from PAGES.tsv --site S  the live file for --entities, from pages fetched by
                                              exporters/fetch-entity-pages.sh (prints JSON; reads nothing else)
+    parity --collections LIVE.json --out ROOM  parity.collections: the live collections page, every collection
+           [--json]                          page and the index's collections table vs the built room; exit 1
+                                             on any difference (collection_parity.py)
+    parity --collections-from PAGES.tsv --site S  the live file for --collections, from pages fetched by
+                                             exporters/fetch-entity-pages.sh (prints JSON; reads nothing else)
+    parity --topics LIVE.json --out ROOM     parity.topics: the live topics page and every page of every
+           [--json]                          topic vs the built room; exit 1 on any difference
+                                             (topic_parity.py)
+    parity --topics-from PAGES.tsv --site S  the live file for --topics, from pages fetched by
+                                             exporters/fetch-entity-pages.sh (prints JSON; reads nothing else)
+    parity --machine-text LIVE.txt --out ROOM  parity.machine_text: the live documents.txt (one GET, saved)
+           [--path documents.txt] [--json]   vs the room's, line by line, the "Generated:" time aside;
+                                             exit 1 on any difference (machine_text.py)
     parity --passages LIVE.json --out ROOM   parity.passages: the live passage route's answers vs the built
            [--json]                          room's page citations, page texts and citations.json (GG);
                                              exit 1 on any difference (passage_parity.py)
     parity --passages-fetch --out ROOM       the live file for --passages: paced public GETs of a sample
            --sample N [--keys K] [--pace 2]  (--keys: curated stable_keys, one a line; default: the room's
                                              citations.json); stops at a 429/403
+    parity --facet-pages LIVE.json --out ROOM  parity.facet_pages: each live facet value's records vs the
+           [--json]                          room's facet page for it, every page linked from the index;
+                                             exit 1 on any difference (browse_parity.py)
+    parity --facets-from INDEX.html --site S  the live file for --facet-pages, from the live index page
+                                             as fetched (prints JSON; reads nothing else)
+    parity --sitemaps XML [XML ...] --out ROOM  parity.sitemaps: the live sitemap providers' URLs under the
+           [--json]                          room vs the room's sitemap.xml; exit 1 on any difference
+    parity --thumbs LIVE.tsv --out ROOM      parity.thumbnails: each live card's thumbnail bytes vs the
+           [--json]                          room's copy (exporters/*-fetch-thumbs.sh); exit 1 on any
+                                             difference (thumb_parity.py)
     diff   --old LOCK --new LOCK [--json]    what a publish must purge and remove, from two locks
+    gate   --out DIR [--max-bytes N] [--json]  a built room's links into its mount all land on a file,
+                                             and no file is over the size limit (default 25 MiB);
+                                             changes nothing; exit 1 on any failure (gate.py)
     vendor write --to DIR                    copy the room's core into another codebase (Civica), pinned
     pack import --map MAP [--write] [--json] a site pack's tokens from its design-tokens file via MAP
                                              (dry run by default: prints what changes; exit 2 if refused)
@@ -54,14 +80,20 @@ import json
 import sys
 from pathlib import Path
 
+from roomkit import browse_parity as BP
 from roomkit import build as B
+from roomkit import collection_parity as CP
 from roomkit import entity_parity as EP
+from roomkit import gate as G
 from roomkit import kitlog
+from roomkit import machine_text as MT
 from roomkit import pack as K
 from roomkit import pack_import as PI
 from roomkit import parity as P
 from roomkit import passage_parity as PP
 from roomkit import search_parity as SP
+from roomkit import thumb_parity as TP
+from roomkit import topic_parity as TOP
 from roomkit import vendor as V
 from roomkit.manifest import ManifestError, load
 
@@ -228,17 +260,45 @@ def _run(argv: list[str] | None = None) -> int:
     src.add_argument("--entities-from", type=Path, metavar="PAGES.tsv",
                      help="print the live file for --entities from pages fetched by exporters/fetch-entity-pages.sh "
                           "(with --site)")
+    src.add_argument("--collections", type=Path, metavar="LIVE.json",
+                     help="parity.collections: the live collection pages (collection_parity.py documents the file) "
+                          "vs the built room, with --out ROOM")
+    src.add_argument("--collections-from", type=Path, metavar="PAGES.tsv",
+                     help="print the live file for --collections from pages fetched by exporters/fetch-entity-pages.sh "
+                          "(with --site)")
+    src.add_argument("--topics", type=Path, metavar="LIVE.json",
+                     help="parity.topics: the live topic pages (topic_parity.py documents the file) vs the built room, "
+                          "with --out ROOM")
+    src.add_argument("--topics-from", type=Path, metavar="PAGES.tsv",
+                     help="print the live file for --topics from pages fetched by exporters/fetch-entity-pages.sh "
+                          "(with --site)")
+    src.add_argument("--machine-text", type=Path, metavar="LIVE.txt",
+                     help="parity.machine_text: the live plain-text index, saved, vs the built room's, with --out ROOM")
     src.add_argument("--passages", type=Path, metavar="LIVE.json",
                      help="parity.passages: the live passage route's answers (passage_parity.py documents the file) "
                           "vs the built room, with --out ROOM")
+    src.add_argument("--facet-pages", type=Path, metavar="LIVE.json",
+                     help="parity.facet_pages: live filtering by each facet value (browse_parity.py documents the "
+                          "file) vs the built room's facet pages, with --out ROOM")
+    src.add_argument("--facets-from", type=Path, metavar="INDEX.html",
+                     help="print the live file for --facet-pages from the live index page as fetched (with --site)")
+    src.add_argument("--sitemaps", type=Path, nargs="+", metavar="XML",
+                     help="parity.sitemaps: the live sitemap provider files vs the built room's sitemap.xml, "
+                          "with --out ROOM")
+    src.add_argument("--thumbs", type=Path, metavar="LIVE.tsv",
+                     help="parity.thumbnails: the live cards' thumbnails (exporters/*-fetch-thumbs.sh) vs the built "
+                          "room's, with --out ROOM")
     src.add_argument("--passages-fetch", action="store_true",
                      help="print the live file for --passages: paced public GETs of a sample of --out ROOM")
+    pp.add_argument("--path", default="documents.txt", help="with --machine-text: the file in the room (default documents.txt)")
     pp.add_argument("--sample", type=int, default=10, help="with --passages-fetch: pages (and spans) to ask for (default 10)")
     pp.add_argument("--keys", type=Path, help="with --passages-fetch: curated stable_keys to ask ggrr/v1/citation for, one a line")
     pp.add_argument("--pace", type=float, default=2.0, help="with --passages-fetch: seconds between requests (default 2)")
-    pp.add_argument("--out", type=Path, help="with --search, --entities or --passages: the built room")
+    pp.add_argument("--out", type=Path, help="with --search, --entities, --collections, --topics, --machine-text, --passages, --facet-pages, --sitemaps or --thumbs: "
+                                             "the built room")
     pp.add_argument("--top", type=int, default=SP.TOP_N, help=f"with --search: N, the live hits must be in the room's top N (default {SP.TOP_N})")
-    pp.add_argument("--site", choices=P.SITES, help="with --matrix: one site only; with --entities-from: whose pages")
+    pp.add_argument("--site", choices=P.SITES, help="with --matrix: one site only; with --entities-from, "
+                                                    "--collections-from, --topics-from or --facets-from: whose pages")
     pp.add_argument("--pause", type=float, default=1.0, help="seconds between requests (default 1)")
     pp.add_argument("--json", action="store_true")
     pp.add_argument("--pages", type=Path, help="answer from a fetched-pages file instead of HTTP (exporters/*-fetch-pages.sh)")
@@ -258,8 +318,20 @@ def _run(argv: list[str] | None = None) -> int:
     dp.add_argument("--old", required=True, type=Path)
     dp.add_argument("--new", required=True, type=Path)
     dp.add_argument("--json", action="store_true")
+    gp = sub.add_parser("gate", help="a built room's internal links and file sizes; changes nothing")
+    gp.add_argument("--out", required=True, type=Path)
+    gp.add_argument("--max-bytes", type=int, default=G.MAX_BYTES)
+    gp.add_argument("--json", action="store_true")
     args = parser.parse_args(argv)
 
+    if args.command == "gate":
+        try:
+            res = G.run(args.out, args.max_bytes)
+        except G.GateError as exc:
+            print(f"roomkit: {exc}", file=sys.stderr)
+            return 2
+        _print(res, args.json, G.text(res))
+        return 0 if res["ok"] else 1
     if args.command == "vendor":
         return _vendor_cmd(args)
     if args.command == "pack":
@@ -302,6 +374,90 @@ def _run(argv: list[str] | None = None) -> int:
             print(f"roomkit: {exc}", file=sys.stderr)
             return 2
         _print(rep, args.json, EP.text(rep))
+        return 0 if rep["ok"] else 1
+    if args.command == "parity" and args.collections_from:
+        if not args.site:
+            parser.error("parity --collections-from needs --site")
+        try:
+            head, pages = CP.read_pages_tsv(args.collections_from)
+            live = CP.live_from_pages(args.site, head, pages)
+        except (CP.CollectionParityError, EP.EntityParityError, OSError, ValueError) as exc:
+            print(f"roomkit: {exc}", file=sys.stderr)
+            return 2
+        print(json.dumps(live, indent=1, sort_keys=True, ensure_ascii=False))
+        return 0
+    if args.command == "parity" and args.collections:
+        if not args.out:
+            parser.error("parity --collections needs --out ROOM")
+        try:
+            rep = CP.run(args.collections, args.out)
+        except (CP.CollectionParityError, OSError, ValueError) as exc:
+            print(f"roomkit: {exc}", file=sys.stderr)
+            return 2
+        _print(rep, args.json, CP.text_report(rep))
+        return 0 if rep["ok"] else 1
+    if args.command == "parity" and args.topics_from:
+        if not args.site:
+            parser.error("parity --topics-from needs --site")
+        try:
+            head, pages = CP.read_pages_tsv(args.topics_from)
+            live = TOP.live_from_pages(args.site, head, pages)
+        except (TOP.TopicParityError, EP.EntityParityError, OSError, ValueError) as exc:
+            print(f"roomkit: {exc}", file=sys.stderr)
+            return 2
+        print(json.dumps(live, indent=1, sort_keys=True, ensure_ascii=False))
+        return 0
+    if args.command == "parity" and args.topics:
+        if not args.out:
+            parser.error("parity --topics needs --out ROOM")
+        try:
+            rep = TOP.run(args.topics, args.out)
+        except (TOP.TopicParityError, OSError, ValueError) as exc:
+            print(f"roomkit: {exc}", file=sys.stderr)
+            return 2
+        _print(rep, args.json, TOP.text_report(rep))
+        return 0 if rep["ok"] else 1
+    if args.command == "parity" and args.machine_text:
+        if not args.out:
+            parser.error("parity --machine-text needs --out ROOM")
+        try:
+            rep = MT.compare(args.machine_text.read_text(encoding="utf-8"),
+                             (args.out / args.path).read_text(encoding="utf-8"))
+        except (OSError, ValueError) as exc:
+            print(f"roomkit: {exc}", file=sys.stderr)
+            return 2
+        _print(rep, args.json, MT.text_report(rep, args.path))
+        return 0 if rep["ok"] else 1
+    if args.command == "parity" and args.facets_from:
+        if not args.site:
+            parser.error("parity --facets-from needs --site")
+        try:
+            live = BP.live_from_index(args.site, args.facets_from.read_text(encoding="utf-8"),
+                                      source=str(args.facets_from))
+        except (BP.BrowseParityError, OSError, ValueError) as exc:
+            print(f"roomkit: {exc}", file=sys.stderr)
+            return 2
+        print(json.dumps(live, indent=1, sort_keys=True, ensure_ascii=False))
+        return 0
+    if args.command == "parity" and (args.facet_pages or args.sitemaps):
+        if not args.out:
+            parser.error("parity --facet-pages / --sitemaps needs --out ROOM")
+        try:
+            rep = BP.run_facets(args.facet_pages, args.out) if args.facet_pages else BP.run_sitemaps(args.sitemaps, args.out)
+        except (BP.BrowseParityError, OSError, KeyError, ValueError) as exc:
+            print(f"roomkit: {exc}", file=sys.stderr)
+            return 2
+        _print(rep, args.json, BP.text(rep))
+        return 0 if rep["ok"] else 1
+    if args.command == "parity" and args.thumbs:
+        if not args.out:
+            parser.error("parity --thumbs needs --out ROOM")
+        try:
+            rep = TP.run(args.thumbs, args.out)
+        except (TP.ThumbParityError, OSError, KeyError, ValueError) as exc:
+            print(f"roomkit: {exc}", file=sys.stderr)
+            return 2
+        _print(rep, args.json, TP.text(rep))
         return 0 if rep["ok"] else 1
     if args.command == "parity" and (args.passages or args.passages_fetch):
         if not args.out:

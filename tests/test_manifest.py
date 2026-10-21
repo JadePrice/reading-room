@@ -614,7 +614,7 @@ def test_scan_page_boxes_validation_refusals() -> None:
 
 def test_scan_pages_json_serialization() -> None:
     from roomkit import build as B
-    from tests.test_golden import ENGINE
+    from tests.roomkit.test_golden import ENGINE
 
     data = _valid_manifest()
     data["documents"][0]["pages"][0]["image_url"] = "/reading-room/camera-contract/pages/p1.webp"

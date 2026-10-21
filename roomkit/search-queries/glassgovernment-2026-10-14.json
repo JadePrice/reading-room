@@ -2,7 +2,7 @@
  "site": "glassgovernment",
  "fetched": "2026-10-14T19:21:05Z",
  "source": "GET https://glassgovernment.org/wp-json/ggrr/v1/search?q=<query> (public, read-only, no login; the endpoint /library/ itself calls)",
- "notes": "Read by the room-search job on mint, 12 queries 2 s apart with a normal browser UA, between 19:21:05Z and 19:21:48Z. Hits are the response's slugs in its order. The endpoint returns at most 50 hits (count is capped at 50): cointelpro, surveillance, body camera, license plate and hate crimes hit that cap, so for them the live list is the site's top 50, not every match. GG's search needs a term of 3+ characters and also matches page text (page_number in each hit).",
+ "notes": "Read by the room-search job on a worker host, 12 queries 2 s apart with a normal browser UA, between 19:21:05Z and 19:21:48Z. Hits are the response's slugs in its order. The endpoint returns at most 50 hits (count is capped at 50): cointelpro, surveillance, body camera, license plate and hate crimes hit that cap, so for them the live list is the site's top 50, not every match. GG's search needs a term of 3+ characters and also matches page text (page_number in each hit).",
  "queries": {
   "axon": [
    "axon-enterprise-master-services-agreement",

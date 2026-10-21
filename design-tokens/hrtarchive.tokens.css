@@ -1,0 +1,168 @@
+/* ============================================================
+   hrtarchive.org — design tokens
+   Static site (Cloudflare Pages). Trans-flag palette.
+   TWO intentional surfaces — keep them separate:
+     1. Archive / index  -> style-archive.css (bright trans flag)
+     2. Rollback editorial-> style.css        (muted trans flag, sepia gov lane)
+   Captured live 2026-06-14; Surface 1 re-synced from live
+   style-archive.css 2026-06-15 (prior Surface 1 was stale).
+   ============================================================ */
+
+/* ----------------------------------------------------------------
+   SURFACE 1 — Archive + index pages (style-archive.css)
+   Deep-purple ground (#12091F) with bright trans-flag + purple
+   accents. Blue = preservation, pink = loss/rollback.
+   Surface 1 uses a Georgia display face (its own override) — NOT the
+   Iowan shared block lower in this file (that is Surface 2's).
+   ---------------------------------------------------------------- */
+:root {
+  /* Trans flag */
+  --trans-pink:       #F5A9B8;   /* secondary accent, emphasis */
+  --trans-blue:       #5BCEFA;   /* primary accent, links */
+  --trans-white:      #FFFFFF;
+  --trans-pink-light: #FFD1DC;
+  --trans-pink-dark:  #E8919F;
+  --trans-blue-light: #A8DFFF;
+  --trans-blue-dark:  #3BA8D4;
+
+  /* Purple accent */
+  --purple-deep: #4A1942;
+  --purple-mid:  #7B3D7E;
+  --purple-soft: #C77DBB;
+  --purple-glow: rgba(123, 61, 126, 0.25);
+
+  /* Background & surface */
+  --bg-deep:     #0D0815;
+  --bg-main:     #12091F;
+  --bg-surface:  rgba(18, 9, 31, 0.85);
+  --bg-elevated: rgba(25, 15, 40, 0.9);
+  --surface:        var(--bg-surface);
+  --surface-strong: rgba(9, 6, 18, 0.92);
+  --surface-soft:   rgba(22, 14, 35, 0.82);
+  --bg:             var(--bg-deep);
+
+  /* Text */
+  --text-primary:   #F8F4FF;
+  --text-secondary: #C9B8D9;
+  --text-muted:     #8A7A9A;
+
+  /* Borders */
+  --border-subtle: rgba(245, 169, 184, 0.15);
+  --border-soft:   rgba(91, 206, 250, 0.2);
+  --border-strong: rgba(91, 206, 250, 0.4);
+
+  /* Semantic */
+  --warning-bg:     rgba(245, 169, 184, 0.12);
+  --warning-border: rgba(245, 169, 184, 0.4);
+  --warning-text:   #FFD1DC;
+  --info-bg:        rgba(91, 206, 250, 0.12);
+  --info-border:    rgba(91, 206, 250, 0.35);
+  --info-text:      #A8DFFF;
+
+  /* Shadows */
+  --shadow-soft:     0 4px 16px rgba(0, 0, 0, 0.25);
+  --shadow-elevated: 0 8px 32px rgba(0, 0, 0, 0.35);
+  --shadow:          var(--shadow-elevated);
+
+  /* Typography — Surface 1 (Georgia display) */
+  --font-display: Georgia, "Times New Roman", Times, serif;
+  --font-body:    -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, sans-serif;
+  --font-mono:    "SF Mono", "Cascadia Code", "Fira Code", Consolas, monospace;
+
+  /* Short-name aliases (about/rollback/page inline styles) */
+  --display:       var(--font-display);
+  --ui:            var(--font-body);
+  --mono:          var(--font-mono);
+  --text:          var(--text-primary);
+  --muted:         var(--text-muted);
+  --muted-strong:  var(--text-secondary);
+  --accent:        var(--trans-blue);
+  --accent-strong: var(--trans-blue-light);
+  --accent-dim:    rgba(91, 206, 250, 0.12);
+  --line:          var(--border-subtle);
+  --line-strong:   var(--border-strong);
+}
+
+/* Trans-flag stripe — 5px tall, vertical bands repeating every 30px
+   (6px each: pink/blue/white/blue/pink). 90deg, NOT `to bottom`. */
+.pride-stripe {
+  height: 5px;
+  background: repeating-linear-gradient(
+    90deg,
+    #F5A9B8 0px,  #F5A9B8 6px,
+    #5BCEFA 6px,  #5BCEFA 12px,
+    #FFFFFF 12px, #FFFFFF 18px,
+    #5BCEFA 18px, #5BCEFA 24px,
+    #F5A9B8 24px, #F5A9B8 30px
+  );
+  background-size: 30px 5px;
+}
+
+/* ----------------------------------------------------------------
+   SURFACE 2 — Rollback editorial pages (style.css)
+   Muted trans flag on teal-black; distinct editorial voice.
+   Applied via per-page :root; scope under .rollback-surface here
+   so it doesn't clobber Surface 1 if both files load.
+   ---------------------------------------------------------------- */
+.rollback-surface {
+  --trans-blue:     #7ec8e3;
+  --trans-pink:     #e8a0b0;
+
+  --bg:             #061117;
+  --bg-deep:        #040a0e;
+  --surface:        rgba(10, 24, 32, 0.72);
+  --surface-strong: rgba(9, 20, 28, 0.92);
+  --surface-soft:   rgba(15, 31, 41, 0.82);
+
+  --line:           rgba(136, 182, 203, 0.18);
+  --line-strong:    rgba(136, 182, 203, 0.34);
+
+  --text:           #eef5f8;
+  --muted:          #a7b9c5;
+  --muted-strong:   #c8d6de;
+
+  --accent:         #7ec8e3;
+  --accent-strong:  #a8dff0;
+  --accent-dim:     rgba(126, 200, 227, 0.12);
+
+  --rollback:       #d4607a;  /* trans pink deep */
+  --response:       #6ec8dc;  /* trans blue */
+  --gold:           #d9a35d;
+  --violet:         #a98be3;
+
+  --status-gone:  #ff9e8a;
+  --status-live:  #86e696;
+  --status-mixed: #eec47d;
+
+  --shadow: 0 24px 64px rgba(0, 0, 0, 0.28);
+}
+
+/* Government-record lane: sepia override of the rollback surface */
+.lane-gov {
+  --bg:           #0f0d09;
+  --bg-deep:      #090705;
+  --text:         #ede5d0;
+  --muted:        #b8a882;
+  --muted-strong: #d4c49a;
+  --accent:       #c49a3c;
+  --accent-strong:#d9af55;
+}
+
+/* ----------------------------------------------------------------
+   Typography — SURFACE 2 default (style.css, Iowan Old Style).
+   NOT shared: Surface 1 overrides --display to Georgia in its own
+   :root above. Scoped here under .rollback-surface so it doesn't
+   clobber Surface 1 if both files load.
+   ---------------------------------------------------------------- */
+.rollback-surface {
+  --display: "Iowan Old Style", "Palatino Linotype", "Book Antiqua", Georgia, serif;
+  --ui:      "Avenir Next", "Segoe UI", "Helvetica Neue", sans-serif;
+  --mono:    "SFMono-Regular", Menlo, Monaco, "Cascadia Mono", Consolas, monospace;
+}
+
+/* Live-state badge tones (record provenance) */
+.status--removed   { /* removed / 404 / scrubbed */ }
+.status--changed   { /* rewritten / mixed */ }
+.status--live      { /* live */ }
+.status--preserved { /* preserved */ }
+.status--restored  { /* restored with disclaimer */ }

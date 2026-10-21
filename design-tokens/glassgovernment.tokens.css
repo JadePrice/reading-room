@@ -1,0 +1,87 @@
+/* ============================================================
+   glassgovernment.org — design tokens
+   Theme: gg-library-child (Kadence child), live
+   Mood:  Light, archival "reading room". Paper + ink, muted civic
+          accents (forest / slate / brick). Atkinson Hyperlegible
+          for maximum legibility. Captured live 2026-06-14.
+   ============================================================ */
+
+:root {
+  /* Archival palette */
+  --paper-0: #F1ECDD;   /* page background */
+  --paper-1: #FBF7EB;   /* raised surface */
+  --ink-0:   #1E1B17;   /* primary text */
+  --ink-1:   #4B463E;   /* secondary text */
+  --rule:    #8A816F;   /* hairlines, dividers */
+  --accent-forest: #2F4737;
+  --accent-slate:  #304B5D;
+  --accent-brick:  #7B3D32;
+  --focus-ring:    #0E5A9D;
+
+  /* Semantic status (hash-badge present/missing, etc.) */
+  --status-ok-bg: #eef8f2;  --status-ok-border: #b9d4c4;  --status-ok-ink: #2F6F4E;
+  --status-warn-bg: #fff7de; --status-warn-border: #eadcaf; --status-warn-ink: #8A6D1D;
+  --status-bad-bg: #fde8e8;  --status-bad-border: #e8c5c5;  --status-bad-ink: #8A2E2E;
+
+  /* Typography — Atkinson Hyperlegible everywhere */
+  --gg-font-header: "Atkinson Hyperlegible", system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --gg-font-body:   "Atkinson Hyperlegible", system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --gg-font-mono:   "Atkinson Hyperlegible Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  --gg-font-heading: var(--gg-font-header);
+
+  /* Type scale (reading-room rhythm) */
+  --type-display-size: clamp(2rem, 4vw, 2.625rem);   --type-display-line: 1.2;
+  --type-section-size: clamp(1.35rem, 2.4vw, 1.75rem); --type-section-line: 1.25;
+  --type-item-size: 1.05rem;   --type-item-line: 1.35;
+  --type-body-size: 1.0625rem; --type-body-line: 1.6;
+  --type-meta-size: 0.8rem;    --type-meta-line: 1.4;
+
+  /* Layout */
+  --reading-room-max: 72rem;
+  --reading-room-gutter: 1.25rem;
+  --reading-room-stack: 1.2rem;
+
+  /* Catalog rhythm + geometry */
+  --catalog-rule-width: 1px;
+  --catalog-rule-strong: 2px;
+  --catalog-radius: 2px;
+  --catalog-space-1: 0.35rem;
+  --catalog-space-2: 0.55rem;
+  --catalog-space-3: 0.8rem;
+  --catalog-space-4: 1rem;
+  --catalog-space-5: 1.25rem;
+  --catalog-link-offset: 2px;
+  --catalog-hover-bg: #EEE7D7;
+
+  /* Depth + motion */
+  --radius: 4px;
+  --shadow: 0 1px 0 rgba(30, 27, 23, 0.2);
+  --motion-fast: 160ms;
+  --paper-texture: none;
+  --paper-vignette: none;
+
+  /* Legacy aliases (kept for existing child-theme CSS) */
+  --bg: var(--paper-0);
+  --surface: var(--paper-1);
+  --ink: var(--ink-0);
+  --muted: var(--ink-1);
+  --lake: var(--accent-slate);
+  --brass: var(--focus-ring);
+  --wood: var(--accent-brick);
+}
+
+/* High-contrast users get darker ink + stronger rules */
+@media (prefers-contrast: more) {
+  :root {
+    --ink-1: #2D2922;
+    --rule: #5F5645;
+    --focus-ring: #064B93;
+    --status-ok-bg: #d0e8d8;  --status-ok-border: #2F4737;  --status-ok-ink: #1a3a26;
+    --status-warn-bg: #f5e4c0; --status-warn-border: #7a5c0a; --status-warn-ink: #5a3d00;
+    --status-bad-bg: #f5d0d0;  --status-bad-border: #7b2020;  --status-bad-ink: #5a1010;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root { --motion-fast: 0ms; }
+}

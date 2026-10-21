@@ -9,7 +9,7 @@ A document page today is a PHP template in front of the database, cached at the 
 ## Commands
 
 ```bash
-PY=python3
+PY="${PYTHON:-python3}"
 $PY -m roomkit.cli build  --manifest M.json --out DIR [--json]   # validate, then write the room
 $PY -m roomkit.cli check  --manifest M.json --out DIR [--json]   # rebuild in memory, compare; changes nothing
 $PY -m roomkit.cli status --manifest M.json --out DIR --json     # unbuilt | stale | current | refused, and the next command
@@ -23,10 +23,16 @@ $PY -m roomkit.cli parity --entities LIVE.json --out ROOM [--json]       # parit
 $PY -m roomkit.cli parity --entities-from PAGES.tsv --site S > LIVE.json  # the live file, from fetched pages
 $PY -m roomkit.cli parity --passages-fetch --out ROOM --sample 10 [--keys KEYS.txt] > LIVE.json  # paced GETs (GG)
 $PY -m roomkit.cli parity --passages LIVE.json --out ROOM [--json]       # parity.passages (below, "Passage citations")
+$PY -m roomkit.cli parity --facets-from INDEX.html --site deflockdane|glassgovernment > LIVE.json  # live facets, from the live index
+$PY -m roomkit.cli parity --facet-pages LIVE.json --out ROOM [--json]    # parity.facet_pages (below, "Facet pages and the sitemap")
+$PY -m roomkit.cli parity --sitemaps PROVIDER.xml... --out ROOM [--json] # parity.sitemaps
+$PY -m roomkit.cli parity --thumbs LIVE.tsv --out ROOM [--json]          # parity.thumbnails (below, "Card thumbnails")
+$PY -m roomkit.cli parity --search LIVE.json --out ROOM [--top N] [--json]  # parity.search (below, "Corpus search")
 $PY -m roomkit.cli diff --old OLD/room.lock.json --new NEW/room.lock.json [--json]  # purge + remove lists
-$PY -m roomkit.cli vendor write --to path/to/civica/app/room       # copy the core into Civica, pinned
+$PY -m roomkit.cli gate --out DIR [--max-bytes N] [--json]     # links into the mount land on a file; no file over 25 MiB
+$PY -m roomkit.cli vendor write --to /srv/projects/civica/app/room       # copy the core into Civica, pinned
 $PY -m roomkit.cli pack import --map roomkit/packs/<site>/tokens.map.json [--write]  # pack tokens from design-tokens
-$PY -m roomkit.cli vendor check --to path/to/civica/app/room [--json]  # its drift; changes nothing
+$PY -m roomkit.cli vendor check --to /srv/projects/civica/app/room [--json]  # its drift; changes nothing
 ```
 
 `build`, `check` and `status` take `--site-pack packs/<site>/` (the site pack, below). Without it, the manifest's site's pack (`site.template`), else `packs/default/`.
@@ -55,9 +61,11 @@ The reading room is meant to become the Civica reading room, so the part that re
 | `view.py` | manifest + pack -> the plain view-model dicts | manifest |
 | `room.py` | the Jinja environment and a thin render call | view, manifest |
 | `pack.py` | load and check a site pack, one function per check | color, css |
+| `search.py` | corpus search: what Pagefind indexes, the pinned indexer, the pack switch | manifest |
+| `browse.py` | facet pages and the sitemap: which pages, their records, the pack switches | entities, view |
 | `templates/room/`, `packs/pack.schema.json` | the markup; the pack's structure | |
 
-Around it, the roomkit-only parts: `build.py` (the static tree, fingerprints, lock), `cli.py`, `parity.py`, `search_parity.py`, `entity_parity.py`, `passage_parity.py`, `vendor.py`, and the pack importer: `tokens_css.py` (read a design-tokens file: top-level `:root`, `var()` resolved, duplicates and variants named) and `pack_import.py` (map -> pack tokens, each non-site value with its why).
+Around it, the roomkit-only parts: `build.py` (the static tree, fingerprints, lock), `cli.py`, `parity.py`, `search_parity.py`, `entity_parity.py`, `passage_parity.py`, `browse_parity.py`, `thumb_parity.py`, `vendor.py`, and the pack importer: `tokens_css.py` (read a design-tokens file: top-level `:root`, `var()` resolved, duplicates and variants named) and `pack_import.py` (map -> pack tokens, each non-site value with its why).
 
 **Civica carries a verbatim copy, pinned** (decided 2026-10-13: vendored copy plus a drift check). `vendor write` copies the core into a package directory and records `VENDORED.json` (source commit, sha256 per file); it refuses while a core file has uncommitted changes. `vendor check` is read-only and names files `modified` in the copy (fix upstream, never in the copy), `missing`, or `behind` the source; exit 1 on any. Files in the destination outside the core (a tenant's pack) are left alone. A test imports a copy under another package name and holds it to the same bytes as roomkit (`tests/roomkit/test_vendor.py`).
 
@@ -69,11 +77,11 @@ The vendored copy lives on Civica branch `room-spike`, not on `main` (as of 2026
 
 One exporter per site, each a `wp eval-file` script on stdin, so nothing is copied to the host. Both write the same manifest schema (`manifest.py` docstring): the site's helpers do the formatting, roomkit formats nothing.
 
-**glassgovernment.org** (`exporters/glassgovernment.php`), through the operator's `wp-prod` wrapper, the route `scripts/wiki/corpus_manifest.py` already uses. `sudo` passes no environment, so flags go in as constants on a one-line PHP block in front of the script:
+**glassgovernment.org** (`exporters/glassgovernment.php`), through the operator's wp-cli command (`$GG_WP`), the route `scripts/wiki/corpus_manifest.py` already uses. `sudo` passes no environment, so flags go in as constants on a one-line PHP block in front of the script:
 
 ```bash
 { echo "<?php define('ROOMKIT_ALLOW_EXCLUDED', true); ?>"; cat roomkit/exporters/glassgovernment.php; } \
-  | ssh gg-core 'sudo -n /usr/local/bin/wp-prod eval-file -' > gg-manifest.json
+  | ssh $GG_HOST "$GG_WP eval-file -" > gg-manifest.json
 ```
 
 With `search_text` the full export is slow (84 MB on 2026-10-14). To run it in pieces, add `define('ROOMKIT_SLICE', '0:100');` (then `100:100`, and so on) to the same PHP block. Each piece carries a `slice` key, and `python roomkit/exporters/merge-slices.py gg-manifest.json piece-*.json` joins them. It refuses a gap, an overlap, a short piece or pieces from different exports, and writes nothing when it refuses.
@@ -83,11 +91,11 @@ The citation is `GGRR_Citations::format_reference`, the badge and rights line co
 **deflockdane.org** (`exporters/deflockdane.php`):
 
 ```bash
-ssh gg-shared 'ROOMKIT_ALLOW_EXCLUDED=1 ~/bin/wp --path=$HOME/domains/deflockdane.org/public_html eval-file -' \
+ssh $DD_HOST 'ROOMKIT_ALLOW_EXCLUDED=1 ~/bin/wp --path=$HOME/domains/deflockdane.org/public_html eval-file -' \
   < roomkit/exporters/deflockdane.php > dd-manifest.json
 ```
 
-- **URLs** come from the plugin's own helpers. That includes the verified viewing copy as `file.view_url`, checked the way the plugin checks it but without the transient the plugin writes.
+- **URLs** come from the plugin's own helpers. That includes the verified viewing copy as `file.view_url`, checked the way the plugin checks it but without the transient the plugin writes. Its hash goes with it (`file.view_sha256`), and `room.lock.json` lists it under `derivatives` beside the original's: the viewing copy is a derivative, never the record's file.
 - **The citation** is the template's formula, repeated, because dd builds it inline in `single-reading-room.php`. `parity` is what keeps that safe.
 - **Every public file is hashed against `file_sha256`.** A missing or mismatched file makes the exporter refuse. With `ROOMKIT_ALLOW_EXCLUDED=1`, the record goes into the manifest's `excluded` list instead, and every roomkit command names it.
 - **Page text is exported** (`ROOMKIT_WITH_PAGES=0` leaves it out). The static pages search it in the browser. dd's plugin keeps OCR text server-side, and shipping it was decided on 2026-10-08 (plan D6).
@@ -95,7 +103,7 @@ ssh gg-shared 'ROOMKIT_ALLOW_EXCLUDED=1 ~/bin/wp --path=$HOME/domains/deflockdan
 **Parity on dd goes through the origin.** Cloudflare rate-limits deflockdane.org and answered 429 within a few dozen paced requests. `exporters/deflockdane-fetch-pages.sh` runs on the host and fetches each page from the host's own public address, skipping Cloudflare. It writes nothing on the host and streams the pages back:
 
 ```bash
-ssh gg-shared bash -s -- $(jq -r '.documents[].slug' dd-manifest.json) \
+ssh $DD_HOST bash -s -- $(jq -r '.documents[].slug' dd-manifest.json) \
   < roomkit/exporters/deflockdane-fetch-pages.sh > dd-pages.tsv
 $PY -m roomkit.cli parity --manifest dd-manifest.json --pages dd-pages.tsv
 ```
@@ -108,11 +116,17 @@ index.html                   the list of documents
 entities/index.html          GG's entity index        } pack features.entities and the
 entity/<type>/<slug>/index.html  one page per entity  } manifest's `entities` block
 <slug>/index.html            one page per document
+<facet>/<value>/index.html   one page per facet value } pack features.facet-pages and the
+                                                      } manifest's site.index.browse
+sitemap.xml                  every served page by its live URL (pack features.sitemaps)
 <slug>/pages.<hash>.json     page texts, when the manifest carries them (and each page's citation,
                              with pack features.passage-cite)
 citations.json               GG's curated citations by stable_key (features.passage-cite)
 assets/room.<hash>.css       the shared template's styles, the room's chrome, the site pack's tokens
 assets/room.<hash>.js        the index finder and the light/dark toggle
+assets/room-search.<hash>.js the corpus-search finder and suggestions (features.corpus-search)
+assets/thumbs/<slug>.<hash>.<ext>  card thumbnails the manifest carries (index.thumb)
+pagefind/                    the Pagefind index (features.corpus-search)
 assets/rr-config.<hash>.js   window.rrReaderConfig
 assets/vendor/rr-reader/     reading-room-reader/src, verbatim (fingerprinted names)
 assets/vendor/pdfjs/         pdf.js as the engine pins it (fingerprinted names)
@@ -120,6 +134,8 @@ assets/vendor/pdfjs/         pdf.js as the engine pins it (fingerprinted names)
 room.lock.json               sha256 of every served file, logical -> published asset names,
                              roomkit/engine versions, the pack's hash
 ```
+
+The tree is written all at once: into a sibling copy of what is on disk (`.<out>.new`), then swapped in with two renames, so a build that fails part-way leaves the previous room whole. Files no longer in the room stay and are listed (`not in room`); the publish step removes them.
 
 ## The site's chrome: superseded capture (D7)
 
@@ -144,13 +160,30 @@ The finder filters the cards already on the page (title, summary, agency, group,
 
 A pack's `features.corpus-search` (off unless the pack turns it on; `labels.fulltext_placeholder` is the box's placeholder) adds a [Pagefind](https://pagefind.app) index and swaps the finder's script for `room-search.js` (`search.py`, `templates/room/room-search.js`, `search.css`).
 
-- **Indexed:** title, summary, citation, agency, group and every page's OCR text from `pages.json`, or, for a record with no usable pages, its `search_text`. That is GG's `full_text` (what the live search reads), exported for a record whose page rows are not a complete 1..N run, most often a large scan OCR'd as one row with no page number. It is indexed and never shown: no `pages.json`, no in-document search, and a hit links to the record, not to a page. The group and each facet are Pagefind filters, the date is a sort; none of them add words. The record pages Pagefind reads are built in memory by `search.record_html` and never served.
+- **Indexed:** title, summary, citation, agency, group, the public notes the record page shows (`display.notes`) and every page's OCR text from `pages.json`, or, for a record with no usable pages, its `search_text`. That is GG's `full_text` (what the live search reads), exported for a record whose page rows are not a complete 1..N run, most often a large scan OCR'd as one row with no page number. It is indexed and never shown: no `pages.json`, no in-document search, and a hit links to the record, not to a page. The group and each facet are Pagefind filters, the date is a sort; none of them add words. The record pages Pagefind reads are built in memory by `search.record_html` and never served.
 - **Shipped:** the index under `pagefind/` (the loader, worker, wasm, shards, fragments, filters; Pagefind's own UI bundles are dropped). No network at page view: the finder loads `pagefind/pagefind.js` from the room's own mount. The room sets no CSP; a site that adds one needs `'wasm-unsafe-eval'` in `script-src` for Pagefind's wasm (QW1).
 - **Pinned:** `pagefind[bin]==1.5.2` in `requirements-dev.txt` (the PyPI wrapper with its bundled binary: `uv pip install --python ~/.venvs/llm-wiki/bin/python 'pagefind[bin]==1.5.2'`). A build with the switch on and another version, or none, is refused with that command.
 - **Not byte-reproducible.** Pagefind writes each filter's values in a random order, so `filter/*`, `pagefind.*.pf_meta` and the hashes in their names change between runs of the same input (fragments and index shards do not). So `room.lock.json` records `search.input` (a hash of every indexed field) and the version; `check` calls the index current when both match and the shipped `pagefind/` files are the ones the on-disk lock lists. The goldens run a stand-in indexer that writes the HTML Pagefind would read.
 - **Finder.** Text goes to the index; the facet selects narrow text results too (and the cards when the box is empty). Results link to the record, and to `#page-N` for PDF records (the reader opens `#page-N`). The query stays in the URL. Pagefind stems words, so `zephy` finds nothing and `zephyr` finds `zephyrine`. Without JavaScript the finder stays hidden and the static list stands.
-- **Suggestions.** A WAI-ARIA combobox over a grouped listbox (arrow keys, Enter, Escape; `aria-activedescendant`; the result count is `aria-live`). Groups: top matches, one per facet the room holds (agency/category, year, and others the manifest carries), recent documents, recent searches (localStorage). "Try searching" is not built (no data to draw it from).
-- **parity.search.** `roomkit parity --search LIVE.json --out ROOM [--top N] [--json]` runs the room's own `pagefind.js` in Chromium and checks that every live hit is in the room's top N (default 100; `--top`). `LIVE.json` is `{"site", "fetched", "source", "notes"?, "queries": {"<query>": ["<slug or record URL>", ...]}}`; a hit's last path segment is its slug. A live hit the room does not hold is reported as `not_in_room`, not a miss. GG's set is `search-queries/glassgovernment-2026-10-14.json`; for dd the Mac feeds results fetched through the origin in the same format.
+- **Suggestions.** A WAI-ARIA combobox over a grouped listbox (arrow keys, Enter, Escape; `aria-activedescendant`; the result count is `aria-live`). Without a site panel, the groups are: top matches, one per facet the room holds (agency/category, year, and others the manifest carries), recent documents, recent searches (localStorage).
+- **The site's own panel.** When the manifest carries `site.index.suggest` (`manifest.py` documents it), the index embeds it as inert JSON (`<script type="application/json" data-room-suggest>`, every `<` escaped) and `room-search.js` draws that panel instead: the site's labels, its recent documents in its order, then each group's items (`empty` of them on an empty box, the `typing` first that hold the text otherwise), with top matches (`top` of them, from Pagefind) first while typing. A chip fills the box with its query. dd's exporter writes live's panel from the shortcode's archive payload (Try searching, Agencies, Surveillance vendors, Document types, Years, with live's limits). With the block's optional `rank` rows (what dd's `prepareDoc` reads per record, from the same payload), top matches are dd's own `scoreDoc` ported into `room-search.js` (title, agency, type, alias, summary and year matches with live's weights and its recency bonus) rather than Pagefind relevance; 14 probe inputs gave every group, item and top-match order equal to live. Live's "See all results for" row is not drawn.
+- **parity.search.** `roomkit parity --search LIVE.json --out ROOM [--top N] [--json]` runs the room's own `pagefind.js` in Chromium and checks that every live hit is in the room's top N (default 100; `--top`). `LIVE.json` is `{"site", "fetched", "source", "notes"?, "queries": {"<query>": ["<slug or record URL>", ...]}}`; a hit's last path segment is its slug. A live hit the room does not hold is reported as `not_in_room`, not a miss. GG's set is `search-queries/glassgovernment-2026-10-14.json`. dd's live results come through the origin: `ssh $DD_HOST bash -s -- $(jq -r '.queries | keys_unsorted[] | @base64' OLD.json) < roomkit/exporters/deflockdane-fetch-search.sh > LIVE.json` (`search-queries/deflockdane-2026-10-20.json`, 98.5%; the misses are live ignoring words under 3 characters and past the 8th, accepted as explained on 2026-10-20).
+
+### Record status (badges, room-only facets, filter suggestions)
+
+Three manifest pieces, each optional, let a site mark what a record is now:
+
+- **A card badge.** `index.badge` (text), `index.badge_kind` (a slug, styled as `room__badge--<kind>`) and `index.badge_sr` (a screen-reader prefix such as "Status: ") draw a badge at the start of the card's meta line, on the index and on every facet page. The badge text is part of the card's filter text, so typing "past" finds the past records.
+- **Room-only facet pages.** A `site.index.browse` facet with `room_only: true` is the room's own: live's index has nothing to compare it to, so `parity --facet-pages` reports it under `room_only` (pages per facet) and still checks that each page is linked from the index, but never calls it an extra facet.
+- **Filter suggestions.** A `site.index.suggest` group item may be `{label, facet, value, count?}` in place of `{label, query, count?}`. Choosing it sets that finder filter and clears the text, as the finder's own facet suggestions do. A facet that `site.index.facets` doesn't name is refused.
+
+dd's exporter fills all three from the plugin's record status (plugin 0.9.0, DB 0.5.0: `record_status` current / past / unknown, `status_until`, `record_kind` procurement / monitoring, `status_basis`, `status_as_of`). It calls the plugin's own `Template::record_status`, so the details rows (Status, with the basis and as-of date as a note, and Record kind) are worded exactly as live's record page words them, and `parity --details` compares them. It also writes Status and Record kind finder filters, a "Status" and a "Record kind" suggestion group (with counts, after Try searching), facet pages at `status/<value>/` and `kind/<value>/`, and card meta "Ending <date>" for a current record winding down and "Surveillance monitoring" for a monitoring record. A record never classified (no `status_as_of`) gets none of this, and on an older plugin the exporter emits exactly what it did before.
+
+### Card thumbnails
+
+A card's thumbnail is either `index.thumb` (`{mime, sha256, data}`, base64 of a JPEG, PNG or WebP up to 256 KiB, checked against its magic bytes and hash) or `index.thumb_url` (a remote image, used as given); a row with both is refused. A `thumb` is written to `assets/thumbs/<slug>.<hash>.<ext>` and cached a year, so the card no longer depends on a route only the site's server answers. dd's exporter emits the plugin's cached preview as `thumb`, and keeps `thumb_url` (the live `/thumb/` route) only for a PDF with no cached preview yet.
+
+**parity.thumbnails** (`thumb_parity.py`). `exporters/deflockdane-fetch-thumbs.sh` reads the live index via the origin and fetches and hashes each card's image (`ssh $DD_HOST bash -s < roomkit/exporters/deflockdane-fetch-thumbs.sh > thumbs.tsv`); `parity --thumbs thumbs.tsv --out ROOM` passes when every card live shows an image shows the same bytes from the room's own tree. A live `<img>` that 404s is `live-broken`, explained, not a miss.
 
 
 ### Entities
@@ -169,22 +202,23 @@ A pack's `features.entities` (off in every committed pack) builds the site's ent
 ```bash
 # GG: export (the new `entities` block rides in the first slice), build with the switch on, fetch, compare
 { echo "<?php define('ROOMKIT_ALLOW_EXCLUDED', true); ?>"; cat roomkit/exporters/glassgovernment.php; } \
-  | ssh gg-core 'sudo -n /usr/local/bin/wp-prod eval-file -' > gg-manifest.json
+  | ssh $GG_HOST "$GG_WP eval-file -" > gg-manifest.json
 mkdir -p /tmp/gg-pack && cp -R roomkit/packs/glassgovernment/. /tmp/gg-pack/ \
   && jq '.features.entities = true' roomkit/packs/glassgovernment/pack.json > /tmp/gg-pack/pack.json
 $PY -m roomkit.cli build --manifest gg-manifest.json --out /tmp/gg-room --site-pack /tmp/gg-pack
 jq -r '.entities.index.url, .entities.pages[].url' gg-manifest.json | sed 's#^https://glassgovernment.org/##' > gg-entity-paths.txt
-bash roomkit/exporters/fetch-entity-pages.sh glassgovernment.org $(cat gg-entity-paths.txt) > gg-entity-pages.tsv
+ssh $GG_HOST bash -s -- --origin-http glassgovernment.org $(cat gg-entity-paths.txt) \
+  < roomkit/exporters/fetch-entity-pages.sh > gg-entity-pages.tsv
 $PY -m roomkit.cli parity --entities-from gg-entity-pages.tsv --site glassgovernment > gg-entities-live.json
 $PY -m roomkit.cli parity --entities gg-entities-live.json --out /tmp/gg-room
 
 # dd: the same, every live read through the origin
-ssh gg-shared 'ROOMKIT_ALLOW_EXCLUDED=1 ~/bin/wp --path=$HOME/domains/deflockdane.org/public_html eval-file -' \
+ssh $DD_HOST 'ROOMKIT_ALLOW_EXCLUDED=1 ~/bin/wp --path=$HOME/domains/deflockdane.org/public_html eval-file -' \
   < roomkit/exporters/deflockdane.php > dd-manifest.json
 mkdir -p /tmp/dd-pack && cp -R roomkit/packs/deflockdane/. /tmp/dd-pack/ \
   && jq '.features.entities = true' roomkit/packs/deflockdane/pack.json > /tmp/dd-pack/pack.json
 $PY -m roomkit.cli build --manifest dd-manifest.json --out /tmp/dd-room --site-pack /tmp/dd-pack
-ssh gg-shared bash -s -- --origin deflockdane.org deflock_rr_entity-sitemap.xml \
+ssh $DD_HOST bash -s -- --origin deflockdane.org deflock_rr_entity-sitemap.xml \
   $(jq -r '.entities.pages[].url | sub("^https://deflockdane.org/"; "")' dd-manifest.json) \
   < roomkit/exporters/fetch-entity-pages.sh > dd-entity-pages.tsv
 $PY -m roomkit.cli parity --entities-from dd-entity-pages.tsv --site deflockdane > dd-entities-live.json
@@ -205,6 +239,91 @@ Verified 2026-10-12, locally: axe WCAG 2.2 AA clean on both sites' index, a docu
 
 **Continuity.** The pack is an input to the build, hashed into the lock. A menu or footer change on the live site reaches the room as an edit to the pack's `chrome`; `check` then reports the pages as stale.
 
+### Collections (GG)
+
+A pack's `features.collections` (on in GG's pack since 2026-10-21, after parity on a fresh export; off in the others) builds GG's collections page (`/library/collections/`), one page per collection (`/library/collection/<key>/`, keys with `_` as live) and the collections table at the top of the index, from the manifest's `collections` block (`site_collections.py` documents it). Templates `collections.html`, `collection.html`, `partials/collections-grid.html`, styled by `collections.css`; `room-collections.js` runs their controls and ships only with the feature.
+
+- **Every word and every list is the site's.** The exporter repeats each template's inline formula, named (the "N files, in order" count, the Federal File / Public Records stamp, the zero-padded row number, "Final", the card code, the sources line, the table's "Recent" where the collections page says "Modern"), and takes the lists from the plugin's helpers in their order (`collections_by_category`, `collection_docs`, `ggrr_collection_meta`, `ggrr_collection_sources`, `ggrr_collection_filter_tags`, `ggrr_collection_sensitivity`). `collections.source` holds the sha256 of each file it copied from; the copies it was written against are gg-reading-room 03c8cd2 (2026-10-19).
+- **Controls follow the live JavaScript.** The collections page: words match the card's own search text, a quick filter keeps its tagged cards and every untagged one (live's rule), a group or category with nothing showing hides, and sorting is within each group with no year last. A collection page has its title search only past eight records, as live, with live's "{shown} of {total} files" status. The index table sorts by name or year as one list. Live leaves its group and era header rows stacked above the sorted rows; the room hides them while sorted, a documented difference. The filter buttons carry `aria-pressed`, which live's lack. Every control is hidden in the markup and shown by the script, so without JavaScript each page lists everything in the site's order.
+- **Not attempted:** the folder-card icons, DECLAS stamps, year bars and first-record card thumbnails. Content, order and counts are the acceptance.
+- **Links.** Each record row links into the room (the record must be one the room holds: a collection naming a record the export left out refuses the block); the canonical and the JSON-LD keep the live URL; the sitemap lists the collection pages. With the switch off, `site_collections.gate` hides the block from the whole build (the goldens are built with a block and the switch off).
+- **Refused:** a URL outside the room path or not ending in its own key, a path starting with a record's slug or a reserved name, a page that is also an entity page, a card or row naming a collection with no page, a duplicate, a tag that is not a filter value, a sort value the room cannot sort by, a search status without `{shown}` and `{total}`, a table without four column headings.
+- **Accessibility.** One h1, no heading gaps, the notice is an `aside` named by its heading, the record list is a `nav` named as live names it, the table's era and group rows are `th scope=rowgroup`; on narrow screens the sources move under the title (read once, never twice). Playwright runs axe (WCAG 2.2 AA) at 375 and 1280 px, light and dark, on every page type, and the controls are exercised in a browser.
+
+**GG pages for parity come through the origin** (`--origin-http`, run on the GG host: Cloudflare reaches the apex on :80). Through the edge, Cloudflare's email obfuscation rewrites every address to "[email protected]", and parity reports differences the room does not have (2026-10-21: 1 collection page, 6 topic pages).
+
+**parity.collections.** `parity --collections-from PAGES.tsv --site glassgovernment` reads pages fetched by `exporters/fetch-entity-pages.sh` (the index for its table, the collections page, every collection page) into `LIVE.json` (`collection_parity.py` documents it); `parity --collections LIVE.json --out ROOM` reads the built room's pages into the same shape and passes only when the collections page (categories, stamps, groups, every card's title, span, count and blurb, in order), every collection page (heading block, notice, records in order with numbers, sizes and badges, JSON-LD) and the index table (eras, groups, rows, sources, descriptions) are equal, every live page answered 200, and nothing went unchecked.
+
+```bash
+# After a fresh GG export (the `collections` block rides in the first slice), with the switch on in a scratch pack:
+jq '.features.collections = true' roomkit/packs/glassgovernment/pack.json > /tmp/gg-pack/pack.json
+$PY -m roomkit.cli build --manifest gg-manifest.json --out /tmp/gg-room --site-pack /tmp/gg-pack
+jq -r '"https://glassgovernment.org/library/", .collections.index.url, .collections.pages[].url' gg-manifest.json \
+  | sed 's#^https://glassgovernment.org/##' > gg-collection-paths.txt
+ssh $GG_HOST bash -s -- --origin-http glassgovernment.org $(cat gg-collection-paths.txt) \
+  < roomkit/exporters/fetch-entity-pages.sh > gg-collection-pages.tsv
+$PY -m roomkit.cli parity --collections-from gg-collection-pages.tsv --site glassgovernment > gg-collections-live.json
+$PY -m roomkit.cli parity --collections gg-collections-live.json --out /tmp/gg-room
+```
+
+### Machine text (GG documents.txt)
+
+A pack's `features.machine-text` (on in GG's pack since 2026-10-21, after parity on a fresh export; off in the others) serves GG's plain-text record index at `/library/documents.txt`, the bytes the exporter wrote (`machine_text.py`). The exporter repeats `templates/txt-ggrr-documents.php` line for line from the same call (`get_documents` with limit 999, capped at 500 by the storage layer, as live), with the export's time on the `Generated:` line, so a manifest always builds the same bytes. Every link into the room must name a record the room holds, or the block is refused. With the file shipped, `.htaccess` adds `AddCharset UTF-8 .txt` (live sends `text/plain; charset=UTF-8`) and gives `.txt` the HTML cache policy; without it no byte changes. A host that ignores `.htaccess` must send the charset itself.
+
+`parity --machine-text LIVE.txt --out ROOM` compares a saved live file with the room's, line by line, the `Generated:` line aside, and names the first difference by each file's line number. Checked 2026-10-20 against today's live file (455 records, in the manifest's order): every link resolves to a record in the room.
+
+`/llms-full.txt` is the site root's, outside the room's mount, so the room does not build it (the matrix row stays partial on it).
+
+```bash
+curl -s -A "$UA" https://glassgovernment.org/library/documents.txt > gg-documents-live.txt
+$PY -m roomkit.cli parity --machine-text gg-documents-live.txt --out /tmp/gg-room
+```
+
+### Topics (GG)
+
+A pack's `features.topics` (on in GG's pack since 2026-10-21, after parity on a fresh export; off in the others) builds GG's topics page at `/library/topics/` and every page of every topic at `/library/topics/<t>/` and `/library/topics/<t>/page/<n>/`, from the manifest's `topics` block (`topics.py`). The exporter writes each page as `templates/archive-ggrr-topics.php` and `archive-ggrr-topic.php` do: the topic list from `ggrr_holdings_topic_summary()` (count, then label), each topic's records from `get_documents_by_topic` 50 at a time in its order (sort order, date, id), the h1 label with the template's acronym list, the head title with plain `ucwords` (as `filter_document_title`), the row meta (date, collection, reading time, agency), the summary cut at 40 words, the numbered paging (range 2, with dots) and the DefinedTerm JSON-LD. roomkit sorts, pages and composes nothing.
+
+- **Refused:** a page whose URL is not `topics/<t>/` (page 1) or `topics/<t>/page/<n>/`, a topic whose pages are not 1..N, a record the room does not hold, a paging link to a page of the topic that is not built, an index entry with no page, a duplicate. A topic naming a record the export left out refuses the block (as collections).
+- **Links and sitemap:** links to topic pages from anywhere in the room stay inside it; canonicals and JSON-LD keep the live URLs, each `/page/N/` its own canonical as live. The sitemap lists the topics page and each topic's first page (GG's topic provider lists first pages only; `parity --sitemaps` takes the topics page as the room's own).
+- **Not rendered:** the in-topic `?s=` filter (live shows it past 50 records; it searches full text, with snippets, in MySQL FULLTEXT score order). The room cannot answer it from the static index yet, so it renders no form rather than a dead one; the matrix row stays partial on it.
+- **Deliberate differences:** each row title is an h2 (live: h3 under the h1); the paging is a list with 44px targets.
+
+`parity --topics LIVE.json --out ROOM` compares the topics page and every topic page (crumbs, heading, count, rows with every field, paging links read under the mount, JSON-LD); `--topics-from PAGES.tsv --site glassgovernment` builds the live file from pages fetched by `exporters/fetch-entity-pages.sh`. Checked 2026-10-21 against all 75 live pages (60 topics, 1,400 rows, 435 records): every record is one the 455-record manifest holds, each topic's rows add up to its listed count, and a block built from the live pages round-trips through the build and both readers 74/74 with the gate passing. That proves the renderer and readers, not the exporter: parity proper waits on a fresh export.
+
+```bash
+jq -r '.topics.index.url, .topics.pages[].url' gg-manifest.json | sed 's#^https://glassgovernment.org/##' > gg-topic-paths.txt
+ssh $GG_HOST bash -s -- --origin-http glassgovernment.org $(cat gg-topic-paths.txt) \
+  < roomkit/exporters/fetch-entity-pages.sh > gg-topic-pages.tsv
+$PY -m roomkit.cli parity --topics-from gg-topic-pages.tsv --site glassgovernment > gg-topics-live.json
+$PY -m roomkit.cli parity --topics gg-topics-live.json --out /tmp/gg-room
+```
+
+### Index selects: optgroups, a multi-valued facet, a year range, a sort
+
+Optional keys of `site.index`, all additive (a manifest without them builds the index it always did). `group_sets: [{label, groups: [names]}]` wraps the group select's options in `<optgroup>`s (a shown group in no set stays a plain option). A facet may be `"multi": true`, whose card values are the document's `index.browse[name]` list (GG's vendor: a record can name several), or `"range": true` with `from_label` and `to_label`, which renders two selects (`<name>-from`, `<name>-to`) over the facet's values. `sort: {label, options: [{value, label}]}` with values from `default`, `date-desc`, `date-asc`, `title` adds a sort select that reorders the cards inside each group (a record with no date goes last). `room.js` keeps every control's state in the URL. These controls are for the plain finder; with corpus search on, `room-search.js` does not read them. GG's export sends all four; the parity matrix row is `index-facets`.
+
+### Facet pages and the sitemap
+
+The no-JS ways in (`browse.py`; matrix rows `index-facet-pages` and `sitemaps`), each behind its own pack switch, off unless the pack asks. dd's pack turns both on (and, since 2026-10-20, `features.entities`).
+
+**Content-Security-Policy (`features.csp`, off unless the pack asks).** Adds one `Header always set Content-Security-Policy` line to the room's `.htaccess` (`build.CSP`): every source `'self'`, no inline script and no `eval` (the room's scripts are all external files; `wasm-unsafe-eval` is for Pagefind's WebAssembly only), `style-src` keeps `'unsafe-inline'` because the reader modules inject a `<style>` element, `frame-ancestors 'self'`. Checked 2026-10-20 in Chromium against a real dd build with the header enforced at the real origin: index, finder search, a PDF record, a CSV record, a facet page and a facet root raised no violation, and an inline script and a cross-origin image were blocked. Not yet checked: the no-JS PDF `<object>` fallback under `object-src 'self'`, GG's room, and a host that ignores `.htaccess` (it must send the same policy). Turn it on in staging first.
+
+- **Facet pages** (`features.facet-pages`). The manifest's `site.index.browse` names the facets that get pages (`{heading, facets: [{name, label, title}]}`, `title` holding `{value}`), and each record's `index.browse` the values it is listed under (`{name: [values]}`: a record can name two vendors). One page per value at `<room>/<facet>/<value-slug>/`, the index's cards in manifest order, and a browse block on the index, one folded list per facet, that works without JavaScript. Separate from `index.facets`, the finder's selects, which do not move. Refused at build: a facet named like a record or a path the room serves, a value with no ASCII slug, two values slugging the same, a record naming a facet the site does not browse. dd's exporter takes agency, document type, vendor and year from the shortcode's own `build_archive_search_payload`, fed what `render()` feeds it, so each page holds what live filtering holds.
+- **Sitemap** (`features.sitemaps`). `sitemap.xml`: the room, every record, the entity index and pages (with entities on), every facet page, by live canonical URL, no lastmod.
+- **parity.facet_pages.** `parity --facets-from INDEX.html --site deflockdane` reads the live index's `archiveSearch` docs into the live file (`browse_parity.py` documents it; `--site glassgovernment` reads GG's selects and row attributes instead, for agency, record type, vendor and year; live records the room does not serve are listed as `not_in_room`, not compared); `parity --facet-pages LIVE.json --out ROOM` passes when every live facet and value is built, every page's records are equal and the index links every page.
+- **parity.sitemaps.** `parity --sitemaps <provider.xml>... --out ROOM`: the live provider files as fetched (dd: Yoast's `deflock_rr_document-sitemap.xml`, `deflock_rr_entity-sitemap.xml`), URLs under the room only, against the room's `sitemap.xml`; the room's index and facet pages are its own and not differences. A sitemap with a DOCTYPE is refused.
+
+Fetch the live inputs through the origin for dd (Cloudflare 429s):
+
+```bash
+R=deflockdane.org:443:$DD_ORIGIN_IP
+curl -sS --resolve $R -o live-index.html https://deflockdane.org/reading-room/
+curl -sS --resolve $R -o docs.xml https://deflockdane.org/deflock_rr_document-sitemap.xml
+curl -sS --resolve $R -o entities.xml https://deflockdane.org/deflock_rr_entity-sitemap.xml
+```
+
+2026-10-20, dd: facet pages 33/33 (agency 17, type 7, vendor 2, year 7); the sitemap equal to the document and entity providers, 84/84, once dd's pack turned `features.entities` on the same day (parity.entities re-run 16/16). axe 0 serious/critical on the index and four facet pages, light, dark and 375 px; the browse block's 33 links present without JavaScript.
+
 ### Passage citations (GG)
 
 A pack's `features.passage-cite` (off in every committed pack; plan Task 12, matrix row `passage-citations`, disposition dynamic-api) turns on the reader's citation panel as the WordPress reader has it: **"Cite page"** in the toolbar and **"Cite"** on each in-document search hit. There is no cite-from-selection; live has none (a later, separate step). The hybrid the user approved on 2026-10-15:
@@ -220,6 +339,7 @@ A pack's `features.passage-cite` (off in every committed pack; plan Task 12, mat
   - an `api` that is not https, or has a query;
   - a citation naming a record the room does not hold, or with another record's `document_id`;
   - a stable_key that is not `sha256("{document_id}|{page}|{start}|{end}")`;
+  - a `file_sha256` (optional, on a curated citation) that is not the record's current file hash: "source changed since this was cited". The key hashes ids and offsets, not the file, so this pin is what catches a replaced file with unchanged text. The GG exporter pins every curated citation to its record's file; `citations.json` carries the pin beside `citation`, not in it, so the citation stays the live answer's shape;
   - a quote that is not the page text between its offsets (code points, as `mb_substr`);
   - a duplicate key, or a page `cite` of the wrong shape.
 - **The exporter records what it copied:** `passages.source` holds the sha256 of `includes/class-ggrr-citations.php` and `includes/class-ggrr-rest.php` as read on the host. The local copy it was written against (c81ba37) has 40d959aa… and ba425447….
@@ -270,7 +390,7 @@ A pack with no `chrome` gets only the skip link ("Skip to the content"). So does
 
 ## Publishing (staging)
 
-`publish/deflockdane-staging.sh`, run by a person on the Mac. It exports, builds and checks in the dd site pack, runs parity, uploads without `--delete`, removes per `roomkit diff`, checks every served file against the lock, and prints the purge list. Everything it reads from the site goes through the origin (Cloudflare 429s).
+`publish/deflockdane-staging.sh`, run by a person on the Mac. It exports, builds and checks in the dd site pack, runs `roomkit gate` (every link into the mount lands on a file, and no file is over 25 MiB, the Cloudflare Pages limit a move off Hostinger would meet; the room's PDFs are not in the tree), runs parity (pages, then thumbnails), uploads without `--delete` in three passes (`publish/upload.sh`: assets and data, then HTML, then `room.lock.json`, so no served page names an asset that has not arrived and the served lock never runs ahead of its files; `tests/roomkit/test_publish_order.py`), removes per `roomkit diff`, checks every served file against the lock, and prints the purge list. Before it uploads it keeps the served room one generation back on the host, outside the web root (`publish/room-snapshot.sh`: a hard-link copy at `~/roomkit-prev/deflockdane/rr-staging`); `publish/deflockdane-staging-rollback.sh` puts that room back in the same order, by checksum, and checks every served file against its lock. Uploads compare by checksum too, so a changed file is never skipped for having the same size and time. Everything it reads from the site goes through the origin (Cloudflare 429s).
 
 Rendering is deterministic: no timestamps, sorted keys, documents in manifest order. `check` uses the same in-memory render as `build`, so a check cannot pass a tree the build would not have made.
 
@@ -286,7 +406,7 @@ A JSON object with `site` (`name`, `title`, `base_url` with no trailing slash, `
 - `citation`, exported verbatim from the site's own formatter. roomkit never composes a citation;
 - `file.url`, `file.download_url`, `file.sha256`, `file.ext`, `file.mime`.
 
-Optional: `agency`, `date`, `summary`, `archive_url`, `file.bytes`, `pages` (`[{n, text, provenance}]`), `search_text` (a string, only on a record with no `pages`; a row with both is refused).
+Optional: `agency`, `date`, `summary`, `archive_url`, `file.bytes`, `pages` (`[{n, text, provenance}]`), `search_text` (a string, only on a record with no `pages`; a row with both is refused). A text-only record has `"file": null` and must carry `search_text` or `pages` (null with neither is refused; an omitted `file` is still refused): its page has no reader, Open or Download buttons or SHA-256 row, and shows the string in `display.no_file` where the reader would be. It has no hash, so a passage citation's `file_sha256` on it is refused.
 
 ## What it refuses to guess at
 
@@ -299,6 +419,7 @@ Any refused row fails the whole build, and nothing is written. A reading room qu
 - a file URL that is not `https://` or a same-host path (`javascript:`, `data:`, `http:` and `//host` are refused);
 - an extension that is neither a reader type nor a known download-only type (`zip`, `xlsx`, `xls`, `docx`, `doc`, `pptx`; those pages get the links and the citation, no reader), an empty mime;
 - a `view_url` on anything but a PDF, or a `view_url`/`poster_url` that is not `https://` or a same-host path;
+- a `view_sha256` that is not 64 hex characters, or one with no `view_url`;
 - a date that is not `YYYY`, `YYYY-MM` or `YYYY-MM-DD`;
 - an `archive_url` that is not `https://`;
 - page numbers that are not 1..N in order.
@@ -307,14 +428,11 @@ Everything from the manifest is HTML-escaped. Files left over from an earlier bu
 
 ## Tests
 
-In this repository, hermetic unit and regression tests are located in `tests/`:
-- `tests/test_manifest.py`: manifest parsing, path/mount validation, boolean integer bypass rejection, and parity checks (`check_details`, `check_header_actions`, `check_badges_notice`, `check_link_groups`, `check_notes`);
-- `tests/test_golden.py`: byte-for-byte rendered tree regressions against `tests/golden/*.txt`;
-- `tests/test_pack.py`: site pack schemas, token mapping, WCAG AAA contrast, and refusal rules;
-- `tests/test_ocr.py`: OCR execution, output file existence and non-empty output verification;
-- `tests/test_router.py`: URL routing and mount resolution.
+This repository (LLM_WIKI) is canonical for roomkit and the reader engine. The standalone repository (`JadePrice/reading-room`) is a derived copy: changes land here first and are copied there, never the other way.
 
-In the upstream monorepo (`llm-wiki`), the full extended test suite under `tests/roomkit/` additionally covers:
+In this workspace, the full extended test suite is under `tests/roomkit/` (and mirrored to `tests/` in the standalone distribution repository):
+- `tests/roomkit/test_roomkit.py`: the themed room, template invariants, display/index parsing, refusals, determinism, and parity checkers (`check_details`, `check_header_actions`, `check_badges_notice`, `check_link_groups`, `check_notes`);
+- the themed room: the pack's chrome on every page, nothing from WordPress, the shared template filled from `display` (badge, notice, notes, chips with kind and quote), room links following the mount while site pages stay on the site, JSON-LD escaping, groups in the site's order, the finder and facets;
 - the template's invariants: every `room.css` rule scoped under `#room-content`, unknown theme tokens refused, the GG toggle sharing `ggrr-theme`, the long jump list folding;
 - malformed `display`/`index` blocks refused (group style, badge kind, notice, facets, meta, unsafe group URLs);
 - fingerprinting, cache headers and `diff` (a retraction removed now, old assets later);
@@ -333,4 +451,5 @@ In the upstream monorepo (`llm-wiki`), the full extended test suite under `tests
 - `test_pack_import.py`: reading design-tokens files (duplicates, unresolved names, cycles, `@media` variants), the map's refusals, an import refused when the pack would be, and every shipped pack equal to what its map derives;
 - `test_pack.py`: the site packs: the schema; every refusal (unknown keys, missing tokens, unsafe URLs and values, contrast light and dark including the 1.29:1 dd panels, unscoped `extra_css`, dropped features, missing files); explicit packs building the golden bytes; `color.py` agreeing with the wiki gate's contrast math;
 - a Playwright run that mounts the reader on a built page, and the same page with JavaScript off;
-- `test_entities.py`: the entity surface on GG- and dd-shaped fixtures: the switch off changes no byte (goldens with a block), every committed pack off; index grouping and entity order as exported; documents in the export's groups and order; links following the mount, a record outside the room kept live, record-page chips rebased only with the switch on; "appears alongside" with kind and count; every heading and label changed in the export changes the page (the record page's claim headings too); no entity word in a template or view; the JSON-LD the exported object (none for dd); each refusal; the same pages for two sites with the same knobs; `entities.css` scoped and token-only; parity.entities reading its own room, agreeing, naming each kind of difference (order, missing, extra, index heading, unchecked, unfetched), refusing a bad live file; live markup (GG index and page, dd page and sitemap) turned into the live file; axe at 375 and 1280, light and dark, no sideways scroll, and without JavaScript one h1, no heading gap, landmarks and named lists.
+- `test_browse.py`: facet pages and the sitemap: both switches off change no byte, facet pages on without a browse block build none; one page per value at its path with its records in manifest order, the canonical live and links following the mount; the index linking every page without JavaScript, facets in the site's order and years newest first; each build refusal and each malformed browse block; the sitemap's URLs, escaping and switch; parity.facet_pages from a dd-shaped live index, agreeing with its own room and naming each difference (extra or missing value, members, missing facet, an unlinked page); parity.sitemaps ignoring the room's own pages and URLs outside it, naming missing and extra, refusing a sitemap index, a DOCTYPE and a room without a sitemap; the CLI for both;
+- `test_entities.py`: the entity surface on GG- and dd-shaped fixtures: the switch off changes no byte (goldens with a block), only dd's committed pack on; index grouping and entity order as exported; documents in the export's groups and order; links following the mount, a record outside the room kept live, record-page chips rebased only with the switch on; "appears alongside" with kind and count; every heading and label changed in the export changes the page (the record page's claim headings too); no entity word in a template or view; the JSON-LD the exported object (none for dd); each refusal; the same pages for two sites with the same knobs; `entities.css` scoped and token-only; parity.entities reading its own room, agreeing, naming each kind of difference (order, missing, extra, index heading, unchecked, unfetched), refusing a bad live file; live markup (GG index and page, dd page and sitemap) turned into the live file; axe at 375 and 1280, light and dark, no sideways scroll, and without JavaScript one h1, no heading gap, landmarks and named lists.

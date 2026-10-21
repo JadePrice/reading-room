@@ -21,7 +21,9 @@ import re
 
 from . import entities as E
 from . import search as S
-from .manifest import PDF, READER, Document, Manifest
+from . import site_collections as CO
+from . import topics as TP
+from .manifest import PDF, READER, THUMB_TYPES, Document, Manifest
 
 
 def slugify(s: str) -> str:
@@ -43,9 +45,9 @@ def _rebase_url(url: str, m: Manifest, at: str) -> str:
     if not url.startswith(room):
         return url
     rest = url[len(room):]
-    # Only the room itself, record pages and (with the pack's entities on) entity
-    # pages are in the static tree; other site pages under the same path
-    # (collection, topic pages) stay on the site.
+    # Only the room itself, record pages and (with the pack's switches on) entity
+    # collection and topic pages are in the static tree; other site pages under the
+    # same path stay on the site.
     if (rest == "" or re.fullmatch(r"[a-z0-9]+(?:-[a-z0-9]+)*/", rest) and rest[:-1] in _slugs(m)
             or rest in _entity_paths(m)):
         return at + rest
@@ -53,10 +55,12 @@ def _rebase_url(url: str, m: Manifest, at: str) -> str:
 
 
 def _entity_paths(m: Manifest) -> set[str]:
-    # m.entities is None unless the pack turned the feature on (entities.gate).
+    # m.entities, m.collections and m.topics are None unless the pack turned the
+    # feature on (entities.gate, site_collections.gate, topics.gate).
     cache = getattr(m, "_room_entity_paths", None)
     if cache is None:
-        cache = E.served(m.entities)
+        cache = (E.served(m.entities) | CO.served(getattr(m, "collections", None))
+                 | TP.served(getattr(m, "topics", None)))
         m._room_entity_paths = cache
     return cache
 
@@ -82,7 +86,7 @@ def _chrome(pack: dict, at: str) -> dict:
 
 def reader_view(doc: Document, at: str) -> dict:
     """The reader mount (or the download block for files the engine cannot show)."""
-    return {"mount": doc.ext in READER, "pdf": doc.ext in PDF, "kind": "PDF" if doc.ext in PDF else "file",
+    return {"has_file": doc.has_file, "no_file": doc.display.get("no_file", ""), "mount": doc.ext in READER, "pdf": doc.ext in PDF, "kind": "PDF" if doc.ext in PDF else "file",
             "file_url": doc.file_url, "download_url": doc.download_url,
             # The reader may load a verified viewing copy; every link stays the original.
             "reader_url": doc.view_url or doc.file_url, "view_note": bool(doc.view_url),
@@ -97,7 +101,7 @@ def _details(doc: Document, m: Manifest, at: str) -> list[dict]:
     if not rows:
         rows = ([{"label": "Agency", "value": doc.agency}] if doc.agency else []) \
             + ([{"label": "Date", "value": doc.date}] if doc.date else []) \
-            + [{"label": "SHA-256", "value": doc.sha256, "code": True}]
+            + ([{"label": "SHA-256", "value": doc.sha256, "code": True}] if doc.has_file else [])
     return [{"label": r["label"], "value": r["value"], "code": bool(r.get("code")),
              "url": _rebase_url(r["url"], m, at) if r.get("url") else "",
              # Judged on the URL as the site wrote it, before any rebase.
@@ -146,6 +150,7 @@ def doc_view(doc: Document, m: Manifest, at: str, pack: dict) -> dict:
         "reader": reader_view(doc, at),
         "details": _details(doc, m, at),
         "file_kind": "PDF" if doc.ext in PDF else "file",
+        "has_file": doc.has_file,
         "file_url": doc.file_url, "download_url": doc.download_url, "archive_url": doc.archive_url,
         "citation": doc.citation,
         "groups": _groups(doc, m, at),
@@ -161,28 +166,78 @@ def _facet_values(m: Manifest, name: str) -> list[str]:
     return sorted(vals, reverse=name == "year")
 
 
+def _group_sets(sets: list[dict], shown: list[str]) -> list[dict]:
+    """The group select's optgroups: each set's groups that the room shows, in the set's
+    order, then any shown group in no set (left as a plain option)."""
+    out, used = [], set()
+    for g in sets:
+        vals = [x for x in g["groups"] if x in shown and x not in used]
+        used.update(vals)
+        if vals:
+            out.append({"label": g["label"], "values": vals})
+    rest = [x for x in shown if x not in used]
+    return out + ([{"label": "", "values": rest}] if out and rest else [])
+
+
 def _year(doc: Document) -> str:
     return doc.date[:4] if doc.date else ""
 
 
-def _card(doc: Document, at: str) -> dict:
+def thumb_path(doc: Document) -> str:
+    """The room's copy of the card thumbnail (manifest index.thumb), before its
+    content hash is added; empty when the manifest carries none."""
+    t = doc.index.get("thumb")
+    return f"assets/thumbs/{doc.slug}.{THUMB_TYPES[t['mime']][0]}" if t else ""
+
+
+def _card(doc: Document, at: str, multi: tuple[str, ...] = (), sortable: bool = False) -> dict:
     ix = doc.index
     blob = " ".join([doc.title, doc.summary, doc.agency, ix.get("group", ""), ix.get("card_date", ""),
-                     *ix.get("meta", []), *ix.get("facets", {}).values()]).lower()
+                     *ix.get("meta", []), *ix.get("facets", {}).values(),
+                     *([ix["badge"]] if ix.get("badge") else [])]).lower()
     return {"text": re.sub(r"\s+", " ", blob).strip(), "group": ix.get("group", ""),
             "facets": [{"name": k, "value": v} for k, v in sorted(ix.get("facets", {}).items())],
-            "url": f"{at}{doc.slug}/", "thumb_url": ix.get("thumb_url", ""),
+            # A multi-valued facet (vendor): the values as JSON, matched whole by room.js.
+            "multi": [{"name": n, "json": json.dumps(ix.get("browse", {}).get(n, []), ensure_ascii=False)} for n in multi],
+            "sort_title": doc.title.lower(), "sortable": sortable,
+            "url": f"{at}{doc.slug}/", "thumb_url": at + thumb_path(doc) if ix.get("thumb") else ix.get("thumb_url", ""),
             "date": doc.date, "card_date": ix.get("card_date", ""),
-            "title": doc.title, "meta": list(ix.get("meta", [])), "summary": doc.summary}
+            "title": doc.title, "meta": list(ix.get("meta", [])), "summary": doc.summary,
+            "badge": ix.get("badge", ""), "badge_kind": ix.get("badge_kind", ""), "badge_sr": ix.get("badge_sr", "")}
+
+
+def _suggest(m: Manifest, at: str) -> str:
+    """site.index.suggest as room-search.js reads it: recent documents as titles and room URLs."""
+    sg = m.site.index.get("suggest")
+    if not sg:
+        return ""
+    titles = {d.slug: d.title for d in m.documents}
+    out = dict(sg, recent_docs=[{"label": titles[s], "url": f"{at}{s}/"} for s in sg["recent_docs"]])
+    if "rank" in sg:
+        out["rank"] = [dict(r, label=titles[r["slug"]], url=f"{at}{r['slug']}/") for r in sg["rank"]]
+    return script_json(out)
 
 
 def _noun(n: int, singular: str, plural: str) -> str:
     return singular if n == 1 else plural
 
 
-def index_view(m: Manifest, at: str, pack: dict) -> dict:
+def _browse(facet_pages: list[dict], heading: str, at: str) -> dict | None:
+    """The index's links to every facet page (browse.py), one folded list per facet."""
+    if not facet_pages:
+        return None
+    facets: dict[str, dict] = {}
+    for p in facet_pages:
+        f = facets.setdefault(p["name"], {"name": p["name"], "label": p["label"], "values": []})
+        f["values"].append({"label": p["value"], "url": at + p["path"], "count": len(p["docs"])})
+    return {"heading": heading, "facets": list(facets.values())}
+
+
+def index_view(m: Manifest, at: str, pack: dict, facet_pages: list[dict] | None = None,
+               browse_heading: str = "") -> dict:
     """The index. Every noun comes from the pack, and the jump nav is named by its
-    visible label."""
+    visible label. `facet_pages` (browse.pages, when the pack builds them) adds the
+    browse block."""
     ix, labels = m.site.index, pack.get("labels", {})
     order = list(ix.get("groups", []))
     grouped: dict[str, list[Document]] = {g: [] for g in order}
@@ -197,8 +252,19 @@ def index_view(m: Manifest, at: str, pack: dict) -> dict:
     jump_label = labels["jump"]
     jump_name = jump_label.rstrip(" :;,.!?\u2026\u2013\u2014")
     years = sorted({_year(d) for d in m.documents if _year(d)})
-    selects = [("group", group_label, [g for g in shown if grouped[g]])]
-    selects += [(f["name"], f["label"], _facet_values(m, f["name"])) for f in ix.get("facets", [])]
+    selects = [{"kind": "group", "name": "group", "label": group_label, "values": [g for g in shown if grouped[g]],
+                "sets": _group_sets(ix.get("group_sets", []), [g for g in shown if grouped[g]])}]
+    multi = tuple(f["name"] for f in ix.get("facets", []) if f.get("multi"))
+    for f in ix.get("facets", []):
+        if f.get("multi"):
+            vals = sorted({v for d in m.documents for v in d.index.get("browse", {}).get(f["name"], [])})
+            selects.append({"kind": "multi", "name": f["name"], "label": f["label"], "values": vals})
+        elif f.get("range"):
+            vals = _facet_values(m, f["name"])
+            selects.append({"kind": "range", "name": f["name"], "label": f["label"], "values": vals,
+                            "from_label": f["from_label"], "to_label": f["to_label"]})
+        else:
+            selects.append({"kind": "", "name": f["name"], "label": f["label"], "values": _facet_values(m, f["name"])})
     jump = [g for g in shown if grouped[g]]
     group_count = len([g for g in grouped if grouped[g]])
     return {**_chrome(pack, at), "layout": pack["layout"]["style"], "index": {
@@ -208,26 +274,55 @@ def index_view(m: Manifest, at: str, pack: dict) -> dict:
         "group_count": group_count,
         # Count nouns come from the pack, singular or plural by the count; never "+s".
         "records_noun": _noun(len(m.documents), labels["record_singular"], labels["record_plural"]),
+        # The header's count may name records differently from the finder's count (GG).
+        "stats_noun": _noun(len(m.documents), labels.get("stats_singular", labels["record_singular"]),
+                            labels.get("stats_plural", labels["record_plural"])),
         # The finder's live count (room.js) picks between these.
         "count_nouns": {"one": labels["record_singular"], "other": labels["record_plural"]},
         "groups_noun": _noun(group_count, labels["group_singular"], labels["groups_plural"]),
-        "years": [years[0], years[-1]] if years else [],
+        "years": list(ix["years"]) if ix.get("years") else ([years[0], years[-1]] if years else []),
         "links": [{"label": ln["label"], "url": ln["url"], "text": ln.get("text", "")} for ln in ix.get("links", [])],
         "search_placeholder": labels.get("search_placeholder", "Title, agency, summary..."),
         # Corpus search (pack features.corpus-search): room-search.js owns the finder and
         # loads the Pagefind index from here. None: room.js filters the cards as before.
         "search": {"pagefind_url": f"{at}{S.OUT}/",
                    "placeholder": labels.get("fulltext_placeholder", "Words in the records, titles, agencies..."),
-                   "recent_key": f"room-recent-searches:{at}"} if S.enabled(pack) else None,
+                   "recent_key": f"room-recent-searches:{at}",
+                   # The site's suggestion panel (manifest site.index.suggest), for room-search.js.
+                   "suggest": _suggest(m, at)} if S.enabled(pack) else None,
         # A select with fewer than two values could not narrow anything.
-        "selects": [{"name": n, "label": lab, "values": vals} for n, lab, vals in selects if len(vals) >= 2],
+        "selects": [x for x in selects if len(x["values"]) >= 2],
+        "sort": ix.get("sort"),
         "jump": {"label": jump_label, "name": jump_name,
                  # Bare slugs, as the WordPress index used, so old #anchors still land.
                  "groups": [{"id": slugify(g), "label": g} for g in jump], "folded": len(jump) > 12}
                 if len(jump) > 1 else None,
-        "sections": [{"id": slugify(g), "label": g, "cards": [_card(d, at) for d in grouped[g]]} for g in shown],
+        "sections": [{"id": slugify(g), "label": g, "cards": [_card(d, at, multi, bool(ix.get('sort'))) for d in grouped[g]]} for g in shown],
         "empty_group_text": ix.get("empty_group_text") or "No records yet.",
+        "browse": _browse(facet_pages or [], browse_heading, at),
+        "collections_grid": _grid(m, at),
     }}
+
+
+def facet_view(p: dict, m: Manifest, at: str, pack: dict) -> dict:
+    """One facet page (browse.py): the records listed under one value, as index cards."""
+    labels = pack.get("labels", {})
+    n = len(p["docs"])
+    return {**_chrome(pack, at), "layout": pack["layout"]["style"], "facet": {
+        "key": f"{p['name']}/{p['slug']}", "room_only": p["room_only"],
+        "crumbs": [{"label": labels.get("room", "Reading Room"), "url": at}, {"label": p["title"], "url": ""}],
+        "eyebrow": p["label"], "title": p["title"], "count": n,
+        "records_noun": _noun(n, labels["record_singular"], labels["record_plural"]),
+        "cards": [_card(d, at) for d in p["docs"]]}}
+
+
+def facet_root_view(f: dict, m: Manifest, at: str, pack: dict) -> dict:
+    """A facet's own path (browse.py roots): its values as links, so a trimmed URL lands somewhere."""
+    labels = pack.get("labels", {})
+    return {**_chrome(pack, at), "froot": {
+        "key": f["name"],
+        "crumbs": [{"label": labels.get("room", "Reading Room"), "url": at}, {"label": f["label"], "url": ""}],
+        "title": f["label"], "values": f["values"]}}
 
 
 # --- entities (pack features.entities; entities.py) ----------------------------------
@@ -281,6 +376,94 @@ def entity_view(p: dict, m: Manifest, at: str, pack: dict) -> dict:
                    for i, g in enumerate(p["groups"], 1)]}}
 
 
+# --- collections (pack features.collections; site_collections.py) -----------------------
+
+def _sort_view(s: dict | None) -> dict | None:
+    return {"label": s["label"], "options": [{"value": o["value"], "label": o["label"]} for o in s["options"]]} if s else None
+
+
+def _grid(m: Manifest, at: str) -> dict | None:
+    """The collections table on the index, or None (no block, or the switch off)."""
+    gr = (getattr(m, "collections", None) or {}).get("grid")
+    if not gr:
+        return None
+    return {"heading": gr["heading"], "columns": list(gr["columns"]), "sort": _sort_view(gr.get("sort")),
+            "eras": [{"heading": e["heading"], "groups": [
+                {"heading": g["heading"], "rows": [
+                    {"slug": r["slug"], "title": r["title"], "url": _rebase_url(r["url"], m, at),
+                     "years": r.get("years", ""), "year": r.get("year", ""), "sources": r.get("sources", ""),
+                     "sources_line": r.get("sources_line", ""), "sources_empty": r.get("sources_empty", ""),
+                     "blurb": r.get("blurb", ""), "blurb_empty": r.get("blurb_empty", "")} for r in g["rows"]]}
+                for g in e["groups"]]} for e in gr["eras"]]}
+
+
+def collections_index_view(m: Manifest, at: str, pack: dict) -> dict:
+    """The site's collections page: its categories, groups and collections, in its order."""
+    ix = m.collections["index"]
+    f = ix.get("filters")
+    img = ix.get("image")
+    return {**_chrome(pack, at), "collections": {
+        "back": _back(ix, m, at), "eyebrow": ix.get("eyebrow", ""), "title": ix["title"], "lede": ix.get("lede", ""),
+        "image": {"url": img["url"], "alt": img["alt"]} if img else None,
+        "empty_text": ix["empty_text"],
+        "search": {"label": ix["search"]["label"], "placeholder": ix["search"]["placeholder"]} if ix.get("search") else None,
+        "filters": {"label": f["label"], "group_label": f["group_label"],
+                    "options": [{"value": o["value"], "label": o["label"]} for o in f["options"]]} if f else None,
+        "sort": _sort_view(ix.get("sort")),
+        "categories": [{"key": c["key"], "heading": c["heading"], "stamp": c.get("stamp", ""), "groups": [
+            {"id": g["id"], "heading": g["heading"], "collections": [
+                {"slug": c2["slug"], "title": c2["title"], "url": _rebase_url(c2["url"], m, at),
+                 "count": c2["count"], "code": c2.get("code", ""), "blurb": c2.get("blurb", ""),
+                 "years": c2.get("years", ""), "year": c2.get("year", ""), "tags": " ".join(c2.get("tags", [])),
+                 "match": c2.get("match", "")} for c2 in g["collections"]]}
+            for g in c["groups"]]} for c in ix["categories"]]}}
+
+
+def collection_view(p: dict, m: Manifest, at: str, pack: dict) -> dict:
+    """One collection page: its heading block, any notice, and its records in order."""
+    n, s = p.get("notice"), p.get("search")
+    return {**_chrome(pack, at), "collection": {
+        "slug": p["slug"], "back": _back(p, m, at), "eyebrow": p.get("eyebrow", ""), "title": p["title"],
+        "count": p["count"], "stamp": p.get("stamp", ""), "stamp_kind": p.get("stamp_kind", ""),
+        "years": p.get("years", ""), "blurb": p.get("blurb", ""), "description": p.get("description", ""),
+        "notice": {"heading": n["heading"], "body": n["body"], "report": n.get("report", "")} if n else None,
+        "search": {"label": s["label"], "placeholder": s["placeholder"], "status": s["status"]} if s else None,
+        "list_label": p["list_label"], "empty_text": p["empty_text"],
+        "documents": [{"slug": d["slug"], "title": d["title"], "url": _rebase_url(d["url"], m, at), "num": d["num"],
+                       "final": d.get("final", ""), "badge": d.get("badge", ""), "badge_kind": d.get("badge_kind", ""),
+                       "badge_sr": d.get("badge_sr", ""), "size": d.get("size", ""), "match": d["title"].lower()}
+                      for d in p["documents"]]}}
+
+
+def topics_index_view(m: Manifest, at: str, pack: dict) -> dict:
+    """The site's topics page: every topic with its count, in the site's order."""
+    ix = m.topics["index"]
+    return {**_chrome(pack, at), "topics": {
+        "back": _back(ix, m, at), "title": ix["title"], "subtitle": ix["subtitle"], "empty_text": ix["empty_text"],
+        "topics": [{"slug": t["slug"], "label": t["label"], "count": t["count"], "url": _rebase_url(t["url"], m, at)}
+                   for t in ix["topics"]]}}
+
+
+def topic_view(p: dict, m: Manifest, at: str, pack: dict) -> dict:
+    """One page of one topic: its heading block, its records, its paging."""
+    pg = p.get("pagination")
+    return {**_chrome(pack, at), "topic": {
+        "slug": p["slug"], "page": p["page"],
+        "crumbs": _crumbs([{**c, "url": _rebase_url(c.get("url", ""), m, at)} for c in p.get("crumbs", [])]),
+        "back": _back(p, m, at), "eyebrow": p.get("eyebrow", ""), "title": p["title"], "subtitle": p["subtitle"],
+        "empty_text": p["empty_text"],
+        "documents": [{"slug": d["slug"], "title": d["title"], "url": _rebase_url(d["url"], m, at),
+                       "badge": d.get("badge", ""), "badge_kind": d.get("badge_kind", ""), "badge_sr": d.get("badge_sr", ""),
+                       "date": d.get("date", ""), "reading_time": d.get("reading_time", ""), "agency": d.get("agency", ""),
+                       "summary": d.get("summary", ""),
+                       "collection": {"label": d["collection"]["label"], "url": _rebase_url(d["collection"]["url"], m, at)}
+                       if d.get("collection") else None}
+                      for d in p["documents"]],
+        "pagination": {"label": pg["label"], "links": [
+            {"kind": it["kind"], "label": it["label"], "url": _rebase_url(it.get("url", ""), m, at) if it.get("url") else ""}
+            for it in pg["items"]]} if pg else None}}
+
+
 def not_found_view(m: Manifest, at: str, pack: dict) -> dict:
     room = pack.get("labels", {}).get("room", "Reading Room")
     return {**_chrome(pack, at), "not_found": {"crumbs": [{"label": room, "url": at}, {"label": "Not found", "url": ""}],
@@ -288,6 +471,12 @@ def not_found_view(m: Manifest, at: str, pack: dict) -> dict:
 
 
 # --- the page around it -------------------------------------------------------------
+
+def script_json(obj: dict) -> str:
+    """JSON for a <script type="application/json"> block: every "<" escaped, so no
+    "</script" or "<!--" in the data can end or change the block."""
+    return json.dumps(obj, ensure_ascii=False, sort_keys=True).replace("<", "\\u003c")
+
 
 def jsonld(obj: dict) -> str:
     # "</" inside a script block would end it; JSON allows the escaped slash.

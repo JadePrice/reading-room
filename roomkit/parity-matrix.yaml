@@ -3,7 +3,7 @@
 # Plan: conductor/plans/2026-10-13-unified-reading-room-frontend.md (Task 1).
 # Wiki: wiki/reading-room-parity.md.
 #
-# Inventory read 2026-10-13 from plugin source on gg-core:
+# Inventory read 2026-10-13 from plugin source on the GG host:
 #   glassgovernment-site 56f30dc  wp-content/plugins/gg-reading-room
 #   deflockdane-site     a5357f4  wp-content/plugins/deflock-reading-room
 # and compared against roomkit 0.3.0 (53fcce4b).
@@ -63,6 +63,9 @@ rows:
   sites:
     deflockdane: {need: required, status: done}
     glassgovernment: {need: required, status: done}   # verified reader mount, features and poster on live pages, 2026-10-19
+  # Cutover note (2026-10-20): dd's poster (and og:image) is the live /thumb/?size=large route,
+  # equal to live, so done holds; but like the card thumbnails before index.thumb, it stops
+  # working when the WP route goes. Copy it into the build before cutover.
   acceptance: "same features enabled, same poster, page 1 renders"
   check: browser
 
@@ -168,12 +171,12 @@ rows:
 
 - id: doc-text-only
   surface: document
-  live: "GG text-only records (65 CFR rows: full text, no file) render a page with 'No file is attached' and their text"
+  live: "GG text-only records (65 CFR rows: full text, no file) render a full record page with 'No file is attached to this record yet.' where the reader goes; the text itself is not shown (read 2026-10-20), only searchable"
   disposition: static
   sites:
     deflockdane: {need: n/a, status: missing}
-    glassgovernment: {need: required, status: missing}  # exporter excludes them today
-  acceptance: "every public GG record has a page; text-only ones show their text"
+    glassgovernment: {need: required, status: done}  # 2026-10-21, fresh export from the committed exporter, record pages fetched through the origin: parity 455/455 live pages match the manifest, the 65 text-only records among them (after the exporter took live's new entity blurb and lowercase archive badges, and parity read a <mark> inside a quote as no gap). Text-only now means nothing attached (no managed_path, attachment_id or confirmed ia_id): a file gone from disk is a refusal again
+  acceptance: "every public GG record has a page; text-only ones show the live notice where the reader goes (the text itself is searchable, not shown)"
   check: parity.slugs
 
 - id: doc-not-found
@@ -204,7 +207,7 @@ rows:
   disposition: static
   sites:
     deflockdane: {need: optional, status: done}
-    glassgovernment: {need: required, status: partial}  # roomkit counts 390 exported; live counts all 451 incl. text-only
+    glassgovernment: {need: required, status: partial}  # 2026-10-21, fresh export from the committed exporter (455 records), live pages fetched through the origin (Cloudflare's email obfuscation rewrites addresses at the edge): "455 documents, 40 collections, 1919–2026" equal live, noun included (pack labels.stats_plural), compared by hand. Open: parity.index does not exist, so no check proves it
   acceptance: "same figures as live"
   check: parity.index
 
@@ -214,7 +217,7 @@ rows:
   disposition: static
   sites:
     deflockdane: {need: optional, status: done}
-    glassgovernment: {need: required, status: partial}  # missing vendor, year range, sort, collection optgroups
+    glassgovernment: {need: required, status: partial}  # 2026-10-21, fresh export from the committed exporter (455 records), live pages fetched through the origin (Cloudflare's email obfuscation rewrites addresses at the edge): all nine selects (collection with optgroups, record type, source, agency, vendor, year from/to, sort, the grid's sort) equal live option for option, by hand, after the exporter took type and source from live's row builder (type was title-cased; source fell back past an empty label with ?: where live's ?? does not). State in the URL (browser test). Open: sorting reorders within each collection section, where live sorts one flat paged list; title order is code-point, not live's collation
   acceptance: "same facets and sort orders; filter state in the URL"
   check: browser
 
@@ -224,17 +227,27 @@ rows:
   disposition: static
   sites:
     deflockdane: {need: n/a, status: missing}
-    glassgovernment: {need: required, status: missing}
+    glassgovernment: {need: required, status: done}  # 2026-10-21, fresh export from the committed exporter (455 records), live pages fetched through the origin (Cloudflare's email obfuscation rewrites addresses at the edge): parity.collections, the index table same (eras, groups, rows, sources, descriptions). A difference outside the acceptance: the room hides header rows while sorted, where live leaves them stacked
   acceptance: "same collections, sources and order"
-  check: parity.index
+  check: parity.collections
 
 - id: index-suggest
   surface: index
   live: "GG combobox suggest (REST suggest). dd suggest panel from embedded data: top matches, agencies, vendors, document types, years, recent documents, recent searches (localStorage), 'Try searching'"
   disposition: static
   sites:
-    deflockdane: {need: required, status: partial}
+    deflockdane: {need: required, status: done}     # site panel, groups equal live, 2026-10-20
     glassgovernment: {need: required, status: partial}
+  # 2026-10-20 (dd): manifest site.index.suggest carries live's own panel (labels, top N,
+  # recent documents, Try searching, Agencies, Surveillance vendors, Document types, Years, with
+  # live's per-group limits for an empty and a typed box), from the shortcode's archive payload;
+  # room-search.js draws it in live's order. dd pack turns corpus-search on. Compared in a browser
+  # against live via the origin for "", Flock, green, 2025, agree, capitol, zzzz: every group and
+  # item equal. Top matches: the user's go (2026-10-20) to port live's scoreDoc; the exporter
+  # writes site.index.suggest.rank (what prepareDoc reads per record) and room-search.js scores
+  # it as live does. Then 14 inputs ("", Flock, green, 2025, agree, capitol, zzzz, sheriff, uw,
+  # axon, policy, retention, dane county, purchase order): every group, item and top-match
+  # order equal. Not drawn: live's "See all results for" row and its summary line.
   # 2026-10-14 (room-search): built from the room's Pagefind index (pack features.corpus-search),
   # no server call. Implemented: top matches, one group per facet the room holds (agency or
   # category, year, and any other facet the manifest carries: vendors and document types only where
@@ -250,8 +263,14 @@ rows:
   live: "GG REST search over document text ('Searching document text...', local-metadata fallback). dd ?rr_search server search"
   disposition: static
   sites:
-    deflockdane: {need: required, status: partial}
+    deflockdane: {need: required, status: done}     # 98.5% recall; 3 explained misses accepted by the user, 2026-10-20
     glassgovernment: {need: required, status: partial}
+  # 2026-10-20 (dd): pack corpus-search on; the index also carries display.notes (the public
+  # notes the record page shows). Live results from exporters/deflockdane-fetch-search.sh via the
+  # origin (search-queries/deflockdane-2026-10-20.json, 30 queries): recall 98.5%. The 3 misses are
+  # live ignoring query words, not room misses: tokens under 3 characters are dropped ("UW") and
+  # only the first 8 tokens are required ("justification" in a 9-word title). The user accepted
+  # these as explained differences on 2026-10-20 ("yes"), so the room keeps its stricter match.
   # 2026-10-14 (room-search): Pagefind 1.5.2 index over title, summary, citation, agency, group and
   # page text, behind pack features.corpus-search; `roomkit parity --search LIVE.json --out ROOM`
   # is the check (search_parity.py; GG's query set is search-queries/glassgovernment-2026-10-14.json).
@@ -274,8 +293,15 @@ rows:
   live: "GG facets and dd suggest groups narrow the list; without JS only GG's ?q= form narrows it"
   disposition: static
   sites:
-    deflockdane: {need: required, status: missing}
-    glassgovernment: {need: required, status: missing}
+    deflockdane: {need: required, status: done}      # parity.facet_pages 33/33, 2026-10-20
+    glassgovernment: {need: required, status: done}  # parity.facet_pages 141/141 pages with the 65 text-only records in (agency 72, type 24, vendor 5, year 40), 2026-10-20
+  # 2026-10-20 (browse.py): pack features.facet-pages builds <room>/<facet>/<value>/ for each
+  # facet the manifest's site.index.browse names, linked from a folded browse block on the
+  # index. dd's exporter takes agency, document type, vendor and year from the shortcode's own
+  # build_archive_search_payload. dd done: `parity --facet-pages` against the live index's
+  # archiveSearch payload (via the origin): agency 17, type 7, vendor 2, year 7, every page's
+  # records equal and linked from the index; axe 0 serious/critical light, dark and 375 px,
+  # browse links present without JS. GG: needs its exporter's browse block and a live reader.
   acceptance: "a built page per facet value (agency, year, vendor, record type; GG also collection), e.g. <room>/agency/<slug>/, linked from the index without JS; members equal to filtering live by that value"
   check: parity.facet_pages
 
@@ -294,10 +320,36 @@ rows:
   live: "dd cards with page-one thumbnails from the /thumb/ route"
   disposition: static
   sites:
-    deflockdane: {need: required, status: partial}  # thumb_url from the origin; decide copy-into-build vs origin
+    deflockdane: {need: required, status: done}     # parity.thumbnails 66/66 same, 2 live-broken, 2026-10-20
     glassgovernment: {need: optional, status: missing}
+  # 2026-10-20: copied into the build (manifest index.thumb, base64 + sha256, served at
+  # assets/thumbs/<slug>.<hash>.<ext>, cached a year), so no card depends on the WP /thumb/
+  # route. The exporter takes the cached preview; a PDF without one keeps thumb_url (the live
+  # route). `parity --thumbs LIVE.tsv --out ROOM` (thumb_parity.py; live side from
+  # exporters/deflockdane-fetch-thumbs.sh via the origin): 68 cards, 66 same bytes, 2 live-broken
+  # (the Axon CSV and ZIP: live's <img> 404s, the room shows none).
   acceptance: "every card that shows a thumbnail live shows the same one"
-  check: parity.index
+  check: parity.thumbnails
+
+- id: record-status
+  surface: index
+  live: "dd record pages show Status (current / past / unknown, with its basis and as-of date) and Record kind (procurement / surveillance monitoring); live's index has no status filter"
+  disposition: static
+  sites:
+    deflockdane: {need: required, status: done}        # parity.details 68/68, facet pages 38 OK, 2026-10-20
+    glassgovernment: {need: n/a, status: missing}
+  # 2026-10-20, the user's go on the reviewed status table: plugin 0.9.0 (DB 0.5.0) stores
+  # record_status, status_until, record_kind, status_basis, status_as_of; the record page draws
+  # Status and Record kind rows (Template::record_status, which the exporter calls too, so the
+  # room words them as live does). The room adds what live's index lacks: a card badge
+  # (index.badge), Status and Record kind finder filters, facet pages marked room_only
+  # (parity.facet_pages reports them, live has nothing to compare), and suggestion items that
+  # set those filters (site.index.suggest items {label, facet, value, count?}).
+  # dd done after the plugin deploy and the table's apply (68 rows, by slug): `parity --pages`
+  # 68/68 with the new rows, facet pages status 3 / kind 2 reported room-only, axe 0 on 124 pages
+  # light/dark at 1280 and 375, and choosing "Past" in the panel leaves the 10 past records.
+  acceptance: "every record's Status and Record kind rows equal live's page; each card's badge, filters and status facet pages hold the records with that status"
+  check: parity.details
 
 # --- other public surfaces ---------------------------------------------------
 
@@ -307,7 +359,7 @@ rows:
   disposition: static
   sites:
     deflockdane: {need: n/a, status: missing}
-    glassgovernment: {need: required, status: missing}
+    glassgovernment: {need: required, status: done}  # 2026-10-21, fresh export from the committed exporter (455 records), live pages fetched through the origin (Cloudflare's email obfuscation rewrites addresses at the edge): parity.collections 40/40 with the index and grid same. Built behind features.collections; search, quick filters and sort follow ggrr-declassify.js (browser test). Not attempted, outside the acceptance: card icons, year bars, thumbnails
   acceptance: "same categories, groups, collections, counts and order"
   check: parity.collections
 
@@ -317,7 +369,7 @@ rows:
   disposition: static
   sites:
     deflockdane: {need: n/a, status: missing}
-    glassgovernment: {need: required, status: missing}
+    glassgovernment: {need: required, status: done}  # 2026-10-21, fresh export from the committed exporter (455 records), live pages fetched through the origin (Cloudflare's email obfuscation rewrites addresses at the edge): parity.collections, every collection page same (heading block, notice, records in order with numbers, sizes and badges, JSON-LD)
   acceptance: "same members and order, same description and notice, JSON-LD equal"
   check: parity.collections
 
@@ -327,7 +379,7 @@ rows:
   disposition: static
   sites:
     deflockdane: {need: n/a, status: missing}
-    glassgovernment: {need: required, status: missing}
+    glassgovernment: {need: required, status: partial}  # 2026-10-21, fresh export from the committed exporter (455 records), live pages fetched through the origin (Cloudflare's email obfuscation rewrites addresses at the edge): parity.topics 74/74 (the topics page and every topic page). Open: the in-topic ?s= filter (full-text, snippets, score order) is not rendered
   acceptance: "same topics, members, order and paging URLs; in-topic search answers from the static index"
   check: parity.topics
 
@@ -437,8 +489,16 @@ rows:
   live: "GG providers: document, entity, collection, topic, power-map. dd: document, entity"
   disposition: static
   sites:
-    deflockdane: {need: required, status: missing}
-    glassgovernment: {need: required, status: missing}
+    deflockdane: {need: required, status: done}      # document 68 + entity 16 = 84/84, 2026-10-20
+    glassgovernment: {need: required, status: done}  # parity.sitemaps 531/531 (455 documents + 76 entities), 2026-10-20; the topic, collection and power-map providers are those rows' surfaces, not served yet
+  # 2026-10-20 (browse.py): pack features.sitemaps writes sitemap.xml, every served page by its
+  # live URL. `parity --sitemaps <provider.xml>... --out ROOM`. dd done: with features.entities
+  # turned on in dd's pack (user's go, 2026-10-20; parity.entities re-run 16/16 that day), the
+  # room's sitemap equals the document and entity providers together, 84/84.
+  # GG, checked against the live Yoast providers 2026-10-20 (document 455, entity 76; collection 40,
+  # topic 60 and power-map 4 belong to rows the room does not serve yet): with features.entities and
+  # sitemaps on, the room holds all 76 entity URLs and 390 of the 455 document URLs. The 65 missing
+  # were the text-only records; doc-text-only is done, so GG sitemaps can go on (X7).
   acceptance: "URL sets equal to the live providers for every surface the room serves"
   check: parity.sitemaps
 
@@ -448,7 +508,7 @@ rows:
   disposition: static
   sites:
     deflockdane: {need: n/a, status: missing}
-    glassgovernment: {need: required, status: missing}
+    glassgovernment: {need: required, status: partial}  # 2026-10-21, fresh export from the committed exporter (455 records), live pages fetched through the origin (Cloudflare's email obfuscation rewrites addresses at the edge): parity.machine_text, documents.txt 463/463 lines equal, the generated time aside. Open: /llms-full.txt is at the site root, outside the room's mount, so its disposition (WordPress keeps it, or a root file at cutover) is a decision to make
   acceptance: "same records and fields as live"
   check: parity.machine_text
 
@@ -527,7 +587,14 @@ rows:
   live: "WCAG 2.2 AA target on both sites"
   disposition: static
   sites:
-    deflockdane: {need: required, status: partial}
+    deflockdane: {need: required, status: done}     # search build, 119 pages x light/dark x 1280/375, 2026-10-20
     glassgovernment: {need: required, status: partial}
+  # 2026-10-20 (dd, corpus search on): axe 4.x (wcag2a/aa, 21a/aa, 22aa) 0 serious/critical on
+  # all 119 pages in both color schemes at 1280 and 375 px, and on the index with the suggestion
+  # panel open (empty and typed) and with results; no horizontal overflow anywhere. Keyboard only:
+  # skip link first and lands on #room-content, combobox arrows/Escape/Enter, every focus stop
+  # on the index, two records, an entity and a facet page has a ring >= 3:1 against what is
+  # behind it. Control borders 5.09:1 on the page. Without JS the 68 cards and the reader
+  # fallback stand and the finder stays hidden. Token pairs are gated at pack load (pack.PAIRS).
   acceptance: "axe zero serious/critical on every surface; contrast >= 4.5:1 text, 3:1 UI, light and dark; keyboard-only and 375px pass"
   check: browser

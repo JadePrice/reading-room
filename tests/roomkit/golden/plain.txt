@@ -48,9 +48,138 @@ Header set Cache-Control "public, max-age=0, s-maxage=3600, must-revalidate"
 <p class="room-chrome__text">Public records, as released. Every record links to its original file.</p>
 </div>
 </footer>
-<script src="/reading-room/assets/room.d1fbddb77323.js"></script>
+<script src="/reading-room/assets/room.70941fc296c3.js"></script>
 </body>
 </html>
+
+=== assets/room.70941fc296c3.js ===
+(function () {
+  "use strict";
+  var root = document.getElementById("room-content");
+  if (!root) { return; }
+  var KEY = root.getAttribute("data-room-theme-key");
+  var toggle = root.querySelector("[data-room-toggle]");
+  if (toggle && KEY) {
+    var sysDark = function () { return window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches; };
+    var apply = function (v) {
+      if (v === "light" || v === "dark") { root.setAttribute("data-room-theme", v); } else { root.removeAttribute("data-room-theme"); }
+      var dark = v === "dark" || (v !== "light" && sysDark());
+      toggle.textContent = dark ? "Light" : "Dark";
+      toggle.setAttribute("aria-label", dark ? "Switch to the light reading theme" : "Switch to the dark reading theme");
+      toggle.setAttribute("aria-pressed", dark ? "true" : "false");
+    };
+    var saved = null;
+    try { saved = window.localStorage.getItem(KEY); } catch (e) {}
+    apply(saved);
+    toggle.hidden = false;
+    toggle.addEventListener("click", function () {
+      var dark = root.getAttribute("data-room-theme") === "dark" || (!root.hasAttribute("data-room-theme") && sysDark());
+      var next = dark ? "light" : "dark";
+      try { window.localStorage.setItem(KEY, next); } catch (e) {}
+      apply(next);
+    });
+  }
+  var finder = root.querySelector("[data-room-finder]");
+  if (!finder) { return; }
+  var form = finder.querySelector("form");
+  var q = document.getElementById("room-q");
+  var facets = Array.prototype.slice.call(finder.querySelectorAll("[data-room-facet]"));
+  var multis = Array.prototype.slice.call(finder.querySelectorAll("[data-room-multi]"));
+  var ranges = Array.prototype.slice.call(finder.querySelectorAll("[data-room-range]"));
+  var sorter = finder.querySelector("[data-room-sort]");
+  var cards = Array.prototype.slice.call(root.querySelectorAll(".room__card"));
+  cards.forEach(function (c, i) { c.setAttribute("data-room-i", i); });
+  var sections = Array.prototype.slice.call(root.querySelectorAll("[data-room-section]"));
+  var count = finder.querySelector("[data-room-count]");
+  var empty = root.querySelector("[data-room-empty]");
+  var jump = root.querySelector("[data-room-jump]");
+  var total = cards.length;
+  finder.hidden = false;
+  var params = new URLSearchParams(window.location.search);
+  q.value = params.get("q") || params.get("rr_search") || "";
+  facets.concat(multis, ranges, sorter ? [sorter] : []).forEach(function (s) { var v = params.get(s.name); if (v) { s.value = v; } });
+  function attr(card, name) {
+    return name === "group" ? card.getAttribute("data-room-group") : card.getAttribute("data-room-f-" + name);
+  }
+  function multiValues(card, name) {
+    try { return JSON.parse(card.getAttribute("data-room-m-" + name) || "[]"); } catch (e) { return []; }
+  }
+  // Sorting reorders the cards inside each group; "default" restores the exported order.
+  function order() {
+    if (!sorter) { return; }
+    var how = sorter.value;
+    var key = {
+      "default": function (c) { return parseInt(c.getAttribute("data-room-i"), 10); },
+      "title": function (c) { return c.getAttribute("data-room-title") || ""; },
+      "date-desc": function (c) { return c.getAttribute("data-room-date") || ""; },
+      "date-asc": function (c) { return c.getAttribute("data-room-date") || ""; }
+    }[how] || null;
+    if (!key) { return; }
+    sections.forEach(function (sec) {
+      var list = sec.querySelector(".room__cards");
+      if (!list) { return; }
+      var items = Array.prototype.slice.call(list.children);
+      items.sort(function (a, b) {
+        var x = key(a), y = key(b);
+        // A record with no date goes last either way.
+        if (how.indexOf("date") === 0) {
+          if (!x && !y) { return 0; }
+          if (!x) { return 1; }
+          if (!y) { return -1; }
+        }
+        var r = x < y ? -1 : x > y ? 1 : 0;
+        return how === "date-desc" ? -r : r;
+      });
+      items.forEach(function (c) { list.appendChild(c); });
+    });
+  }
+  function run(push) {
+    order();
+    var words = q.value.toLowerCase().split(/\s+/).filter(Boolean);
+    var active = facets.filter(function (s) { return s.value; });
+    var activeM = multis.filter(function (s) { return s.value; });
+    var activeR = ranges.filter(function (s) { return s.value; });
+    var shown = 0;
+    cards.forEach(function (c) {
+      var text = c.getAttribute("data-room-text") || "";
+      var hit = words.every(function (w) { return text.indexOf(w) !== -1; })
+        && active.every(function (s) { return attr(c, s.name) === s.value; })
+        && activeM.every(function (s) { return multiValues(c, s.getAttribute("data-room-multi")).indexOf(s.value) !== -1; })
+        && activeR.every(function (s) {
+          var y = parseInt(attr(c, s.getAttribute("data-room-range")), 10);
+          if (isNaN(y)) { return false; }
+          return s.getAttribute("data-room-bound") === "from" ? y >= parseInt(s.value, 10) : y <= parseInt(s.value, 10);
+        });
+      c.hidden = !hit;
+      if (hit) { shown += 1; }
+    });
+    var filtering = words.length > 0 || active.length > 0 || activeM.length > 0 || activeR.length > 0;
+    sections.forEach(function (sec) {
+      var list = sec.querySelectorAll(".room__card");
+      var any = Array.prototype.some.call(list, function (c) { return !c.hidden; });
+      sec.hidden = filtering && !any;
+    });
+    if (jump) { jump.hidden = filtering; }
+    if (empty) { empty.hidden = shown > 0; }
+    // The nouns are the pack's (data-room-one/-other); nothing here builds a plural.
+    var noun = count.getAttribute(total === 1 ? "data-room-one" : "data-room-other");
+    count.textContent = filtering ? shown + " of " + total + " " + noun + " match" : total + " " + noun;
+    if (push && window.history && window.history.replaceState) {
+      var p = new URLSearchParams();
+      if (q.value.trim()) { p.set("q", q.value.trim()); }
+      active.concat(activeM, activeR).forEach(function (s) { p.set(s.name, s.value); });
+      if (sorter && sorter.value && sorter.selectedIndex > 0) { p.set(sorter.name, sorter.value); }
+      var qs = p.toString();
+      window.history.replaceState(null, "", window.location.pathname + (qs ? "?" + qs : ""));
+    }
+  }
+  var timer = null;
+  q.addEventListener("input", function () { window.clearTimeout(timer); timer = window.setTimeout(function () { run(true); }, 150); });
+  facets.concat(multis, ranges, sorter ? [sorter] : []).forEach(function (s) { s.addEventListener("change", function () { run(true); }); });
+  form.addEventListener("submit", function (e) { e.preventDefault(); run(true); });
+  form.addEventListener("reset", function () { window.setTimeout(function () { run(true); q.focus(); }, 0); });
+  run(false);
+}());
 
 === assets/room.8135576933a1.css ===
 /* roomkit shared reading-room styles. Tokens come from the site's theme. */
@@ -239,89 +368,6 @@ body.room-plain .room-chrome__group ul a{color:var(--room-link)}
 }
 body.room-plain{margin:0;background:#fbfaf7;color-scheme:light dark}@media (prefers-color-scheme:dark){body.room-plain{background:#161513}}
 
-=== assets/room.d1fbddb77323.js ===
-(function () {
-  "use strict";
-  var root = document.getElementById("room-content");
-  if (!root) { return; }
-  var KEY = root.getAttribute("data-room-theme-key");
-  var toggle = root.querySelector("[data-room-toggle]");
-  if (toggle && KEY) {
-    var sysDark = function () { return window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches; };
-    var apply = function (v) {
-      if (v === "light" || v === "dark") { root.setAttribute("data-room-theme", v); } else { root.removeAttribute("data-room-theme"); }
-      var dark = v === "dark" || (v !== "light" && sysDark());
-      toggle.textContent = dark ? "Light" : "Dark";
-      toggle.setAttribute("aria-label", dark ? "Switch to the light reading theme" : "Switch to the dark reading theme");
-      toggle.setAttribute("aria-pressed", dark ? "true" : "false");
-    };
-    var saved = null;
-    try { saved = window.localStorage.getItem(KEY); } catch (e) {}
-    apply(saved);
-    toggle.hidden = false;
-    toggle.addEventListener("click", function () {
-      var dark = root.getAttribute("data-room-theme") === "dark" || (!root.hasAttribute("data-room-theme") && sysDark());
-      var next = dark ? "light" : "dark";
-      try { window.localStorage.setItem(KEY, next); } catch (e) {}
-      apply(next);
-    });
-  }
-  var finder = root.querySelector("[data-room-finder]");
-  if (!finder) { return; }
-  var form = finder.querySelector("form");
-  var q = document.getElementById("room-q");
-  var facets = Array.prototype.slice.call(finder.querySelectorAll("[data-room-facet]"));
-  var cards = Array.prototype.slice.call(root.querySelectorAll(".room__card"));
-  var sections = Array.prototype.slice.call(root.querySelectorAll("[data-room-section]"));
-  var count = finder.querySelector("[data-room-count]");
-  var empty = root.querySelector("[data-room-empty]");
-  var jump = root.querySelector("[data-room-jump]");
-  var total = cards.length;
-  finder.hidden = false;
-  var params = new URLSearchParams(window.location.search);
-  q.value = params.get("q") || params.get("rr_search") || "";
-  facets.forEach(function (s) { var v = params.get(s.name); if (v) { s.value = v; } });
-  function attr(card, name) {
-    return name === "group" ? card.getAttribute("data-room-group") : card.getAttribute("data-room-f-" + name);
-  }
-  function run(push) {
-    var words = q.value.toLowerCase().split(/\s+/).filter(Boolean);
-    var active = facets.filter(function (s) { return s.value; });
-    var shown = 0;
-    cards.forEach(function (c) {
-      var text = c.getAttribute("data-room-text") || "";
-      var hit = words.every(function (w) { return text.indexOf(w) !== -1; })
-        && active.every(function (s) { return attr(c, s.name) === s.value; });
-      c.hidden = !hit;
-      if (hit) { shown += 1; }
-    });
-    var filtering = words.length > 0 || active.length > 0;
-    sections.forEach(function (sec) {
-      var list = sec.querySelectorAll(".room__card");
-      var any = Array.prototype.some.call(list, function (c) { return !c.hidden; });
-      sec.hidden = filtering && !any;
-    });
-    if (jump) { jump.hidden = filtering; }
-    if (empty) { empty.hidden = shown > 0; }
-    // The nouns are the pack's (data-room-one/-other); nothing here builds a plural.
-    var noun = count.getAttribute(total === 1 ? "data-room-one" : "data-room-other");
-    count.textContent = filtering ? shown + " of " + total + " " + noun + " match" : total + " " + noun;
-    if (push && window.history && window.history.replaceState) {
-      var p = new URLSearchParams();
-      if (q.value.trim()) { p.set("q", q.value.trim()); }
-      active.forEach(function (s) { p.set(s.name, s.value); });
-      var qs = p.toString();
-      window.history.replaceState(null, "", window.location.pathname + (qs ? "?" + qs : ""));
-    }
-  }
-  var timer = null;
-  q.addEventListener("input", function () { window.clearTimeout(timer); timer = window.setTimeout(function () { run(true); }, 150); });
-  facets.forEach(function (s) { s.addEventListener("change", function () { run(true); }); });
-  form.addEventListener("submit", function (e) { e.preventDefault(); run(true); });
-  form.addEventListener("reset", function () { window.setTimeout(function () { run(true); q.focus(); }, 0); });
-  run(false);
-}());
-
 === assets/rr-config.7854e4c23fe0.js ===
 window.rrReaderConfig = {"docSearchUrl": "", "passageUrl": "", "pdfJsUrl": "/reading-room/assets/vendor/pdfjs/pdf.min.1a12e2ef3e98.js", "pdfWorkerUrl": "/reading-room/assets/vendor/pdfjs/pdf.worker.min.e738705f74c2.js"};
 
@@ -460,7 +506,7 @@ Three &amp; &lt;four&gt;</p>
 <script src="/reading-room/assets/vendor/pdfjs/pdf.min.1a12e2ef3e98.js"></script>
 <script src="/reading-room/assets/vendor/rr-reader/modules/rr-reader-pdf.3930bcfcf48b.js"></script>
 <script src="/reading-room/assets/vendor/rr-reader/modules/rr-cite.7b88f6a61cce.js"></script>
-<script src="/reading-room/assets/room.d1fbddb77323.js"></script>
+<script src="/reading-room/assets/room.70941fc296c3.js"></script>
 </body>
 </html>
 
@@ -585,7 +631,7 @@ Line two</p>
 <script src="/reading-room/assets/vendor/pdfjs/pdf.min.1a12e2ef3e98.js"></script>
 <script src="/reading-room/assets/vendor/rr-reader/modules/rr-reader-pdf.3930bcfcf48b.js"></script>
 <script src="/reading-room/assets/vendor/rr-reader/modules/rr-cite.7b88f6a61cce.js"></script>
-<script src="/reading-room/assets/room.d1fbddb77323.js"></script>
+<script src="/reading-room/assets/room.70941fc296c3.js"></script>
 </body>
 </html>
 
@@ -668,7 +714,7 @@ Line two</p>
 </div>
 </footer>
 <script src="/reading-room/assets/vendor/rr-reader/modules/rr-cite.7b88f6a61cce.js"></script>
-<script src="/reading-room/assets/room.d1fbddb77323.js"></script>
+<script src="/reading-room/assets/room.70941fc296c3.js"></script>
 </body>
 </html>
 
@@ -754,7 +800,7 @@ Line two</p>
 <script src="/reading-room/assets/vendor/rr-reader/rr-reader.6cd02f3098f6.js"></script>
 <script src="/reading-room/assets/vendor/rr-reader/modules/rr-reader-image.75f822f44d86.js"></script>
 <script src="/reading-room/assets/vendor/rr-reader/modules/rr-cite.7b88f6a61cce.js"></script>
-<script src="/reading-room/assets/room.d1fbddb77323.js"></script>
+<script src="/reading-room/assets/room.70941fc296c3.js"></script>
 </body>
 </html>
 
@@ -840,7 +886,7 @@ Line two</p>
 <script src="/reading-room/assets/vendor/rr-reader/rr-reader.6cd02f3098f6.js"></script>
 <script src="/reading-room/assets/vendor/rr-reader/modules/rr-reader-image.75f822f44d86.js"></script>
 <script src="/reading-room/assets/vendor/rr-reader/modules/rr-cite.7b88f6a61cce.js"></script>
-<script src="/reading-room/assets/room.d1fbddb77323.js"></script>
+<script src="/reading-room/assets/room.70941fc296c3.js"></script>
 </body>
 </html>
 
@@ -926,7 +972,7 @@ Line two</p>
 <script src="/reading-room/assets/vendor/rr-reader/rr-reader.6cd02f3098f6.js"></script>
 <script src="/reading-room/assets/vendor/rr-reader/modules/rr-reader-image.75f822f44d86.js"></script>
 <script src="/reading-room/assets/vendor/rr-reader/modules/rr-cite.7b88f6a61cce.js"></script>
-<script src="/reading-room/assets/room.d1fbddb77323.js"></script>
+<script src="/reading-room/assets/room.70941fc296c3.js"></script>
 </body>
 </html>
 
@@ -1012,7 +1058,7 @@ Line two</p>
 <script src="/reading-room/assets/vendor/rr-reader/rr-reader.6cd02f3098f6.js"></script>
 <script src="/reading-room/assets/vendor/rr-reader/modules/rr-reader-image.75f822f44d86.js"></script>
 <script src="/reading-room/assets/vendor/rr-reader/modules/rr-cite.7b88f6a61cce.js"></script>
-<script src="/reading-room/assets/room.d1fbddb77323.js"></script>
+<script src="/reading-room/assets/room.70941fc296c3.js"></script>
 </body>
 </html>
 
@@ -1098,7 +1144,7 @@ Line two</p>
 <script src="/reading-room/assets/vendor/rr-reader/rr-reader.6cd02f3098f6.js"></script>
 <script src="/reading-room/assets/vendor/rr-reader/modules/rr-reader-image.75f822f44d86.js"></script>
 <script src="/reading-room/assets/vendor/rr-reader/modules/rr-cite.7b88f6a61cce.js"></script>
-<script src="/reading-room/assets/room.d1fbddb77323.js"></script>
+<script src="/reading-room/assets/room.70941fc296c3.js"></script>
 </body>
 </html>
 
@@ -1184,7 +1230,7 @@ Line two</p>
 <script src="/reading-room/assets/vendor/rr-reader/rr-reader.6cd02f3098f6.js"></script>
 <script src="/reading-room/assets/vendor/rr-reader/modules/rr-reader-image.75f822f44d86.js"></script>
 <script src="/reading-room/assets/vendor/rr-reader/modules/rr-cite.7b88f6a61cce.js"></script>
-<script src="/reading-room/assets/room.d1fbddb77323.js"></script>
+<script src="/reading-room/assets/room.70941fc296c3.js"></script>
 </body>
 </html>
 
@@ -1270,7 +1316,7 @@ Line two</p>
 <script src="/reading-room/assets/vendor/rr-reader/rr-reader.6cd02f3098f6.js"></script>
 <script src="/reading-room/assets/vendor/rr-reader/modules/rr-reader-image.75f822f44d86.js"></script>
 <script src="/reading-room/assets/vendor/rr-reader/modules/rr-cite.7b88f6a61cce.js"></script>
-<script src="/reading-room/assets/room.d1fbddb77323.js"></script>
+<script src="/reading-room/assets/room.70941fc296c3.js"></script>
 </body>
 </html>
 
@@ -1356,7 +1402,7 @@ Line two</p>
 <script src="/reading-room/assets/vendor/rr-reader/rr-reader.6cd02f3098f6.js"></script>
 <script src="/reading-room/assets/vendor/rr-reader/modules/rr-reader-image.75f822f44d86.js"></script>
 <script src="/reading-room/assets/vendor/rr-reader/modules/rr-cite.7b88f6a61cce.js"></script>
-<script src="/reading-room/assets/room.d1fbddb77323.js"></script>
+<script src="/reading-room/assets/room.70941fc296c3.js"></script>
 </body>
 </html>
 
@@ -1442,7 +1488,7 @@ Line two</p>
 <script src="/reading-room/assets/vendor/rr-reader/rr-reader.6cd02f3098f6.js"></script>
 <script src="/reading-room/assets/vendor/rr-reader/modules/rr-reader-image.75f822f44d86.js"></script>
 <script src="/reading-room/assets/vendor/rr-reader/modules/rr-cite.7b88f6a61cce.js"></script>
-<script src="/reading-room/assets/room.d1fbddb77323.js"></script>
+<script src="/reading-room/assets/room.70941fc296c3.js"></script>
 </body>
 </html>
 
@@ -1528,7 +1574,7 @@ Line two</p>
 <script src="/reading-room/assets/vendor/rr-reader/rr-reader.6cd02f3098f6.js"></script>
 <script src="/reading-room/assets/vendor/rr-reader/modules/rr-reader-image.75f822f44d86.js"></script>
 <script src="/reading-room/assets/vendor/rr-reader/modules/rr-cite.7b88f6a61cce.js"></script>
-<script src="/reading-room/assets/room.d1fbddb77323.js"></script>
+<script src="/reading-room/assets/room.70941fc296c3.js"></script>
 </body>
 </html>
 
@@ -1654,7 +1700,7 @@ whitespace &amp; &lt;tags&gt; and &quot;quotes&quot;.</p></div></li></ul>
 <p class="room-chrome__text">Public records, as released. Every record links to its original file.</p>
 </div>
 </footer>
-<script src="/reading-room/assets/room.d1fbddb77323.js"></script>
+<script src="/reading-room/assets/room.70941fc296c3.js"></script>
 </body>
 </html>
 
@@ -1743,7 +1789,7 @@ whitespace &amp; &lt;tags&gt; and &quot;quotes&quot;.</p></div></li></ul>
 <script src="/reading-room/assets/vendor/rr-reader/rr-reader.6cd02f3098f6.js"></script>
 <script src="/reading-room/assets/vendor/rr-reader/modules/rr-reader-text.83792d749e4d.js"></script>
 <script src="/reading-room/assets/vendor/rr-reader/modules/rr-cite.7b88f6a61cce.js"></script>
-<script src="/reading-room/assets/room.d1fbddb77323.js"></script>
+<script src="/reading-room/assets/room.70941fc296c3.js"></script>
 </body>
 </html>
 
@@ -1754,7 +1800,7 @@ whitespace &amp; &lt;tags&gt; and &quot;quotes&quot;.</p></div></li></ul>
 {
  "assets": {
   "assets/room.css": "assets/room.8135576933a1.css",
-  "assets/room.js": "assets/room.d1fbddb77323.js",
+  "assets/room.js": "assets/room.70941fc296c3.js",
   "assets/rr-config.js": "assets/rr-config.7854e4c23fe0.js",
   "assets/vendor/pdfjs/pdf.min.js": "assets/vendor/pdfjs/pdf.min.1a12e2ef3e98.js",
   "assets/vendor/pdfjs/pdf.worker.min.js": "assets/vendor/pdfjs/pdf.worker.min.e738705f74c2.js",
@@ -1769,9 +1815,9 @@ whitespace &amp; &lt;tags&gt; and &quot;quotes&quot;.</p></div></li></ul>
  "documents": 15,
  "engine": "0.0.0-golden",
  "files": {
-  "404.html": "58e7bd80154dec6539355b775ee3a096cee103e4a49ee3aa71b9928c93005684",
+  "404.html": "5ce28c40406a55506add021589b070b4a2f4842e2087452b8a4a5c45ac69e681",
+  "assets/room.70941fc296c3.js": "70941fc296c37829bdec22b961f1bba291bf29409ce22b41a4ba1472e1fca226",
   "assets/room.8135576933a1.css": "8135576933a197aa4e26090fd9f2448854109b2b945e9033e5cc6618bdfac1db",
-  "assets/room.d1fbddb77323.js": "d1fbddb77323272b5e106f05ae1b29e7a85ee52da1c4e5cfa10dbb28effc3770",
   "assets/rr-config.7854e4c23fe0.js": "7854e4c23fe06763a344b77bf2696e0cd4fbece115d6a94af0f194087ab84541",
   "assets/vendor/pdfjs/pdf.min.1a12e2ef3e98.js": "1a12e2ef3e989e0b5d86cbf5cb4f66f95f3bfeecd532a71f8da22ef8de46d824",
   "assets/vendor/pdfjs/pdf.worker.min.e738705f74c2.js": "e738705f74c22ec75eee1f7d8e6624c62966318aa98c9407bcc05f9b472b8aa1",
@@ -1781,24 +1827,24 @@ whitespace &amp; &lt;tags&gt; and &quot;quotes&quot;.</p></div></li></ul>
   "assets/vendor/rr-reader/modules/rr-reader-pdf.3930bcfcf48b.js": "3930bcfcf48be14c49f9f13a1461e2c9c94dadd652ec33578dfbad7403aae564",
   "assets/vendor/rr-reader/modules/rr-reader-text.83792d749e4d.js": "83792d749e4da7e8689c24e28f6b30b6a66e5992f10e8363db80f6c1ebb65139",
   "assets/vendor/rr-reader/rr-reader.6cd02f3098f6.js": "6cd02f3098f69c3aa84eb84835199edce2e35c9e200a2b7152b6845e6afd5dec",
-  "big-report/index.html": "599f7e0d9bf99d7c4adf9a3838d44c5023608efc2e97ab8d9f1bb81415642a1b",
-  "camera-contract/index.html": "d0b322ced24d7186b3ef06980bd6d27ea83d29a04f002163c96e5798b21432a2",
+  "big-report/index.html": "545c12eb161788525b91672f94dddf5b2bdd59309696d1b4ced131955f69ba75",
+  "camera-contract/index.html": "f77ac81167fb985c10cd10dfe8636ff39ce8e80b25a1fb770f2544fed27a9855",
   "camera-contract/pages.c605fd0398f8.json": "c605fd0398f8496a9f7b8fc77f1cbf423a9cbd094d125778c807cb93e474cf8f",
-  "data-dump/index.html": "acdc4c6f7f8a06cdc1e57f08340d7f827e05ab96ea90ecbe5bafec4fccea64a2",
-  "filler-0/index.html": "0151578ed5c8aabfdab174814ea90b2c3b1bfe037e8a3406bebdfca64365d636",
-  "filler-1/index.html": "6ab4c05a020090f54b2e1e9e960dc683c96595b6dad1f5ab21f5b62c1cbf711d",
-  "filler-2/index.html": "0be7d787c01286bc803b3c69761c9d2eb82e3ae5f8770478cd4d13d626a2094b",
-  "filler-3/index.html": "91765bf7c961710b059f3c7d8b1cf1897135aa8206b9bfcdf40391d7ae9e9b26",
-  "filler-4/index.html": "679ede06aa2fb70433e49c95929ff13d3f7bf2e011f3e3aa94bf9042b7ef3d0c",
-  "filler-5/index.html": "5cb6d57c1092f331a6bbb1a872f7bbdb8bbcb84a010ba9566aa88377278c9287",
-  "filler-6/index.html": "669aa1d1c98f69a2d4f2ed201a3a7f35ae64898fa9afab044f2b23885f9e9666",
-  "filler-7/index.html": "2a7afdf84ec19c9e45067b164dbcb4c0243236ec4cd0773a2d7559384f7d9f65",
-  "filler-8/index.html": "0d4b5f3d648d1f21ef6a950eab8da9d43a00a29ef22c835a56968b08e0c7dedb",
-  "filler-9/index.html": "ff4a4d3d5e135252fcd4a2b10936d73eb4e2f0a0001ed674ab08a96e416cf09d",
-  "index.html": "e6a8d7a02cb5d475f913bfa62ed20ebfc70d49c6e755602acebcf0fb3053718d",
-  "memo-text/index.html": "21c77f923e4a48d5663dfe3bcdc0ddd768ed557524969f5ff768bfee693e92eb",
+  "data-dump/index.html": "ab7d04a2925db4d94c3e6abfddf4fddb274e9620096e86502c0222ced25170f4",
+  "filler-0/index.html": "48dcd53dcb53d01111ac9c0241339acec4ae96b3196734441233f09e2926b01a",
+  "filler-1/index.html": "984d46359c69f5ff3e6f4edada273aff8adb7e14c73202f6ea1e1ee67e3d772d",
+  "filler-2/index.html": "8d92c33411bc38b9e1f08f4252d0db922dfd122fa6bf9c9a6d85ff98fb0e0487",
+  "filler-3/index.html": "e8f371680b06fce1399480e4012b0a5ccf12a3fc5bd5d4aea5ebd3ae0e0de1ea",
+  "filler-4/index.html": "41fc15bb77002d7169246177366f06f94f8ec2441c2db6187f90ed474122094a",
+  "filler-5/index.html": "e28d97836cf8cb4e0f2bf037ae2454a50a6fe75c8a60bb0269c9759dae1f7dd2",
+  "filler-6/index.html": "43a8ad8ccfc36bdeb7854a79eddf4bb75ec3c4c2fbf8fbf4a4b6ee7a73739b3c",
+  "filler-7/index.html": "a1ef7fb5be91a4c9f2e9ba147e4bef473cfa95242816cbb125a61afc250d04dc",
+  "filler-8/index.html": "9b973ebaa64c345a91444b360f643556b9e22c95f0c44046160783f17ad3cf37",
+  "filler-9/index.html": "a3b614f7137aa0c523093400c2adebf0c182bcb9ec65f9416b211e624c79b1db",
+  "index.html": "5b0872c3b547b1a09ebfe9b9060a6e5fed484e71e8b7e6f861f5a0677fab9796",
+  "memo-text/index.html": "1a1e3c8f38ca4eb048504838add6cab9b82a7a8a54c9ee992f74998e6c4e08ec",
   "memo-text/pages.acc2f3a668b0.json": "acc2f3a668b0b6317d9a08dd645da822989b54268f52f02285fd5aed68f918c8",
-  "site-photo/index.html": "c10e30cb79235d1d913272a88e4969433ef2e3e25967fc5db1264188d9ea92c7"
+  "site-photo/index.html": "897a64559697e0a879b51fa6331c6cbfcf31ae4708fccfc45f172f0628f51417"
  },
  "mount": "/reading-room/",
  "noindex": false,
@@ -1891,7 +1937,7 @@ whitespace &amp; &lt;tags&gt; and &quot;quotes&quot;.</p></div></li></ul>
 <script src="/reading-room/assets/vendor/rr-reader/rr-reader.6cd02f3098f6.js"></script>
 <script src="/reading-room/assets/vendor/rr-reader/modules/rr-reader-image.75f822f44d86.js"></script>
 <script src="/reading-room/assets/vendor/rr-reader/modules/rr-cite.7b88f6a61cce.js"></script>
-<script src="/reading-room/assets/room.d1fbddb77323.js"></script>
+<script src="/reading-room/assets/room.70941fc296c3.js"></script>
 </body>
 </html>
 

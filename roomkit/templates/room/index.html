@@ -13,12 +13,15 @@
 {% if index.lede %}
 <p class="room__lede">{{ index.lede }}</p>
 {% endif %}
-<ul class="room__stats"><li><span class="room__stat">{{ index.count }}</span> {{ index.records_noun }}</li><li><span class="room__stat">{{ index.group_count }}</span> {{ index.groups_noun }}</li>
+<ul class="room__stats"><li><span class="room__stat">{{ index.count }}</span> {{ index.stats_noun }}</li><li><span class="room__stat">{{ index.group_count }}</span> {{ index.groups_noun }}</li>
 {%- if index.years %}<li><span class="room__stat">{{ index.years[0] }}{% if index.years[1] != index.years[0] %}&ndash;{{ index.years[1] }}{% endif %}</span></li>{% endif %}</ul>
 {% for ln in index.links %}
 <p class="room__head-link"><a href="{{ ln.url }}">{{ ln.label }}</a>{% if ln.text %}: {{ ln.text }}{% endif %}</p>
 {% endfor %}
 </header>
+{% if index.collections_grid %}
+{% include "room/partials/collections-grid.html" %}
+{% endif %}
 {# With corpus search (index.search), room-search.js owns the finder: text search
     over the room's Pagefind index, suggestions as a combobox. Without it, room.js. #}
 <section class="room__finder" aria-label="Find a record"{% if index.search %} data-room-search data-room-pagefind="{{ index.search.pagefind_url }}" data-room-recent-key="{{ index.search.recent_key }}"{% else %} data-room-finder{% endif %} hidden>
@@ -27,14 +30,27 @@
 {% if index.search %}
 <div class="room__combo"><input type="search" id="room-q" name="q" autocomplete="off" placeholder="{{ index.search.placeholder }}" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="room-suggest" aria-describedby="room-q-hint">
 <div class="room__suggest" id="room-suggest" role="listbox" aria-label="Suggestions" hidden></div></div>
+{%- if index.search.suggest %}
+<script type="application/json" data-room-suggest>{{ index.search.suggest|safe }}</script>
+{%- endif %}
 <p class="room__sr" id="room-q-hint">Searches the text of every record. Suggestions appear as you type: arrow keys move through them, Enter chooses, Escape closes.</p></div>
 {% else %}
 <input type="search" id="room-q" name="q" autocomplete="off" placeholder="{{ index.search_placeholder }}"></div>
 {% endif %}
-{% for s in index.selects %}
-<div class="room__field"><label for="room-f-{{ s.name }}">{{ s.label }}</label><select id="room-f-{{ s.name }}" name="{{ s.name }}" data-room-facet="{{ s.name }}"><option value="">All</option>
+{% for s in index.selects %}{% if s.kind == "range" %}
+<div class="room__field"><label for="room-f-{{ s.name }}-from">{{ s.from_label }}</label><select id="room-f-{{ s.name }}-from" name="{{ s.name }}-from" data-room-range="{{ s.name }}" data-room-bound="from"><option value="">Any</option>
 {%- for v in s["values"] %}<option value="{{ v }}">{{ v }}</option>{% endfor %}</select></div>
-{% endfor %}
+<div class="room__field"><label for="room-f-{{ s.name }}-to">{{ s.to_label }}</label><select id="room-f-{{ s.name }}-to" name="{{ s.name }}-to" data-room-range="{{ s.name }}" data-room-bound="to"><option value="">Any</option>
+{%- for v in s["values"] %}<option value="{{ v }}">{{ v }}</option>{% endfor %}</select></div>
+{% else %}
+<div class="room__field"><label for="room-f-{{ s.name }}">{{ s.label }}</label><select id="room-f-{{ s.name }}" name="{{ s.name }}" {% if s.kind == "multi" %}data-room-multi="{{ s.name }}"{% else %}data-room-facet="{{ s.name }}"{% endif %}><option value="">All</option>
+{%- if s.kind == "group" and s.sets %}{% for o in s.sets %}{% if o.label %}<optgroup label="{{ o.label }}">{% endif %}{% for v in o["values"] %}<option value="{{ v }}">{{ v }}</option>{% endfor %}{% if o.label %}</optgroup>{% endif %}{% endfor %}
+{%- else %}{% for v in s["values"] %}<option value="{{ v }}">{{ v }}</option>{% endfor %}{% endif %}</select></div>
+{% endif %}{% endfor %}
+{% if index.sort %}
+<div class="room__field"><label for="room-f-sort">{{ index.sort.label }}</label><select id="room-f-sort" name="sort" data-room-sort>
+{%- for o in index.sort.options %}<option value="{{ o.value }}">{{ o.label }}</option>{% endfor %}</select></div>
+{% endif %}
 <div class="room__field room__field--buttons">
 <button type="submit" class="room__btn">Search</button>
 <button type="reset" class="room__btn room__btn--ghost" data-room-clear>Clear</button></div>
@@ -57,6 +73,16 @@
 {%- endif %}
 {%- for g in index.jump.groups %}<li><a href="#{{ g.id }}">{{ g.label }}</a></li>{% endfor %}</ul>
 {%- if index.jump.folded %}</details>{% endif %}</nav>
+{% endif %}
+{% if index.browse %}
+{# The facet pages (pack features.facet-pages): the way to narrow the list without JavaScript. #}
+<nav class="room__jump room__browse" aria-labelledby="room-browse-h" data-room-browse>
+<h2 id="room-browse-h" class="room__jump-label">{{ index.browse.heading }}</h2>
+{% for f in index.browse.facets %}
+<details data-room-browse-facet="{{ f.name }}"><summary>{{ f.label }} ({{ f["values"]|length }})</summary><ul>
+{%- for v in f["values"] %}<li><a href="{{ v.url }}">{{ v.label }} <span class="room__section-n">{{ v.count }}</span></a></li>{% endfor %}</ul></details>
+{% endfor %}
+</nav>
 {% endif %}
 <div class="room__groups room__groups--{{ layout }}">
 {% for sec in index.sections %}

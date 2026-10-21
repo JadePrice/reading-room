@@ -1,0 +1,110 @@
+{
+ "collections": {
+  "index": {
+   "url": "https://example.test/library/collections/",
+   "head_title": "Reading Room – Glass Government",
+   "back": {"label": "← Reading Room", "url": "https://example.test/library/"},
+   "eyebrow": "Declassified collections",
+   "title": "The Reading Room",
+   "lede": "Public records, served whole.",
+   "search": {"label": "Search archive", "placeholder": "Search collections or keywords..."},
+   "filters": {"label": "Quick filters:", "group_label": "Filter collections", "options": [
+    {"value": "all", "label": "All"},
+    {"value": "federal", "label": "Federal Agencies"},
+    {"value": "police", "label": "Local Police"}
+   ]},
+   "sort": {"label": "Sort by:", "options": [
+    {"value": "default", "label": "Default"},
+    {"value": "year-asc", "label": "Year (Oldest First)"},
+    {"value": "year-desc", "label": "Year (Newest First)"},
+    {"value": "alpha", "label": "Alphabetical"}
+   ]},
+   "empty_text": "No collections are published yet.",
+   "categories": [
+    {"key": "historical", "heading": "Historical", "stamp": "Federal File", "groups": [
+     {"id": "cointelpro", "heading": "COINTELPRO", "collections": [
+      {"slug": "cointelpro_new_left", "title": "\"New Left\"", "url": "https://example.test/library/collection/cointelpro_new_left/",
+       "code": "COINTELPRO", "blurb": "FBI counterintelligence against campus organizing.", "years": "1968–1971",
+       "year": "1968", "count": "3 files", "tags": ["federal"], "match": "\"new left\" cointelpro fbi counterintelligence against campus organizing."},
+      {"slug": "agloso", "title": "AGLOSO", "url": "https://example.test/library/collection/agloso/",
+       "code": "AGLOSO", "years": "1947–1974", "year": "1947", "count": "1 files", "match": "agloso cointelpro "}
+     ]}
+    ]},
+    {"key": "uncategorized", "heading": "Other", "groups": [
+     {"id": "other", "heading": "Other", "collections": [
+      {"slug": "empty-one", "title": "Empty One", "url": "https://example.test/library/collection/empty-one/",
+       "code": "EMPTY-ONE", "count": "0 files", "tags": ["police"], "match": "empty one other "}
+     ]}
+    ]}
+   ]
+  },
+  "pages": [
+   {"slug": "cointelpro_new_left", "url": "https://example.test/library/collection/cointelpro_new_left/",
+    "head_title": "\"New Left\" – Glass Government",
+    "back": {"label": "← All collections", "url": "https://example.test/library/collections/"},
+    "eyebrow": "Collection", "title": "\"New Left\"", "count": "3 files, in order",
+    "list_label": "\"New Left\" files", "empty_text": "No files in this collection yet.",
+    "stamp": "Federal File", "stamp_kind": "historical", "years": "1968–1971",
+    "blurb": "FBI counterintelligence against campus organizing.",
+    "notice": {"heading": "Read with care", "body": "These files name private people.", "report": "Report a problem."},
+    "search": {"label": "Search this collection", "placeholder": "Filter 3 files by title", "status": "{shown} of {total} files"},
+    "documents": [
+     {"slug": "big-report", "title": "Big Report: “Quoted” & <b>bold</b> café", "url": "https://example.test/library/big-report/",
+      "num": "01", "badge": "Government record", "badge_kind": "government", "badge_sr": "Provenance: ", "size": "9.1 MB"},
+     {"slug": "camera-contract", "title": "Camera Contract (final)", "url": "https://example.test/library/camera-contract/",
+      "num": "02", "final": "Final", "size": "512 KB"},
+     {"slug": "memo-text", "title": "Memo", "url": "https://example.test/library/memo-text/", "num": "07"}
+    ],
+    "jsonld": {"@context": "https://schema.org", "@type": "Collection", "name": "\"New Left\"",
+               "url": "https://example.test/library/collection/cointelpro_new_left/", "numberOfItems": 3}},
+   {"slug": "agloso", "url": "https://example.test/library/collection/agloso/",
+    "head_title": "AGLOSO – Glass Government",
+    "back": {"label": "← All collections", "url": "https://example.test/library/collections/"},
+    "eyebrow": "Collection", "title": "AGLOSO", "count": "1 file, in order",
+    "list_label": "AGLOSO files", "empty_text": "No files in this collection yet.",
+    "description": "The Attorney General's list.",
+    "documents": [
+     {"slug": "data-dump", "title": "Data Dump", "url": "https://example.test/library/data-dump/", "num": "01", "size": "40 B"}
+    ],
+    "jsonld": {"@context": "https://schema.org", "@type": "Collection", "name": "AGLOSO", "description": "The Attorney General's list.",
+               "url": "https://example.test/library/collection/agloso/", "numberOfItems": 1}},
+   {"slug": "empty-one", "url": "https://example.test/library/collection/empty-one/",
+    "head_title": "Empty One – Glass Government",
+    "back": {"label": "← All collections", "url": "https://example.test/library/collections/"},
+    "eyebrow": "Collection", "title": "Empty One", "count": "0 files, in order",
+    "list_label": "Empty One files", "empty_text": "No files in this collection yet.",
+    "documents": [],
+    "jsonld": {"@context": "https://schema.org", "@type": "Collection", "name": "Empty One",
+               "url": "https://example.test/library/collection/empty-one/", "numberOfItems": 0}}
+  ],
+  "grid": {
+   "heading": "Collections",
+   "columns": ["Period", "Collection", "Sources", "Description"],
+   "sort": {"label": "Sort", "options": [
+    {"value": "default", "label": "Grouped (default)"},
+    {"value": "name", "label": "Name (A–Z)"},
+    {"value": "year-desc", "label": "Year (newest)"},
+    {"value": "year-asc", "label": "Year (oldest)"}
+   ]},
+   "eras": [
+    {"heading": "Historical", "groups": [
+     {"heading": "COINTELPRO", "rows": [
+      {"slug": "cointelpro_new_left", "title": "\"New Left\"", "url": "https://example.test/library/collection/cointelpro_new_left/",
+       "years": "1968–1971", "year": "1968", "sources": "FBI Records: The Vault",
+       "sources_line": "Source: FBI Records: The Vault", "blurb": "FBI counterintelligence against campus organizing."},
+      {"slug": "agloso", "title": "AGLOSO", "url": "https://example.test/library/collection/agloso/",
+       "years": "1947–1974", "year": "1947", "sources": "Federal Register, NARA",
+       "sources_line": "Sources: Federal Register, NARA", "blurb_empty": "No description available."}
+     ]}
+    ]},
+    {"heading": "Other", "groups": [
+     {"heading": "Other", "rows": [
+      {"slug": "empty-one", "title": "Other", "url": "https://example.test/library/collection/empty-one/",
+       "sources_empty": "Source not recorded.", "blurb_empty": "No description available."}
+     ]}
+    ]}
+   ]
+  },
+  "source": {"templates/index-ggrr-collections.php": "0000000000000000000000000000000000000000000000000000000000000000"}
+ }
+}

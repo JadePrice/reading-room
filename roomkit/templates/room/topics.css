@@ -1,0 +1,26 @@
+/* Topics page and topic pages (pack features.topics; roomkit/topics.py).
+   Shipped only when the pack turns topics on. Every rule is under #room-content and
+   every color is a token pair pack.PAIRS already gates: page-* on the page, ink/ink-soft/
+   link on a panel (surface), on-accent on accent for the current page. */
+#room-content .room__back{font-size:.9rem}
+#room-content .room__back a{color:var(--room-page-link)}
+#room-content .room__tsub{color:var(--room-page-ink-soft);margin-top:4px}
+/* The topics page */
+#room-content .room__tcards{list-style:none;display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px}
+#room-content .room__tcard{display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding:14px 16px;text-decoration:none;color:var(--room-link);height:100%}
+#room-content .room__tcard:hover .room__tcard-label{text-decoration:underline}
+#room-content .room__tcard-label{font-weight:700;overflow-wrap:anywhere}
+#room-content .room__tcard-count{color:var(--room-ink-soft);font-variant-numeric:tabular-nums}
+/* A topic page */
+#room-content .room__trows{list-style:none;max-width:var(--room-measure)}
+#room-content .room__trow{padding:18px 0;border-bottom:1px solid var(--room-rule)}
+#room-content .room__trow:last-child{border-bottom:none}
+#room-content .room__trow-title{font-size:1.1rem;line-height:1.35;margin:0 0 6px;overflow-wrap:anywhere}
+#room-content .room__trow-title a{color:var(--room-page-link)}
+#room-content .room__trow-meta{display:flex;flex-wrap:wrap;gap:4px 14px;font-size:.85rem;color:var(--room-page-ink-soft)}
+#room-content .room__trow-meta a{color:var(--room-page-link)}
+#room-content .room__trow-summary{margin-top:8px;font-size:.92rem;color:var(--room-page-ink-soft);overflow-wrap:anywhere}
+#room-content .room__pager ul{list-style:none;display:flex;flex-wrap:wrap;justify-content:center;gap:8px;margin-top:32px}
+#room-content .room__pager a,#room-content .room__pager span{display:inline-block;min-width:44px;min-height:44px;padding:10px 12px;text-align:center;border:1px solid var(--room-rule);border-radius:4px;color:var(--room-page-link)}
+#room-content .room__pager .room__pager-dots{border-color:transparent;color:var(--room-page-ink-soft)}
+#room-content .room__pager .room__pager-current{background:var(--room-accent);border-color:var(--room-accent);color:var(--room-on-accent)}

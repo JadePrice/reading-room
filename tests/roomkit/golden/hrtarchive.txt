@@ -56,7 +56,7 @@ Header set Cache-Control "public, max-age=0, s-maxage=3600, must-revalidate"
 <p class="room-chrome__text">hrtarchive.org · Historical mirrors · Snapshot 2024–2026</p>
 </div>
 </footer>
-<script src="/archive/assets/room.d1fbddb77323.js"></script>
+<script src="/archive/assets/room.70941fc296c3.js"></script>
 </body>
 </html>
 
@@ -155,7 +155,7 @@ Header set Cache-Control "public, max-age=0, s-maxage=3600, must-revalidate"
 <script src="/archive/assets/vendor/rr-reader/rr-reader.6cd02f3098f6.js"></script>
 <script src="/archive/assets/vendor/rr-reader/modules/rr-reader-image.75f822f44d86.js"></script>
 <script src="/archive/assets/vendor/rr-reader/modules/rr-cite.7b88f6a61cce.js"></script>
-<script src="/archive/assets/room.d1fbddb77323.js"></script>
+<script src="/archive/assets/room.70941fc296c3.js"></script>
 </body>
 </html>
 
@@ -343,7 +343,7 @@ body.room-plain .room-chrome__group ul a{color:var(--room-link)}
 }}
 #room-content,body.room-plain{--room-accent:#5BCEFA;--room-focus:#F5A9B8;--room-font-body:-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, sans-serif;--room-font-display:Georgia, "Times New Roman", Times, serif;--room-font-mono:"SF Mono", "Cascadia Code", "Fira Code", Consolas, monospace;--room-ink:#F8F4FF;--room-ink-soft:#C9B8D9;--room-link:#5BCEFA;--room-on-accent:#0D0815;--room-page-bg:#12091F;--room-page-ink:#F8F4FF;--room-page-ink-soft:#C9B8D9;--room-page-link:#5BCEFA;--room-rule:rgba(91, 206, 250, 0.4);--room-surface:rgba(25, 15, 40, 0.9);--room-surface-sunk:rgba(9, 6, 18, 0.92);}
 
-=== assets/room.d1fbddb77323.js ===
+=== assets/room.70941fc296c3.js ===
 (function () {
   "use strict";
   var root = document.getElementById("room-content");
@@ -375,7 +375,11 @@ body.room-plain .room-chrome__group ul a{color:var(--room-link)}
   var form = finder.querySelector("form");
   var q = document.getElementById("room-q");
   var facets = Array.prototype.slice.call(finder.querySelectorAll("[data-room-facet]"));
+  var multis = Array.prototype.slice.call(finder.querySelectorAll("[data-room-multi]"));
+  var ranges = Array.prototype.slice.call(finder.querySelectorAll("[data-room-range]"));
+  var sorter = finder.querySelector("[data-room-sort]");
   var cards = Array.prototype.slice.call(root.querySelectorAll(".room__card"));
+  cards.forEach(function (c, i) { c.setAttribute("data-room-i", i); });
   var sections = Array.prototype.slice.call(root.querySelectorAll("[data-room-section]"));
   var count = finder.querySelector("[data-room-count]");
   var empty = root.querySelector("[data-room-empty]");
@@ -384,22 +388,63 @@ body.room-plain .room-chrome__group ul a{color:var(--room-link)}
   finder.hidden = false;
   var params = new URLSearchParams(window.location.search);
   q.value = params.get("q") || params.get("rr_search") || "";
-  facets.forEach(function (s) { var v = params.get(s.name); if (v) { s.value = v; } });
+  facets.concat(multis, ranges, sorter ? [sorter] : []).forEach(function (s) { var v = params.get(s.name); if (v) { s.value = v; } });
   function attr(card, name) {
     return name === "group" ? card.getAttribute("data-room-group") : card.getAttribute("data-room-f-" + name);
   }
+  function multiValues(card, name) {
+    try { return JSON.parse(card.getAttribute("data-room-m-" + name) || "[]"); } catch (e) { return []; }
+  }
+  // Sorting reorders the cards inside each group; "default" restores the exported order.
+  function order() {
+    if (!sorter) { return; }
+    var how = sorter.value;
+    var key = {
+      "default": function (c) { return parseInt(c.getAttribute("data-room-i"), 10); },
+      "title": function (c) { return c.getAttribute("data-room-title") || ""; },
+      "date-desc": function (c) { return c.getAttribute("data-room-date") || ""; },
+      "date-asc": function (c) { return c.getAttribute("data-room-date") || ""; }
+    }[how] || null;
+    if (!key) { return; }
+    sections.forEach(function (sec) {
+      var list = sec.querySelector(".room__cards");
+      if (!list) { return; }
+      var items = Array.prototype.slice.call(list.children);
+      items.sort(function (a, b) {
+        var x = key(a), y = key(b);
+        // A record with no date goes last either way.
+        if (how.indexOf("date") === 0) {
+          if (!x && !y) { return 0; }
+          if (!x) { return 1; }
+          if (!y) { return -1; }
+        }
+        var r = x < y ? -1 : x > y ? 1 : 0;
+        return how === "date-desc" ? -r : r;
+      });
+      items.forEach(function (c) { list.appendChild(c); });
+    });
+  }
   function run(push) {
+    order();
     var words = q.value.toLowerCase().split(/\s+/).filter(Boolean);
     var active = facets.filter(function (s) { return s.value; });
+    var activeM = multis.filter(function (s) { return s.value; });
+    var activeR = ranges.filter(function (s) { return s.value; });
     var shown = 0;
     cards.forEach(function (c) {
       var text = c.getAttribute("data-room-text") || "";
       var hit = words.every(function (w) { return text.indexOf(w) !== -1; })
-        && active.every(function (s) { return attr(c, s.name) === s.value; });
+        && active.every(function (s) { return attr(c, s.name) === s.value; })
+        && activeM.every(function (s) { return multiValues(c, s.getAttribute("data-room-multi")).indexOf(s.value) !== -1; })
+        && activeR.every(function (s) {
+          var y = parseInt(attr(c, s.getAttribute("data-room-range")), 10);
+          if (isNaN(y)) { return false; }
+          return s.getAttribute("data-room-bound") === "from" ? y >= parseInt(s.value, 10) : y <= parseInt(s.value, 10);
+        });
       c.hidden = !hit;
       if (hit) { shown += 1; }
     });
-    var filtering = words.length > 0 || active.length > 0;
+    var filtering = words.length > 0 || active.length > 0 || activeM.length > 0 || activeR.length > 0;
     sections.forEach(function (sec) {
       var list = sec.querySelectorAll(".room__card");
       var any = Array.prototype.some.call(list, function (c) { return !c.hidden; });
@@ -413,14 +458,15 @@ body.room-plain .room-chrome__group ul a{color:var(--room-link)}
     if (push && window.history && window.history.replaceState) {
       var p = new URLSearchParams();
       if (q.value.trim()) { p.set("q", q.value.trim()); }
-      active.forEach(function (s) { p.set(s.name, s.value); });
+      active.concat(activeM, activeR).forEach(function (s) { p.set(s.name, s.value); });
+      if (sorter && sorter.value && sorter.selectedIndex > 0) { p.set(sorter.name, sorter.value); }
       var qs = p.toString();
       window.history.replaceState(null, "", window.location.pathname + (qs ? "?" + qs : ""));
     }
   }
   var timer = null;
   q.addEventListener("input", function () { window.clearTimeout(timer); timer = window.setTimeout(function () { run(true); }, 150); });
-  facets.forEach(function (s) { s.addEventListener("change", function () { run(true); }); });
+  facets.concat(multis, ranges, sorter ? [sorter] : []).forEach(function (s) { s.addEventListener("change", function () { run(true); }); });
   form.addEventListener("submit", function (e) { e.preventDefault(); run(true); });
   form.addEventListener("reset", function () { window.setTimeout(function () { run(true); q.focus(); }, 0); });
   run(false);
@@ -541,7 +587,7 @@ window.rrReaderConfig = {"docSearchUrl": "", "passageUrl": "", "pdfJsUrl": "/arc
 </div>
 </footer>
 <script src="/archive/assets/vendor/rr-reader/modules/rr-cite.7b88f6a61cce.js"></script>
-<script src="/archive/assets/room.d1fbddb77323.js"></script>
+<script src="/archive/assets/room.70941fc296c3.js"></script>
 </body>
 </html>
 
@@ -650,7 +696,7 @@ window.rrReaderConfig = {"docSearchUrl": "", "passageUrl": "", "pdfJsUrl": "/arc
 <script src="/archive/assets/vendor/pdfjs/pdf.min.1a12e2ef3e98.js"></script>
 <script src="/archive/assets/vendor/rr-reader/modules/rr-reader-pdf.3930bcfcf48b.js"></script>
 <script src="/archive/assets/vendor/rr-reader/modules/rr-cite.7b88f6a61cce.js"></script>
-<script src="/archive/assets/room.d1fbddb77323.js"></script>
+<script src="/archive/assets/room.70941fc296c3.js"></script>
 </body>
 </html>
 
@@ -741,7 +787,7 @@ window.rrReaderConfig = {"docSearchUrl": "", "passageUrl": "", "pdfJsUrl": "/arc
 <p class="room-chrome__text">hrtarchive.org · Historical mirrors · Snapshot 2024–2026</p>
 </div>
 </footer>
-<script src="/archive/assets/room.d1fbddb77323.js"></script>
+<script src="/archive/assets/room.70941fc296c3.js"></script>
 </body>
 </html>
 
@@ -840,7 +886,7 @@ window.rrReaderConfig = {"docSearchUrl": "", "passageUrl": "", "pdfJsUrl": "/arc
 <script src="/archive/assets/vendor/rr-reader/rr-reader.6cd02f3098f6.js"></script>
 <script src="/archive/assets/vendor/rr-reader/modules/rr-reader-text.83792d749e4d.js"></script>
 <script src="/archive/assets/vendor/rr-reader/modules/rr-cite.7b88f6a61cce.js"></script>
-<script src="/archive/assets/room.d1fbddb77323.js"></script>
+<script src="/archive/assets/room.70941fc296c3.js"></script>
 </body>
 </html>
 
@@ -945,7 +991,7 @@ window.rrReaderConfig = {"docSearchUrl": "", "passageUrl": "", "pdfJsUrl": "/arc
 <script src="/archive/assets/vendor/pdfjs/pdf.min.1a12e2ef3e98.js"></script>
 <script src="/archive/assets/vendor/rr-reader/modules/rr-reader-pdf.3930bcfcf48b.js"></script>
 <script src="/archive/assets/vendor/rr-reader/modules/rr-cite.7b88f6a61cce.js"></script>
-<script src="/archive/assets/room.d1fbddb77323.js"></script>
+<script src="/archive/assets/room.70941fc296c3.js"></script>
 </body>
 </html>
 
@@ -953,7 +999,7 @@ window.rrReaderConfig = {"docSearchUrl": "", "passageUrl": "", "pdfJsUrl": "/arc
 {
  "assets": {
   "assets/room.css": "assets/room.454560f5d4b6.css",
-  "assets/room.js": "assets/room.d1fbddb77323.js",
+  "assets/room.js": "assets/room.70941fc296c3.js",
   "assets/rr-config.js": "assets/rr-config.5798b6ad9e97.js",
   "assets/vendor/pdfjs/pdf.min.js": "assets/vendor/pdfjs/pdf.min.1a12e2ef3e98.js",
   "assets/vendor/pdfjs/pdf.worker.min.js": "assets/vendor/pdfjs/pdf.worker.min.e738705f74c2.js",
@@ -967,10 +1013,10 @@ window.rrReaderConfig = {"docSearchUrl": "", "passageUrl": "", "pdfJsUrl": "/arc
  "documents": 5,
  "engine": "0.0.0-golden",
  "files": {
-  "404.html": "a5eec111a128c3000c4d096f2f5c8eb5ee29426d912eba8c7847de1c5f7f8a00",
-  "archived-chart/index.html": "6cbb3847f8831a93c929a35dbb6bf8f6c288482637b1ea0e2f2b4abf1dffccd3",
+  "404.html": "18620ce1afc29a9f9c7b2adfb29d5f98e2f715318911ed95269ea70343e62c20",
+  "archived-chart/index.html": "0373f25ae7e11ab307d78f38df942af756dacf7d9bf0c604bf286ab18f494bba",
   "assets/room.454560f5d4b6.css": "454560f5d4b603dfaf48866bb4dbdf38c21c6726e5e2386387fa503a031f9e91",
-  "assets/room.d1fbddb77323.js": "d1fbddb77323272b5e106f05ae1b29e7a85ee52da1c4e5cfa10dbb28effc3770",
+  "assets/room.70941fc296c3.js": "70941fc296c37829bdec22b961f1bba291bf29409ce22b41a4ba1472e1fca226",
   "assets/rr-config.5798b6ad9e97.js": "5798b6ad9e971b0cabd4dab3bac04542bfb4e383c13cb0cc9f8ba5b4f13ecf40",
   "assets/vendor/pdfjs/pdf.min.1a12e2ef3e98.js": "1a12e2ef3e989e0b5d86cbf5cb4f66f95f3bfeecd532a71f8da22ef8de46d824",
   "assets/vendor/pdfjs/pdf.worker.min.e738705f74c2.js": "e738705f74c22ec75eee1f7d8e6624c62966318aa98c9407bcc05f9b472b8aa1",
@@ -980,12 +1026,12 @@ window.rrReaderConfig = {"docSearchUrl": "", "passageUrl": "", "pdfJsUrl": "/arc
   "assets/vendor/rr-reader/modules/rr-reader-pdf.3930bcfcf48b.js": "3930bcfcf48be14c49f9f13a1461e2c9c94dadd652ec33578dfbad7403aae564",
   "assets/vendor/rr-reader/modules/rr-reader-text.83792d749e4d.js": "83792d749e4da7e8689c24e28f6b30b6a66e5992f10e8363db80f6c1ebb65139",
   "assets/vendor/rr-reader/rr-reader.6cd02f3098f6.js": "6cd02f3098f69c3aa84eb84835199edce2e35c9e200a2b7152b6845e6afd5dec",
-  "dataset-export/index.html": "d03e7b30409ef38f47b77caff06b42bb475096dbdc8131bdd29b7044ed65496b",
-  "guidance-page-capture/index.html": "1d61756c05c2e55e6216ec082520a771083eafaf057f52e037750f0130eff1a0",
+  "dataset-export/index.html": "27e2d15a6db7bc09b4a93e6bc37089c780a9b96184e0d93b95d80c995ccd3035",
+  "guidance-page-capture/index.html": "d7f36296694b2a5f6c56963bce1eb4536e9125d915cf1e4c7935ad7393f8e719",
   "guidance-page-capture/pages.e6637a9750e8.json": "e6637a9750e8d4d050588528f2d6f9da20be13d93be7f6376e39fdb2f9364ebc",
-  "index.html": "e8b258161b0f584ae1060c586cc9c66948ba5d7cc49425da33e1635c9659bd12",
-  "page-text-snapshot/index.html": "e083134ff03c9cc117e7738d5b836e1504e3b4dc0212bec7b83d5557784ebfc2",
-  "removed-fact-sheet/index.html": "27a6927f34986e5d7190d5b1e65da81dafce78372de3e337c7c123912d8ecef6"
+  "index.html": "01b69ff907bf344454ea795b596cf6f19dcaa638dfe2d4994834dbd7411fa8ea",
+  "page-text-snapshot/index.html": "79acec6893c50f3d3b2ef775ef49d0a9425b8267552521eae33d360ce3370ce2",
+  "removed-fact-sheet/index.html": "54e9cfa9a55f0fd7343440b65c7253365c666fed57e60b4688f37eeda6ac118f"
  },
  "mount": "/archive/",
  "noindex": false,

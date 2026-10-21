@@ -1,7 +1,7 @@
 {
   "site": "deflockdane",
   "fetched": "2026-10-19T00:04:18Z",
-  "source": "GET https://deflockdane.org/reading-room/?rr_search=<query> (public HTML search form on /reading-room/, read via origin 145.223.72.89 to avoid Cloudflare edge rate-limiting)",
+  "source": "GET https://deflockdane.org/reading-room/?rr_search=<query> (public HTML search form on /reading-room/, read via the origin to avoid Cloudflare edge rate-limiting)",
   "notes": "30 queries (15 verbatim record titles from /reading-room/ and 15 topic/vendor/agency terms) fetched against origin at 2026-10-19T00:04:18Z. Deflock_Reading_Room_Storage::get_docs caps results at 200 public documents and uses MySQL FULLTEXT boolean prefix matching (+token* for alphanumeric tokens >= 3 chars, capped at first 8 unique tokens) and groups results by agency section on the rendered page.",
   "queries": {
     "Wisconsin State Capitol Police Response Letter": [

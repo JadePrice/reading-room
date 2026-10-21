@@ -4,10 +4,10 @@
  *
  * READ-ONLY. Run from the Mac, script on stdin, nothing copied to the host:
  *
- *   ssh gg-core 'sudo -n /usr/local/bin/wp-prod eval-file -' \
+ *   ssh $GG_HOST "$GG_WP eval-file -" \
  *     < roomkit/exporters/glassgovernment.php > gg-manifest.json
  *
- * (`wp-prod` is the operator's wp-cli wrapper for /srv/wp-prod/current; the
+ * (`$GG_WP` is the operator's wp-cli command for the GG install; the
  * same route scripts/wiki/corpus_manifest.py reads the census by.)
  *
  * Prints one JSON manifest (roomkit/manifest.py) of the public
@@ -19,7 +19,11 @@
  * GGRR_Entities::for_doc with the template's two headings, and the entity index
  * and entity pages (`entities`) from list_approved, entity_label,
  * docs_for_entity and co_occurring under index-ggrr-entities.php's and
- * entity-ggrr.php's own words. Where the template
+ * entity-ggrr.php's own words, and the collections page, collection pages and
+ * the index's collections table (`collections`) from collections_by_category,
+ * collection_docs, ggrr_collection_meta and ggrr_collection_sources under
+ * index-ggrr-collections.php's, archive-ggrr-collection.php's and
+ * index-ggrr-reading-room.php's own words. Where the template
  * composes something inline (the Pages row, the record-type words, the
  * JSON-LD), the formula is repeated here and named; `roomkit parity` checks
  * the citation and file URLs against the live pages.
@@ -40,6 +44,10 @@
  * the documents, so a slow link can fetch the manifest in pieces and
  * roomkit/exporters/merge-slices.py joins them (refusing a gap or an
  * overlap). Without it, everything goes out at once, as before.
+ *
+ * A record with no file attached but full_text is exported as a text-only record
+ * (`file` null, `display.no_file`, a "Pending local file hash" rail row), the page the live
+ * site shows; its text goes out as pages or `search_text`.
  *
  * Refuses (exit 1, JSON {"error", "problems"}) when a public record has no
  * servable file or its bytes do not hash to file_sha256; with
@@ -64,7 +72,7 @@ if (!class_exists('GGRR_Storage') || !class_exists('GGRR_Template') || !class_ex
 global $wpdb;
 $S = 'GGRR_Storage';
 $T = 'GGRR_Template';
-// sudo (wp-prod) does not pass environment variables, so the flags may also
+// sudo ($GG_WP) does not pass environment variables, so the flags may also
 // arrive as constants defined in a one-line PHP block prepended on stdin
 // (roomkit/publish/glassgovernment-staging.sh does this).
 $with_pages = getenv('ROOMKIT_WITH_PAGES') !== '0' && !defined('ROOMKIT_NO_PAGES');
@@ -82,6 +90,8 @@ for ($offset = 0; ; $offset += 500) {
 // Every public record's slug by id, before any slice: a curated citation names its
 // record by id, and that record may sit in another slice.
 $public_slug = array_column($rows, 'slug', 'id');
+// ...and its file hash, for the citations that pin the file they were made against.
+$public_sha = array_map('strtolower', array_column($rows, 'file_sha256', 'id'));
 $slice = null;
 $slice_raw = defined('ROOMKIT_SLICE') ? (string) ROOMKIT_SLICE : (string) getenv('ROOMKIT_SLICE');
 if ($slice_raw !== '') {
@@ -127,9 +137,26 @@ function roomkit_gg_rights(array $doc): ?array {
     return $row;
 }
 
+// What the live index's selects narrow by (agency, record type, vendor, year), from the
+// row builder the index template itself calls, so each record's facet pages hold what live
+// filtering by that value holds (browse.py). The row's labels are the selects' option text.
+$browse_by_slug = [];
+// The record type and source selects too: the row's raw record_type, and its source
+// (source_label ?? source_system: an empty label stays empty, so the record lists no source).
+$facets_by_slug = [];
+foreach ((array) ggrr_reading_room_documents() as $r) {
+    $facets_by_slug[(string) ($r['slug'] ?? '')] = ['type' => (string) ($r['record_type'] ?? ''), 'source' => (string) ($r['source'] ?? '')];
+    $browse_by_slug[(string) ($r['slug'] ?? '')] = array_filter([
+        'agency' => array_values(array_filter([trim((string) ($r['agency'] ?? ''))])),
+        'type' => array_values(array_filter([(string) ($r['record_type'] ?? '')])),
+        'vendor' => array_values(array_unique(array_filter(array_map(fn($v) => (string) ($v['label'] ?? ''), (array) ($r['vendors'] ?? []))))),
+        'year' => array_values(array_filter([ctype_digit((string) ($r['year'] ?? '')) ? (string) $r['year'] : ''])),
+    ]);
+}
+
 $ent_headings = [
     'authorship' => ['Attributed to', 'Recorded in the catalog as the party that produced this document.'],
-    'named' => ['Named in this document', 'Matched verbatim in the document text. The quoted words are the match and the line around them.'],
+    'named' => ['Named in this document', 'Matched verbatim in the document text. The highlighted words are the match; the rest is the line around them.'],
 ];
 $ent_types = ['vendor' => 'Vendor', 'agency' => 'Agency', 'org' => 'Organization', 'program' => 'Program', 'location' => 'Location'];
 
@@ -138,19 +165,31 @@ $problems = [];
 foreach ($rows as $doc) {
     $slug = (string) $doc['slug'];
     $id = (int) $doc['id'];
-    $path = $S::get_file_path($doc);
-    if (!$S::has_servable_file($doc) || $path === '' || !is_readable($path)) {
-        $problems[] = ['slug' => $slug, 'problem' => 'no servable file'];
-        continue;
+    // A record with no file attached but full text is a text-only page, as the live site shows it
+    // ("No file is attached to this record yet."). One whose file is attached but unreadable or
+    // altered is still a problem: get_file_path() answers '' for a managed_path that is gone
+    // from disk too, so "attached" is read from the row, not from has_servable_file().
+    $attached = trim((string) ($doc['managed_path'] ?? '')) !== '' || (int) ($doc['attachment_id'] ?? 0) > 0
+        || (!empty($doc['ia_id']) && ($doc['ia_status'] ?? '') === 'confirmed');
+    $text_only = !$attached && trim((string) ($doc['full_text'] ?? '')) !== '';
+    $path = $text_only ? '' : $S::get_file_path($doc);
+    $sha = '';
+    $ext = '';
+    $mime = '';
+    if (!$text_only) {
+        if (!$S::has_servable_file($doc) || $path === '' || !is_readable($path)) {
+            $problems[] = ['slug' => $slug, 'problem' => 'no servable file'];
+            continue;
+        }
+        $sha = strtolower((string) $doc['file_sha256']);
+        if (!preg_match('/^[a-f0-9]{64}$/', $sha) || !hash_equals($sha, (string) hash_file('sha256', $path))) {
+            $problems[] = ['slug' => $slug, 'problem' => 'file bytes do not hash to file_sha256'];
+            continue;
+        }
+        $ext = $S::get_file_extension($doc);
+        $mime = (string) (wp_check_filetype('x.' . $ext)['type'] ?? '');
     }
-    $sha = strtolower((string) $doc['file_sha256']);
-    if (!preg_match('/^[a-f0-9]{64}$/', $sha) || !hash_equals($sha, (string) hash_file('sha256', $path))) {
-        $problems[] = ['slug' => $slug, 'problem' => 'file bytes do not hash to file_sha256'];
-        continue;
-    }
-    $ext = $S::get_file_extension($doc);
-    $mime = (string) (wp_check_filetype('x.' . $ext)['type'] ?? '');
-    $inline = $S::get_inline_file_url($doc);
+    $inline = $text_only ? '' : $S::get_inline_file_url($doc);
     $date = (string) ($doc['document_date'] ?? '');
     $has_date = $date !== '' && $date !== '0000-00-00';
     $date_display = $has_date ? $T::format_display_date($date) : '';
@@ -167,18 +206,21 @@ foreach ($rows as $doc) {
         $has_date ? $date_display : 'n.d.', $permalink, null, $ia_ok ? (string) $doc['ia_id'] : ''
     );
 
-    $file = [
-        'url' => $inline,
-        'download_url' => $S::get_download_file_url($doc),
-        'sha256' => $sha,
-        'bytes' => (int) filesize($path),
-        'ext' => $ext,
-        'mime' => $mime,
-    ];
-    if ($ext === 'pdf') {
-        $poster = roomkit_gg_poster($doc);
-        if ($poster !== '') {
-            $file['poster_url'] = $poster;
+    $file = null;
+    if (!$text_only) {
+        $file = [
+            'url' => $inline,
+            'download_url' => $S::get_download_file_url($doc),
+            'sha256' => $sha,
+            'bytes' => (int) filesize($path),
+            'ext' => $ext,
+            'mime' => $mime,
+        ];
+        if ($ext === 'pdf') {
+            $poster = roomkit_gg_poster($doc);
+            if ($poster !== '') {
+                $file['poster_url'] = $poster;
+            }
         }
     }
 
@@ -219,13 +261,16 @@ foreach ($rows as $doc) {
         ? ['label' => 'Source', 'value' => (string) ($doc['source_label'] ?: $doc['source_url']), 'url' => (string) $doc['source_url']]
         : ['label' => 'Source', 'value' => (string) ($doc['source_label'] ?: 'Not listed')];
     if ($ia_ok) {
-        $details[] = ['label' => 'Permanent copy', 'value' => 'Internet Archive', 'url' => $ia_url, 'note' => 'Verified present'];
+        // The template's badge words, as live shows them (lowercase).
+        $details[] = ['label' => 'Permanent copy', 'value' => 'Internet Archive', 'url' => $ia_url, 'note' => 'verified'];
     } elseif (!empty($doc['ia_id']) && ($doc['ia_status'] ?? '') === 'pending') {
-        $details[] = ['label' => 'Permanent copy', 'value' => 'Backup pending', 'note' => 'Internet Archive upload in progress'];
+        $details[] = ['label' => 'Permanent copy', 'value' => 'backup pending', 'note' => 'Internet Archive upload in progress'];
     } elseif (!empty($doc['ia_id'])) {
-        $details[] = ['label' => 'Permanent copy', 'value' => 'Not yet archived'];
+        $details[] = ['label' => 'Permanent copy', 'value' => 'not yet archived'];
     }
-    $details[] = ['label' => 'SHA-256', 'value' => $sha, 'code' => true];
+    $details[] = $text_only
+        ? ['label' => 'SHA-256', 'value' => 'Pending local file hash']
+        : ['label' => 'SHA-256', 'value' => $sha, 'code' => true];
 
     // --- topics, entities, power maps, related: the rail's lists ---
     $groups = [];
@@ -260,9 +305,9 @@ foreach ($rows as $doc) {
     }
     $related = class_exists('GGRR_Entities') ? GGRR_Entities::related_docs($id) : [];
     if ($related) {
-        $groups[] = ['heading' => 'Related documents', 'style' => 'list', 'items' => array_map(fn($r) => [
+        $groups[] = ['heading' => 'Related Documents', 'style' => 'list', 'items' => array_map(fn($r) => [
             'label' => $r['title'], 'url' => home_url('/library/' . rawurlencode($r['slug']) . '/'),
-            'meta' => $T::collection_label($r['collection']),
+            'meta' => (string) $r['collection'],  // the template prints the raw slug
         ], $related)];
     }
 
@@ -318,7 +363,7 @@ foreach ($rows as $doc) {
     ]));
     $hdr = [
         'meta' => $hdr_meta,
-        'original_url' => $inline . (str_contains($inline, '?') ? '&' : '?') . 'original=1',
+        'original_url' => $inline !== '' ? $inline . (str_contains($inline, '?') ? '&' : '?') . 'original=1' : '',
         'category' => (string) ($cm['category'] ?? 'historical'),
     ];
     if ($ia_ok) {
@@ -343,6 +388,7 @@ foreach ($rows as $doc) {
         'notice' => $sens ? array_filter(['heading' => $sens['heading'], 'body' => $sens['body'], 'report' => (string) ($sens['report'] ?? '')]) : null,
         'details' => $details,
         'notes' => (string) ($doc['notes_public'] ?? ''),
+        'no_file' => $text_only ? 'No file is attached to this record yet.' : '',
         'groups' => $groups,
         'jsonld' => $jsonld,
     ], fn($v) => $v !== '' && $v !== null && $v !== []);
@@ -367,9 +413,10 @@ foreach ($rows as $doc) {
             'group' => $collection_label,
             'card_date' => $date_display,
             'meta' => $meta,
+            'browse' => (object) ($browse_by_slug[$slug] ?? []),
             'facets' => (object) array_filter([
-                'type' => !empty($doc['record_type']) ? ucwords(str_replace(['_', '-'], ' ', (string) $doc['record_type'])) : '',
-                'source' => (string) ($doc['source_label'] ?: ($doc['source_system'] ?? '')),
+                'type' => $facets_by_slug[$slug]['type'] ?? '',
+                'source' => $facets_by_slug[$slug]['source'] ?? '',
                 'agency' => $agency,
                 'year' => $has_date ? substr($date, 0, 4) : '',
             ]),
@@ -419,11 +466,14 @@ if ($problems && !$allow_excluded) {
 
 // Collection order: the library's own grouping (category, then group), as /library/ lists it.
 $group_order = [];
+$group_sets = [];  // the live collection select's optgroups: the library's group names
 foreach ($T::collections_by_category() as $cat => $grps) {
     foreach ($grps as $grp => $cols) {
+        $labels_in = [];
         foreach ($cols as $c) {
-            $group_order[] = $T::collection_label((string) $c['slug']);
+            $group_order[] = $labels_in[] = $T::collection_label((string) $c['slug']);
         }
+        $group_sets[] = ['label' => (string) $grp, 'groups' => $labels_in];
     }
 }
 
@@ -594,6 +644,397 @@ if (class_exists('GGRR_Entities') && ($slice === null || $slice['offset'] === 0)
     ];
 }
 
+// --- collections: the collections page (templates/index-ggrr-collections.php), one
+// page per collection (templates/archive-ggrr-collection.php) and the collections
+// table on the index (templates/index-ggrr-reading-room.php, section 1), every word
+// as those templates write it and every list from the plugin's own helpers, in their
+// order. The templates build their strings inline, so each formula is repeated here
+// and named; `roomkit parity --collections` compares the result with the live pages.
+// First slice only, as entities.
+
+// ggrr_filesize_h() (archive-ggrr-collection.php), which that template defines inline.
+function roomkit_gg_filesize_h(array $doc): string {
+    $path = GGRR_Storage::get_file_path($doc);
+    if ($path === '' || !is_readable($path)) { return ''; }
+    $b = filesize($path);
+    if ($b === false) { return ''; }
+    if ($b >= 1048576) { return number_format($b / 1048576, 1) . ' MB'; }
+    if ($b >= 1024) { return number_format($b / 1024, 0) . ' KB'; }
+    return $b . ' B';
+}
+
+function roomkit_gg_collection_url(string $slug): string {
+    return home_url('/library/collection/' . rawurlencode($slug) . '/');
+}
+
+// archive-ggrr-collection.php, top to bottom, for one collection.
+function roomkit_gg_collection_page(string $collection): array {
+    $T = 'GGRR_Template';
+    $label = $T::collection_label($collection);
+    $desc = $T::collection_description($collection);
+    $docs = $T::collection_docs($collection);
+    $n = count($docs);
+    $url = roomkit_gg_collection_url($collection);
+    $jsonld = array_filter([
+        '@context' => 'https://schema.org',
+        '@type' => 'Collection',
+        'name' => $label,
+        'description' => $desc,
+        'url' => $url,
+        'numberOfItems' => $n,
+    ], fn($v) => $v !== '' && $v !== null);
+    $page = [
+        'slug' => $collection,
+        'url' => $url,
+        'head_title' => $label . ' – Glass Government',                  // filter_document_title
+        'back' => ['label' => '← All collections', 'url' => home_url('/library/collections/')],
+        'eyebrow' => 'Collection',
+        'title' => $label,
+        'count' => $n . ' ' . ($n === 1 ? 'file' : 'files') . ', in order',
+        'list_label' => $label . ' files',
+        'empty_text' => 'No files in this collection yet.',
+        'jsonld' => $jsonld,
+    ];
+    $m = ggrr_collection_meta($collection);
+    if ($m) {
+        $page['stamp'] = $m['category'] === 'historical' ? 'Federal File' : 'Public Records';
+        $page['stamp_kind'] = (string) $m['category'];
+        if (!empty($m['year_start'])) {
+            $page['years'] = (int) $m['year_start'] . '–' . (int) $m['year_end'];
+        }
+        if (!empty($m['blurb'])) {
+            $page['blurb'] = (string) $m['blurb'];
+        }
+    } elseif ($desc !== '') {
+        $page['description'] = $desc;
+    }
+    $sens = function_exists('ggrr_collection_sensitivity') ? ggrr_collection_sensitivity($collection) : null;
+    if ($sens) {
+        $page['notice'] = array_filter(['heading' => $sens['heading'], 'body' => $sens['body'],
+                                        'report' => (string) ($sens['report'] ?? '')], fn($v) => $v !== '');
+    }
+    if ($n > 8) {
+        $page['search'] = ['label' => 'Search this collection', 'placeholder' => 'Filter ' . $n . ' files by title',
+                           'status' => '{shown} of {total} files'];
+    }
+    $i = 0;
+    $page['documents'] = array_map(function ($doc) use (&$i) {
+        $i++;
+        $t = strtolower((string) ($doc['title'] ?? ''));
+        $final = strpos($t, '(final)') !== false || preg_match('/\bfinal\b/', $t) === 1;   // $is_final
+        $num = ((int) ($doc['sort_order'] ?? 0)) ?: $i;
+        return array_filter([
+            'slug' => (string) $doc['slug'],
+            'title' => (string) $doc['title'],
+            'url' => home_url('/library/' . rawurlencode((string) $doc['slug']) . '/'),
+            'num' => str_pad((string) (int) $num, 2, '0', STR_PAD_LEFT),
+            'final' => $final ? 'Final' : '',
+            'size' => roomkit_gg_filesize_h($doc),
+        ] + roomkit_gg_badge($doc), fn($v) => $v !== '');
+    }, $docs);
+    return $page;
+}
+
+$collections = null;
+if (function_exists('ggrr_collection_meta') && ($slice === null || $slice['offset'] === 0)) {
+    $byCat = $T::collections_by_category();
+    $coll_pages = [];
+    foreach ($byCat as $grps) {
+        foreach ($grps as $cols) {
+            foreach ($cols as $c) {
+                $coll_pages[] = roomkit_gg_collection_page((string) $c['slug']);
+            }
+        }
+    }
+
+    // index-ggrr-collections.php
+    $cat_order = ['historical' => 'Historical', 'modern' => 'Modern', 'uncategorized' => 'Other'];
+    $cat_stamp = ['historical' => 'Federal File', 'modern' => 'Public Records', 'uncategorized' => ''];
+    $categories = [];
+    foreach ($cat_order as $cat => $cat_title) {
+        if (empty($byCat[$cat])) { continue; }
+        $groups = [];
+        foreach ($byCat[$cat] as $group => $rows) {
+            $groups[] = ['id' => sanitize_title($group), 'heading' => (string) $group, 'collections' => array_map(function ($row) use ($cat, $group) {
+                $m = $row['meta'];
+                $slug = (string) $row['slug'];
+                $title = $m['title'] ?? GGRR_Template::collection_label($slug);
+                $y0 = $m['year_start'] ?? null;
+                $y1 = $m['year_end'] ?? null;
+                return array_filter([
+                    'slug' => $slug,
+                    'title' => (string) $title,
+                    'url' => roomkit_gg_collection_url($slug),
+                    'code' => strtoupper(substr(str_replace('_', '-', $slug), 0, 10)),
+                    'blurb' => (string) ($m['blurb'] ?? ''),
+                    'years' => ($y0 && $y1) ? (int) $y0 . '–' . (int) $y1 : '',
+                    'year' => $y0 ? (string) (int) $y0 : '',      // data-ggrr-year (9999 there means none)
+                    'count' => (int) $row['count'] . ' files',
+                    'tags' => function_exists('ggrr_collection_filter_tags')
+                        ? ggrr_collection_filter_tags($cat, (string) $group, (string) $title) : [],
+                    'match' => strtolower($title . ' ' . $group . ' ' . ($m['blurb'] ?? '')),        // data-ggrr-search-match
+                ], fn($v) => $v !== '' && $v !== []);
+            }, $rows)];
+        }
+        $categories[] = array_filter(['key' => $cat, 'heading' => $cat_title, 'stamp' => $cat_stamp[$cat], 'groups' => $groups],
+                                     fn($v) => $v !== '');
+    }
+    $banner = get_stylesheet_directory() . '/assets/images/reading_room_banner.png';
+
+    // index-ggrr-reading-room.php, section 1 (its own $catOrder: 'modern' is 'Recent' there).
+    $grid_order = ['historical' => 'Historical', 'modern' => 'Recent', 'uncategorized' => 'Other'];
+    $coll_sources = function_exists('ggrr_collection_sources') ? ggrr_collection_sources() : [];
+    $eras = [];
+    foreach ($grid_order as $cat => $cat_title) {
+        if (empty($byCat[$cat])) { continue; }
+        $groups = [];
+        foreach ($byCat[$cat] as $group => $rows) {
+            $groups[] = ['heading' => (string) $group, 'rows' => array_map(function ($row) use ($group, $coll_sources) {
+                $m = $row['meta'];
+                $slug = (string) $row['slug'];
+                $y0 = $m['year_start'] ?? null;
+                $y1 = $m['year_end'] ?? null;
+                $srcs = $coll_sources[$slug] ?? [];
+                $srcs_text = implode(', ', $srcs);
+                $blurb = (string) ($m['blurb'] ?? '');
+                return array_filter([
+                    'slug' => $slug,
+                    'title' => (string) ($m['title'] ?? $group),
+                    'url' => roomkit_gg_collection_url($slug),
+                    'years' => ($y0 && $y1) ? (int) $y0 . '–' . (int) $y1 : '',
+                    'year' => $y0 ? (string) (int) $y0 : '',
+                    'sources' => $srcs_text,
+                    'sources_line' => $srcs ? (count($srcs) > 1 ? 'Sources: ' : 'Source: ') . $srcs_text : '',
+                    'sources_empty' => $srcs ? '' : 'Source not recorded.',
+                    'blurb' => $blurb,
+                    'blurb_empty' => $blurb !== '' ? '' : 'No description available.',
+                ], fn($v) => $v !== '');
+            }, $rows)];
+        }
+        $eras[] = ['heading' => $cat_title, 'groups' => $groups];
+    }
+
+    $collections = [
+        'index' => array_filter([
+            'url' => home_url('/library/collections/'),
+            'head_title' => 'Reading Room – Glass Government',                  // filter_document_title
+            'back' => ['label' => '← Reading Room', 'url' => home_url('/library/')],
+            'eyebrow' => 'Declassified collections',
+            'title' => 'The Reading Room',
+            'lede' => 'Public records, served whole. Each collection below is a set of released government files with their original source and a verifiable hash. Open a collection to read its files in order.',
+            'image' => file_exists($banner) ? ['url' => get_stylesheet_directory_uri() . '/assets/images/reading_room_banner.png',
+                                               'alt' => 'FBI COINTELPRO declassified files folders'] : null,
+            'search' => ['label' => 'Search archive', 'placeholder' => 'Search collections or keywords...'],
+            'filters' => ['label' => 'Quick filters:', 'group_label' => 'Filter collections', 'options' => [
+                ['value' => 'all', 'label' => 'All'],
+                ['value' => 'federal', 'label' => 'Federal Agencies'],
+                ['value' => 'police', 'label' => 'Local Police'],
+                ['value' => 'environmental', 'label' => 'Environmental'],
+            ]],
+            'sort' => ['label' => 'Sort by:', 'options' => [
+                ['value' => 'default', 'label' => 'Default'],
+                ['value' => 'year-asc', 'label' => 'Year (Oldest First)'],
+                ['value' => 'year-desc', 'label' => 'Year (Newest First)'],
+                ['value' => 'alpha', 'label' => 'Alphabetical'],
+            ]],
+            'empty_text' => 'No collections are published yet. Files appear here as they are processed and verified.',
+            'categories' => $categories,
+        ], fn($v) => $v !== null),
+        'pages' => $coll_pages,
+        'grid' => [
+            'heading' => 'Collections',
+            'columns' => ['Period', 'Collection', 'Sources', 'Description'],
+            'sort' => ['label' => 'Sort', 'options' => [
+                ['value' => 'default', 'label' => 'Grouped (default)'],
+                ['value' => 'name', 'label' => 'Name (A–Z)'],
+                ['value' => 'year-desc', 'label' => 'Year (newest)'],
+                ['value' => 'year-asc', 'label' => 'Year (oldest)'],
+            ]],
+            'eras' => $eras,
+        ],
+        'source' => array_map(fn($f) => is_readable(GGRR_PATH . $f) ? hash_file('sha256', GGRR_PATH . $f) : '', [
+            'templates/index-ggrr-collections.php' => 'templates/index-ggrr-collections.php',
+            'templates/archive-ggrr-collection.php' => 'templates/archive-ggrr-collection.php',
+            'templates/index-ggrr-reading-room.php' => 'templates/index-ggrr-reading-room.php',
+            'includes/ggrr-collections-registry.php' => 'includes/ggrr-collections-registry.php',
+            'includes/class-ggrr-template.php' => 'includes/class-ggrr-template.php',
+        ]),
+    ];
+}
+
+// --- machine_text: /library/documents.txt (templates/txt-ggrr-documents.php), first
+// slice only. The template echoes its lines inline; they are repeated here in its
+// order and words, from the same call (get_documents with limit 999, which the
+// storage layer caps at 500, as live), the time on its "Generated:" line being the
+// export's. `roomkit parity --machine-text` compares it with the live file.
+$machine_text = null;
+if (class_exists('GGRR_Storage') && ($slice === null || $slice['offset'] === 0)) {
+    $mt_docs = GGRR_Storage::get_documents(['visibility' => 'public', 'limit' => 999]);
+    $out = "Glass Government — Records Reading Room\n";
+    $out .= "========================================\n";
+    $out .= "Total documents: " . count($mt_docs) . "\n";
+    $out .= "URL: " . home_url('/library/') . "\n";
+    $out .= "Generated: " . gmdate('Y-m-d H:i:s T') . "\n";
+    $out .= "\n";
+    foreach ($mt_docs as $d) {
+        $_url = home_url('/library/' . rawurlencode((string) ($d['slug'] ?? '')) . '/');
+        $_title = (string) ($d['title'] ?? '');
+        $_lic = (string) ($d['license'] ?? '');
+        if ($_lic !== '' && function_exists('ggrr_license_label')) {
+            $_lic = ggrr_license_label($_lic);
+        }
+        $_class = function_exists('ggrr_doc_class') ? ggrr_doc_class($d) : '';
+        $meta = implode(' | ', array_filter([$_title, (string) ($d['agency'] ?? ''), (string) ($d['collection'] ?? ''),
+                                             (string) ($d['document_date'] ?? ''), $_lic]));
+        $out .= "- [{$_title}]({$_url})";
+        if ($meta !== '') { $out .= " — {$meta}"; }
+        if ($_class === 'third-party') { $out .= " [third-party]"; }
+        if ((string) ($d['file_sha256'] ?? '') !== '') { $out .= " (sha256:" . $d['file_sha256'] . ")"; }
+        if ((string) ($d['ia_id'] ?? '') !== '' && ($d['ia_status'] ?? '') === 'confirmed') { $out .= " [IA]"; }
+        $out .= "\n";
+    }
+    $out .= "\n---\n";
+    $out .= "End of index. " . count($mt_docs) . " documents listed.\n";
+    $machine_text = [
+        'files' => [['url' => home_url('/library/documents.txt'), 'text' => $out]],
+        'source' => ['templates/txt-ggrr-documents.php' => is_readable(GGRR_PATH . 'templates/txt-ggrr-documents.php')
+                     ? hash_file('sha256', GGRR_PATH . 'templates/txt-ggrr-documents.php') : ''],
+    ];
+}
+
+// --- topics: the topics page (templates/archive-ggrr-topics.php) and every page of
+// every topic (templates/archive-ggrr-topic.php, 50 records a page as /page/N/),
+// each word as those templates write it, the records from the plugin's own calls in
+// their order. The templates build their strings inline, so each formula is repeated
+// here and named; `roomkit parity --topics` compares the result with the live pages.
+// First slice only, as entities.
+
+function roomkit_gg_topic_url(string $topic, int $n = 1): string {
+    $base = home_url('/library/topics/' . rawurlencode($topic) . '/');
+    return $n === 1 ? $base : $base . 'page/' . $n . '/';
+}
+
+// archive-ggrr-topic.php for one (topic, page), with no ?s=.
+function roomkit_gg_topic_page(string $topic, int $topic_page, int $total, int $per_page): array {
+    $T = 'GGRR_Template';
+    // $topic_label: segments, the template's acronym list uppercased, the rest ucfirst.
+    $segments = explode(' ', str_replace(['_', '-'], ' ', strtolower($topic)));
+    $acronyms = ['acs', 'agloso', 'chip', 'cointelpro', 'cpusa', 'dhs', 'doj', 'fbi', 'ffp', 'fmap', 'huac', 'lapd', 'mco',
+                 'naacp', 'oasdi', 'pccm', 'pfas', 'plp', 'sclc', 'sds', 'snap', 'sncc', 'ssoc', 'swp', 'tanf', 'wsa', 'ysa'];
+    $label = implode(' ', array_map(fn($seg) => in_array($seg, $acronyms, true) ? strtoupper($seg) : ucfirst($seg), $segments));
+    $docs = GGRR_Storage::get_documents_by_topic($topic, $per_page, ($topic_page - 1) * $per_page, '');
+    $total_pages = (int) ceil($total / max(1, $per_page));
+    $base = roomkit_gg_topic_url($topic);
+    $page = [
+        'slug' => $topic,
+        'page' => $topic_page,
+        'url' => roomkit_gg_topic_url($topic, $topic_page),
+        'head_title' => ucwords(str_replace(['_', '-'], ' ', $topic)) . ' – Glass Government',   // filter_document_title
+        'crumbs' => [['label' => 'Home', 'url' => home_url('/')], ['label' => 'Reading Room', 'url' => home_url('/library/')],
+                     ['label' => 'Topics', 'url' => home_url('/library/topics/')], ['label' => $label]],
+        'back' => ['label' => '← Reading Room', 'url' => home_url('/library/')],
+        'eyebrow' => 'Topic',
+        'title' => $label,
+        'subtitle' => sprintf(_n('%d document', '%d documents', $total, 'ggrr'), $total),
+        'empty_text' => 'No documents found for this topic.',
+        'jsonld' => array_filter([
+            '@context' => 'https://schema.org',
+            '@type' => 'DefinedTerm',
+            'name' => $label,
+            'description' => $total . ' document' . ($total === 1 ? '' : 's') . ' tagged with ' . $label . ' in the Glass Government Reading Room',
+            'url' => $base,
+            'inDefinedTermSet' => 'Glass Government Reading Room Topics',
+        ], fn($v) => $v !== '' && $v !== null),
+    ];
+    if ($total > $per_page) {
+        $page['search'] = ['label' => 'Filter documents', 'placeholder' => 'Filter within this topic…'];
+    }
+    $page['documents'] = array_map(function ($doc) use ($T) {
+        $collection = (string) ($doc['collection'] ?? '');
+        $date = (string) ($doc['document_date'] ?? '');
+        $summary = (string) ($doc['summary'] ?? '');
+        $row = ['slug' => (string) $doc['slug'], 'title' => (string) ($doc['title'] ?? ''),
+                'url' => home_url('/library/' . rawurlencode($doc['slug']) . '/')] + roomkit_gg_badge($doc);
+        if ($date !== '') { $row['date'] = $T::format_display_date($date); }
+        if ($collection !== '') {
+            $row['collection'] = ['label' => $T::collection_label($collection), 'url' => roomkit_gg_collection_url($collection)];
+        }
+        if (!empty($doc['reading_time'])) { $row['reading_time'] = (int) $doc['reading_time'] . ' min'; }
+        if ((string) ($doc['agency'] ?? '') !== '') { $row['agency'] = (string) $doc['agency']; }
+        // wp_trim_words ends a cut summary with &hellip;, which esc_html leaves as it is.
+        if ($summary !== '') { $row['summary'] = html_entity_decode(wp_trim_words($summary, 40), ENT_QUOTES); }
+        return $row;
+    }, $docs);
+    if ($total_pages > 1) {
+        $items = [];
+        if ($topic_page > 1) {
+            $items[] = ['kind' => 'prev', 'label' => '← Previous', 'url' => roomkit_gg_topic_url($topic, $topic_page - 1)];
+        }
+        $range = 2;
+        $dots_shown = false;
+        for ($i = 1; $i <= $total_pages; $i++) {
+            if ($i === $topic_page) {
+                $items[] = ['kind' => 'current', 'label' => (string) $i];
+                $dots_shown = false;
+            } elseif ($i === 1 || $i === $total_pages || ($i >= $topic_page - $range && $i <= $topic_page + $range)) {
+                $items[] = ['kind' => 'page', 'label' => (string) $i, 'url' => roomkit_gg_topic_url($topic, $i)];
+                $dots_shown = false;
+            } elseif (!$dots_shown) {
+                $items[] = ['kind' => 'dots', 'label' => '…'];
+                $dots_shown = true;
+            }
+        }
+        if ($topic_page < $total_pages) {
+            $items[] = ['kind' => 'next', 'label' => 'Next →', 'url' => roomkit_gg_topic_url($topic, $topic_page + 1)];
+        }
+        $page['pagination'] = ['label' => 'Page navigation', 'items' => $items];
+    }
+    return $page;
+}
+
+$topics = null;
+if (class_exists('GGRR_Storage') && method_exists('GGRR_Storage', 'get_documents_by_topic')
+    && ($slice === null || $slice['offset'] === 0)) {
+    // archive-ggrr-topics.php's list: the cached summary, or the same built from get_all_topics.
+    $tlist = function_exists('ggrr_holdings_topic_summary') ? ggrr_holdings_topic_summary() : [];
+    if (empty($tlist)) {
+        foreach (GGRR_Storage::get_all_topics() as $tslug => $tcount) {
+            $tlist[] = ['topic' => $tslug, 'label' => ucwords(str_replace(['_', '-'], ' ', $tslug)), 'count' => $tcount,
+                        'url' => home_url('/library/topics/' . rawurlencode($tslug) . '/')];
+        }
+        usort($tlist, static fn($a, $b) => $b['count'] <=> $a['count'] ?: strcmp($a['label'], $b['label']));
+    }
+    $tpages = [];
+    foreach ($tlist as $t) {
+        $tslug = (string) $t['topic'];
+        $ttotal = GGRR_Storage::get_topic_document_count($tslug, '');
+        $tn = max(1, (int) ceil($ttotal / 50));
+        for ($n = 1; $n <= $tn; $n++) {
+            $tpages[] = roomkit_gg_topic_page($tslug, $n, $ttotal, 50);
+        }
+    }
+    $topics = [
+        'index' => [
+            'url' => home_url('/library/topics/'),
+            'head_title' => 'Topics – Glass Government',                       // filter_document_title
+            'back' => ['label' => '← Reading Room', 'url' => home_url('/library/')],
+            'title' => 'Topics',
+            'subtitle' => number_format_i18n(count($tlist)) . ' subjects across the collection',
+            'empty_text' => 'No topics found.',
+            'topics' => array_map(fn($t) => ['slug' => (string) $t['topic'], 'label' => (string) $t['label'],
+                                             'count' => number_format_i18n($t['count']), 'url' => (string) $t['url']], $tlist),
+        ],
+        'pages' => $tpages,
+        'source' => array_map(fn($f) => is_readable(GGRR_PATH . $f) ? hash_file('sha256', GGRR_PATH . $f) : '', [
+            'templates/archive-ggrr-topics.php' => 'templates/archive-ggrr-topics.php',
+            'templates/archive-ggrr-topic.php' => 'templates/archive-ggrr-topic.php',
+            'includes/class-ggrr-storage.php' => 'includes/class-ggrr-storage.php',
+            'includes/ggrr-homepage-data.php' => 'includes/ggrr-homepage-data.php',
+            'includes/class-ggrr-template.php' => 'includes/class-ggrr-template.php',
+        ]),
+    ];
+}
+
 // --- passages: the passage route and the curated citations (first slice only) ---
 $passages = null;
 if ($slice === null || $slice['offset'] === 0) {
@@ -612,7 +1053,9 @@ if ($slice === null || $slice['offset'] === 0) {
             $cite_excluded[] = ['stable_key' => $key, 'problem' => 'its page is gone'];
             continue;
         }
-        $curated[] = ['slug' => (string) $slug_of] + $c;
+        $pin = (string) ($public_sha[(int) $k['document_id']] ?? '');
+        // Pinned to the file the record has now; roomkit refuses the row if that file changes.
+        $curated[] = ['slug' => (string) $slug_of] + $c + (preg_match('/^[a-f0-9]{64}$/', $pin) ? ['file_sha256' => $pin] : []);
     }
     $passages = [
         'api' => rest_url('ggrr/v1/passage'),
@@ -639,6 +1082,10 @@ try {
             'title' => 'The Reading Room',
             'groups' => array_values(array_unique($group_order)),
             'group_label' => 'Collection',
+            // The live index's span (ggrr_holdings_summary), which counts more than the dated records.
+            'years' => (function_exists('ggrr_holdings_summary') && ($hs = ggrr_holdings_summary())
+                && !empty($hs['year_min']) && !empty($hs['year_max']))
+                ? [(string) $hs['year_min'], (string) $hs['year_max']] : null,
             'links' => [[
                 'label' => 'Power maps',
                 'url' => home_url('/library/power-maps/'),
@@ -648,14 +1095,36 @@ try {
                 ['name' => 'type', 'label' => 'Record type'],
                 ['name' => 'source', 'label' => 'Source'],
                 ['name' => 'agency', 'label' => 'Agency'],
-                ['name' => 'year', 'label' => 'Year'],
+                ['name' => 'vendor', 'label' => 'Vendor', 'multi' => true],
+                ['name' => 'year', 'label' => 'Year', 'range' => true, 'from_label' => 'From year', 'to_label' => 'To year'],
+            ],
+            // The live sort select's options, in its order.
+            'sort' => ['label' => 'Sort', 'options' => [
+                ['value' => 'default', 'label' => 'Default order'],
+                ['value' => 'date-desc', 'label' => 'Date (newest)'],
+                ['value' => 'date-asc', 'label' => 'Date (oldest)'],
+                ['value' => 'title', 'label' => 'Title (A-Z)'],
+            ]],
+            'group_sets' => $group_sets,
+            // No live page words these; the room's own copy, kept here with the site's.
+            'browse' => [
+                'heading' => 'Browse records by',
+                'facets' => [
+                    ['name' => 'agency', 'label' => 'Agency', 'title' => 'Records from {value}'],
+                    ['name' => 'type', 'label' => 'Record type', 'title' => 'Record type: {value}'],
+                    ['name' => 'vendor', 'label' => 'Vendor', 'title' => 'Records naming {value}'],
+                    ['name' => 'year', 'label' => 'Year', 'title' => 'Records from {value}'],
+                ],
             ],
         ],
     ],
     'exported_by' => 'roomkit/exporters/glassgovernment.php',
     'documents' => $docs,
     'excluded' => $problems,
-] + ($entities ? ['entities' => $entities] : []) + ($passages ? ['passages' => $passages] : [])
+] + ($entities ? ['entities' => $entities] : []) + ($collections ? ['collections' => $collections] : [])
+  + ($machine_text ? ['machine_text' => $machine_text] : [])
+  + ($topics ? ['topics' => $topics] : [])
+  + ($passages ? ['passages' => $passages] : [])
   + ($slice ? ['slice' => $slice] : []), JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR);
 } catch (JsonException $e) {
     fwrite(STDERR, 'roomkit exporter: manifest is not encodable as JSON (' . $e->getMessage() . '); nothing written' . "\n");

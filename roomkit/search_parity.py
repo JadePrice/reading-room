@@ -130,6 +130,12 @@ class _Mounted(SimpleHTTPRequestHandler):
         pass
 
 
+class _Server(ThreadingHTTPServer):
+    # Pagefind fetches every result's fragment at once; with the default backlog
+    # of 5 a burst is refused and the run dies on "Failed to fetch" (2026-10-20).
+    request_queue_size = 128
+
+
 _SEARCH = """async ([base, queries, n]) => {
   const pf = await import(base + "pagefind.js");
   await pf.options({baseUrl: base.replace(/pagefind\\/$/, ""), excerptLength: 24});
@@ -164,7 +170,7 @@ def _run_in_browser(room: Path, queries: list[str], n: int, box: dict) -> None:
         lock = json.loads((room / "room.lock.json").read_text(encoding="utf-8"))
         mount = lock["mount"]
         handler = functools.partial(type("H", (_Mounted,), {"mount": mount}), directory=str(room))
-        srv = ThreadingHTTPServer(("127.0.0.1", 0), handler)
+        srv = _Server(("127.0.0.1", 0), handler)
         threading.Thread(target=srv.serve_forever, daemon=True).start()
         try:
             with sync_playwright() as pw:

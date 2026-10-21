@@ -1,0 +1,54 @@
+/* Collections page, collection pages and the index's collections table (pack
+   features.collections; roomkit/site_collections.py). Shipped only when the pack
+   turns collections on. Every rule is under #room-content and every color is a token
+   pair pack.PAIRS already gates: page-* on the page, ink/ink-soft/link on a panel
+   (surface), on-accent on accent for a pressed filter. */
+#room-content .room__back{font-size:.9rem}
+#room-content .room__back a{color:var(--room-page-link)}
+#room-content .room__banner{margin-top:16px}
+#room-content .room__banner img{display:block;max-width:100%;height:auto;border-radius:var(--room-radius)}
+#room-content .room__stamp{display:inline-block;font-size:.72rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:1px 8px;border:1px solid currentColor;border-radius:4px;color:var(--room-page-ink-soft);vertical-align:middle}
+#room-content .room__cyears{font-variant-numeric:tabular-nums}
+/* The collections page */
+#room-content .room__ccontrols{display:flex;flex-wrap:wrap;gap:12px 20px;align-items:end;margin-bottom:24px}
+#room-content .room__ccontrols .room__field--q{flex:1 1 260px}
+#room-content .room__cfilters{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+#room-content .room__cfilters-label{font-size:.8rem;font-weight:700;letter-spacing:.04em;color:var(--room-ink-soft)}
+#room-content .room__cfilters .room__btn[aria-pressed="true"]{background:var(--room-accent);color:var(--room-on-accent)}
+#room-content .room__ccat{margin-bottom:32px}
+#room-content .room__cgroup{margin-bottom:20px}
+#room-content .room__cgroup h3{font-size:1.05rem;margin-bottom:10px;color:var(--room-page-ink)}
+#room-content .room__ccards{list-style:none;display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px}
+#room-content .room__ccard{display:flex;flex-direction:column;gap:6px;padding:16px}
+#room-content .room__ccard h4{font-size:1rem;line-height:1.35}
+#room-content .room__ccard .room__blurb{margin:0}
+#room-content .room__ccode{font-family:var(--room-font-mono);font-size:.7rem;letter-spacing:.08em;color:var(--room-ink-soft)}
+#room-content .room__ccard-foot{margin-top:auto;display:flex;flex-wrap:wrap;gap:4px 12px;font-size:.85rem;color:var(--room-ink-soft)}
+/* A collection page */
+#room-content .room__ccount{color:var(--room-page-ink-soft);margin-top:4px}
+#room-content .room__cperiod{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:8px;color:var(--room-page-ink-soft)}
+#room-content .room__csearch{margin-bottom:16px;max-width:var(--room-measure)}
+#room-content .room__csearch .room__count{margin:4px 0 0;color:var(--room-ink-soft)}
+#room-content .room__files ul{list-style:none;display:grid;gap:2px}
+#room-content .room__file{display:grid;grid-template-columns:2.5em 1fr auto;gap:12px;align-items:baseline;padding:10px 4px;border-bottom:1px solid var(--room-rule);text-decoration:none;color:var(--room-ink)}
+#room-content .room__file:hover .room__file-title{text-decoration:underline}
+#room-content .room__file-num,#room-content .room__file-size{font-variant-numeric:tabular-nums;color:var(--room-ink-soft);font-size:.85rem}
+#room-content .room__file-title{color:var(--room-link)}
+#room-content .room__files .room__badge{color:var(--room-ink-soft);font-size:.68rem;padding:1px 6px;margin-left:6px}
+/* The index's collections table */
+#room-content .room__cgrid{margin-bottom:24px}
+#room-content .room__cgrid-head{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:end;gap:12px;margin-bottom:12px}
+#room-content .room__cgrid-head h2{font-size:1.15rem}
+#room-content .room__table-wrap{overflow-x:auto}
+#room-content .room__cgrid-table{width:100%;border-collapse:collapse;font-size:.9rem}
+#room-content .room__cgrid-table th,#room-content .room__cgrid-table td{text-align:left;vertical-align:top;padding:8px 10px;border-bottom:1px solid var(--room-rule)}
+#room-content .room__cgrid-table thead th{font-size:.75rem;letter-spacing:.06em;text-transform:uppercase;color:var(--room-ink-soft)}
+#room-content .room__cgrid-era th{font-size:.8rem;letter-spacing:.08em;text-transform:uppercase;color:var(--room-ink)}
+#room-content .room__cgrid-group th{font-weight:700;color:var(--room-ink-soft)}
+#room-content .room__cgrid-period{white-space:nowrap;font-variant-numeric:tabular-nums}
+#room-content .room__cgrid-blurb{color:var(--room-ink-soft)}
+#room-content .room__cgrid-srcline{display:none}
+@media (max-width:48rem){
+#room-content .room__cgrid-table thead th:nth-child(3),#room-content .room__cgrid-src{display:none}
+#room-content .room__cgrid-srcline{display:block;font-size:.8rem;color:var(--room-ink-soft);margin-top:2px}
+}

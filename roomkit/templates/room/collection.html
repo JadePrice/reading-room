@@ -1,0 +1,56 @@
+{#- The content element of one collection page (pack features.collections): its
+    heading block, the site's notice when it has one, and its records in the
+    site's order, every word the export's. The search is hidden until
+    room-collections.js runs. -#}
+{% from "room/partials/macros.html" import root, link, toggle %}
+{{ root("collection", theme_key) }}
+{% with c = collection %}
+<div class="room__shell" data-room-collection-page="{{ c.slug }}">
+<div class="room__topline">
+{%- if c.back %}<p class="room__back">{{ link(c.back.label, c.back.url) }}</p>{% endif %}{{ toggle(toggle_on) }}</div>
+<header class="room__head">
+{% if c.eyebrow %}
+<p class="room__eyebrow">{{ c.eyebrow }}</p>
+{% endif %}
+<h1 class="room__title">{{ c.title }}</h1>
+<p class="room__ccount" data-room-ccount>{{ c.count }}</p>
+{% if c.stamp or c.years %}
+<p class="room__cperiod">{% if c.stamp %}<span class="room__stamp{% if c.stamp_kind %} room__stamp--{{ c.stamp_kind }}{% endif %}">{{ c.stamp }}</span>{% endif %}
+{%- if c.stamp and c.years %} {% endif %}{% if c.years %}<span class="room__cyears">{{ c.years }}</span>{% endif %}</p>
+{% endif %}
+{% if c.blurb %}
+<p class="room__lede">{{ c.blurb }}</p>
+{% elif c.description %}
+<p class="room__lede">{{ c.description }}</p>
+{% endif %}
+</header>
+{% if c.notice %}
+<aside class="room__notice" aria-labelledby="room-cnotice-h">
+<h2 id="room-cnotice-h">{{ c.notice.heading }}</h2>
+<p>{{ c.notice.body }}</p>
+{% if c.notice.report %}
+<p class="room__notice-report">{{ c.notice.report }}</p>
+{% endif %}
+</aside>
+{% endif %}
+{% if not c.documents %}
+<p class="room__section-empty">{{ c.empty_text }}</p>
+{% else %}
+{% if c.search %}
+<div class="room__panel room__field room__field--q room__csearch" data-room-csearch hidden><label for="room-cfq">{{ c.search.label }}</label><input type="search" id="room-cfq" autocomplete="off" placeholder="{{ c.search.placeholder }}" data-room-cfq>
+<p class="room__count" role="status" aria-live="polite" data-room-cstatus="{{ c.search.status }}"></p></div>
+{% endif %}
+<nav class="room__panel room__files" aria-label="{{ c.list_label }}">
+{# A list, not an ordered one: each row shows the site's own number. #}
+<ul>
+{% for d in c.documents %}
+<li data-room-match="{{ d.match }}"><a class="room__file" href="{{ d.url }}" data-room-doc="{{ d.slug }}"><span class="room__file-num">{{ d.num }}</span><span class="room__file-title">{{ d.title }}
+{%- if d.final %} <span class="room__badge room__badge--final">{{ d.final }}</span>{% endif %}
+{%- if d.badge %} <span class="room__badge{% if d.badge_kind %} room__badge--{{ d.badge_kind }}{% endif %}">{% if d.badge_sr %}<span class="room__sr">{{ d.badge_sr }}</span>{% endif %}{{ d.badge }}</span>{% endif %}</span>
+{%- if d.size %}<span class="room__file-size">{{ d.size }}</span>{% endif %}</a></li>
+{% endfor %}
+</ul></nav>
+{% endif %}
+</div>
+{% endwith %}
+</main>

@@ -11,15 +11,30 @@ order. Same manifest and engine, same bytes.
     404.html                         what a missing path gets, without WordPress
     <slug>/index.html                one page per document (reader + no-JS fallback + citation)
     <slug>/pages.<hash>.json         page texts, when the manifest carries them
+    assets/thumbs/<slug>.<hash>.<ext>  a card's thumbnail, when the manifest carries it (index.thumb)
     assets/room.<hash>.css           the shared styles, the room's chrome, the site pack's tokens (templates/room/)
     assets/room.<hash>.js            index filters and the light/dark toggle
     assets/rr-config.<hash>.js       window.rrReaderConfig for the engine
     assets/vendor/rr-reader/...      the shared engine, verbatim
     assets/vendor/pdfjs/...          pdf.js as the engine pins it
     assets/room-search.<hash>.js     the finder's text search and suggestions (pack features.corpus-search)
+    collections/index.html, collection/<key>/index.html
+                                     the site's collections page and collection pages, at their
+                                     live paths (pack features.collections, manifest
+                                     `collections`; site_collections.py), with the collections
+                                     table on the index
+    documents.txt                    the site's plain-text record index as exported (pack
+                                     features.machine-text, manifest `machine_text`;
+                                     machine_text.py)
+    topics/index.html, topics/<t>/index.html, topics/<t>/page/<n>/index.html
+                                     the site's topics page and every page of every topic
+                                     (pack features.topics, manifest `topics`; topics.py)
     entities/index.html, entity/<type>/<slug>/index.html
                                      the site's entity index and pages, at their live paths
                                      (pack features.entities, manifest `entities`; entities.py)
+    <facet>/<value>/index.html       one page per facet value, linked from the index's browse block
+                                     (pack features.facet-pages, site.index.browse; browse.py)
+    sitemap.xml                      every page above by its live URL (pack features.sitemaps)
     pagefind/...                     the Pagefind index over every record (same switch; search.py)
     citations.json                   GG's curated citations by stable_key, and each page's site
                                      citation in pages.json (pack features.passage-cite,
@@ -45,14 +60,19 @@ from __future__ import annotations
 import hashlib
 import json
 import re
+import shutil
 from pathlib import Path
 
+from . import browse as B
 from . import css as CSS
 from . import entities as E
+from . import machine_text as MT
 from . import pack as P
 from . import passages as PS
 from . import room as R
 from . import search as S
+from . import site_collections as CO
+from . import topics as TP
 from . import view as V
 from .manifest import (
     IMAGE,
@@ -63,6 +83,7 @@ from .manifest import (
     Document,
     Manifest,
     ManifestError,
+    thumb_bytes,
     validate_room_path,
 )
 
@@ -77,6 +98,25 @@ HTACCESS = ".htaccess"
 # for an hour between purges; browsers always revalidate it.
 CACHE_ASSET = "public, max-age=31536000, immutable"
 CACHE_HTML = "public, max-age=0, s-maxage=3600, must-revalidate"
+# The policy `features.csp` sends. The room's own scripts are all external files (no
+# inline executable script: JSON-LD and the suggest data are data blocks), so script-src
+# is 'self' alone; 'wasm-unsafe-eval' is for Pagefind's WebAssembly, not for eval().
+# style-src keeps 'unsafe-inline' because the reader modules inject a <style> element.
+CSP = "; ".join([  # noqa: FLY002 - one directive per line
+    "default-src 'self'",
+    "script-src 'self' 'wasm-unsafe-eval'",
+    "worker-src 'self' blob:",
+    "style-src 'self' 'unsafe-inline'",
+    "img-src 'self' data: blob:",
+    "font-src 'self'",
+    "connect-src 'self'",
+    "object-src 'self'",
+    "frame-src 'self'",
+    "media-src 'self'",
+    "base-uri 'self'",
+    "form-action 'self'",
+    "frame-ancestors 'self'",
+])
 FINGERPRINT = re.compile(r"\.[0-9a-f]{12}\.[a-z0-9]+$")
 
 def _module(ext: str) -> str:
@@ -156,13 +196,31 @@ def _doc_page(doc: Document, m: Manifest, at: str, noindex: bool, pack: dict) ->
     return _page("room/document.html", V.doc_view(doc, m, at, pack), at, head, scripts, pack)
 
 
-def _index_page(m: Manifest, at: str, noindex: bool, pack: dict) -> str:
+def _index_page(m: Manifest, at: str, noindex: bool, pack: dict, facet_pages: list[dict]) -> str:
     s = m.site
     canonical = s.base_url + s.room_path
     title = s.index.get("title") or s.title
     head = V.head(title, noindex, canonical, V.social(title, s.index.get("lede", ""), canonical, "", s.title))
     scripts = [f"{at}assets/room-search.js"] if S.enabled(pack) else []
-    return _page("room/index.html", V.index_view(m, at, pack), at, head, scripts, pack)
+    if m.collections and m.collections.get("grid"):
+        scripts.append(f"{at}assets/room-collections.js")
+    return _page("room/index.html", V.index_view(m, at, pack, facet_pages, B.heading(m)), at, head, scripts, pack)
+
+
+def _facet_page(p: dict, m: Manifest, at: str, noindex: bool, pack: dict) -> str:
+    s = m.site
+    canonical = s.base_url + s.room_path + p["path"]
+    head = V.head(f"{p['title']} | {s.title}", noindex, canonical,
+                  V.social(p["title"], "", canonical, "", s.title))
+    return _page("room/facet.html", V.facet_view(p, m, at, pack), at, head, [], pack)
+
+
+def _facet_root_page(f: dict, m: Manifest, at: str, noindex: bool, pack: dict) -> str:
+    s = m.site
+    canonical = s.base_url + s.room_path + f["path"]
+    head = V.head(f"{f['label']} | {s.title}", noindex, canonical, V.social(f["label"], "", canonical, "", s.title))
+    f = {**f, "values": [{**v, "url": at + f["path"] + v["slug"] + "/"} for v in f["values"]]}
+    return _page("room/facet-root.html", V.facet_root_view(f, m, at, pack), at, head, [], pack)
 
 
 def _entity_index_page(m: Manifest, at: str, noindex: bool, pack: dict) -> str:
@@ -180,22 +238,60 @@ def _entity_page(p: dict, m: Manifest, at: str, noindex: bool, pack: dict) -> st
     return _page("room/entity.html", V.entity_view(p, m, at, pack), at, head, [], pack)
 
 
+def _collections_index_page(m: Manifest, at: str, noindex: bool, pack: dict) -> str:
+    ix = m.collections["index"]
+    head = V.head(ix["head_title"], noindex, ix["url"],
+                  V.social(ix["title"], ix.get("lede", ""), ix["url"], "", m.site.title))
+    return _page("room/collections.html", V.collections_index_view(m, at, pack), at, head,
+                 [f"{at}assets/room-collections.js"], pack)
+
+
+def _collection_page(p: dict, m: Manifest, at: str, noindex: bool, pack: dict) -> str:
+    # The canonical and the JSON-LD name the live URL, as on a record page.
+    head = V.head(p["head_title"], noindex, p["url"],
+                  V.social(p["title"], p.get("blurb") or p.get("description", ""), p["url"], "", m.site.title),
+                  V.jsonld(p["jsonld"]) if p.get("jsonld") else "")
+    return _page("room/collection.html", V.collection_view(p, m, at, pack), at, head,
+                 [f"{at}assets/room-collections.js"] if p.get("search") else [], pack)
+
+
+def _topics_index_page(m: Manifest, at: str, noindex: bool, pack: dict) -> str:
+    ix = m.topics["index"]
+    head = V.head(ix["head_title"], noindex, ix["url"],
+                  V.social(ix["title"], ix["subtitle"], ix["url"], "", m.site.title))
+    return _page("room/topics.html", V.topics_index_view(m, at, pack), at, head, [], pack)
+
+
+def _topic_page(p: dict, m: Manifest, at: str, noindex: bool, pack: dict) -> str:
+    # The canonical and the JSON-LD name the live URL; each /page/N/ is its own canonical, as live.
+    head = V.head(p["head_title"], noindex, p["url"],
+                  V.social(p["title"], p["subtitle"], p["url"], "", m.site.title),
+                  V.jsonld(p["jsonld"]) if p.get("jsonld") else "")
+    return _page("room/topic.html", V.topic_view(p, m, at, pack), at, head, [], pack)
+
+
 def _404_page(m: Manifest, at: str, pack: dict) -> str:
     head = V.head(f"Not found | {m.site.title}", True)
     return _page("room/404.html", V.not_found_view(m, at, pack), at, head, [], pack)
 
 
-def _htaccess(at: str) -> str:
+def _htaccess(at: str, images: bool = False, csp: bool = False, text: bool = False) -> str:
+    # Thumbnails are hashed assets too; their extensions are named only in a room
+    # that ships them, so a room without changes no byte. The same for machine text:
+    # a .txt file is a page (the HTML cache policy) in UTF-8, as the site sends it.
+    exts = "css|js|json" + ("|jpg|png|webp" if images else "")
     return "\n".join([
         "# Written by roomkit. Cache policy: build.py module docstring.",
         f"ErrorDocument 404 {at}404.html",
+        *(["AddCharset UTF-8 .txt"] if text else []),
         "<IfModule mod_headers.c>",
-        '<FilesMatch "\\.[0-9a-f]{12}\\.(css|js|json)$">',
+        f'<FilesMatch "\\.[0-9a-f]{{12}}\\.({exts})$">',
         f'Header set Cache-Control "{CACHE_ASSET}"',
         "</FilesMatch>",
-        '<FilesMatch "\\.html$">',
+        '<FilesMatch "\\.(html|txt)$">' if text else '<FilesMatch "\\.html$">',
         f'Header set Cache-Control "{CACHE_HTML}"',
         "</FilesMatch>",
+        *([f'Header always set Content-Security-Policy "{CSP}"'] if csp else []),
         "</IfModule>",
         "",
     ])
@@ -258,29 +354,63 @@ def render(m: Manifest, engine: Path = ENGINE, mount: str | None = None, noindex
         raise ValueError("render() called on a manifest with refusals")
     pack = _pack(m, pack)
     # Without the pack's entities switch the room never sees the block: no pages,
-    # no links into them, no stylesheet (entities.gate). The same for passages.
-    m = PS.gate(E.gate(m, pack), pack)
+    # no links into them, no stylesheet (entities.gate). The same for collections,
+    # passages, machine text and topics.
+    m = TP.gate(MT.gate(PS.gate(CO.gate(E.gate(m, pack), pack), pack), pack), pack)
+    facet_pages: list[dict] = []
+    if B.facet_pages_on(pack) and m.site.index.get("browse"):
+        problems = B.problems(m)
+        if problems:
+            raise ValueError("browse refused:\n" + "\n".join(f"   {x}" for x in problems))
+        facet_pages = B.pages(m)
     files: dict[str, bytes] = {
         "assets/rr-config.js": _config(at, m.passages["api"] if m.passages else "").encode(),
-        HTACCESS: _htaccess(at).encode(),
+        HTACCESS: _htaccess(at, any(V.thumb_path(d) for d in m.documents),
+                            bool(pack.get("features", {}).get("csp")), bool(m.machine_text)).encode(),
         **_engine_files(engine),
     }
+    for d in m.documents:
+        if V.thumb_path(d):
+            files[V.thumb_path(d)] = thumb_bytes(d.index["thumb"])
     search = S.enabled(pack)
     files["assets/room.css"] = (R.ROOM_CSS + R.chrome_css(pack) + (R.SEARCH_CSS if search else "")
-                                + (R.ENTITIES_CSS if m.entities else "") + CSS.theme_css(pack)).encode()
+                                + (R.ENTITIES_CSS if m.entities else "") + (R.BROWSE_CSS if facet_pages else "")
+                                + (R.COLLECTIONS_CSS if m.collections else "")
+                                + (R.TOPICS_CSS if m.topics else "")
+                                + CSS.theme_css(pack)).encode()
     files["assets/room.js"] = R.ROOM_JS.encode()
+    if m.collections:
+        files["assets/room-collections.js"] = R.ROOM_COLLECTIONS_JS.encode()
     if search:
         files["assets/room-search.js"] = R.ROOM_SEARCH_JS.encode()
         # Pagefind names its own files (content hashes inside pagefind/); they are
         # not fingerprinted again, or its loader could not find them.
         files.update(S.index_files(m, at, indexer))
-    files["index.html"] = _index_page(m, at, noindex, pack).encode()
+    files["index.html"] = _index_page(m, at, noindex, pack, facet_pages).encode()
+    for p in facet_pages:
+        files[p["path"] + "index.html"] = _facet_page(p, m, at, noindex, pack).encode()
+    for f in B.roots(facet_pages):
+        files[f["path"] + "index.html"] = _facet_root_page(f, m, at, noindex, pack).encode()
+    if B.sitemap_on(pack):
+        files[B.SITEMAP] = B.sitemap_xml(B.urls(m, facet_pages)).encode()
     files["404.html"] = _404_page(m, at, pack).encode()
     if m.entities:
         if m.entities["index"]:
             files[m.entities["index"]["path"] + "index.html"] = _entity_index_page(m, at, noindex, pack).encode()
         for p in m.entities["pages"]:
             files[p["path"] + "index.html"] = _entity_page(p, m, at, noindex, pack).encode()
+    for f in (m.machine_text or {}).get("files", []):
+        files[f["path"]] = f["text"].encode()
+    if m.collections:
+        if m.collections["index"]:
+            files[m.collections["index"]["path"] + "index.html"] = _collections_index_page(m, at, noindex, pack).encode()
+        for p in m.collections["pages"]:
+            files[p["path"] + "index.html"] = _collection_page(p, m, at, noindex, pack).encode()
+    if m.topics:
+        if m.topics["index"]:
+            files[m.topics["index"]["path"] + "index.html"] = _topics_index_page(m, at, noindex, pack).encode()
+        for p in m.topics["pages"]:
+            files[p["path"] + "index.html"] = _topic_page(p, m, at, noindex, pack).encode()
     for d in m.documents:
         files[f"{d.slug}/index.html"] = _doc_page(d, m, at, noindex, pack).encode()
         if d.pages:
@@ -313,6 +443,11 @@ def render(m: Manifest, engine: Path = ENGINE, mount: str | None = None, noindex
             # Served files. .htaccess is server config: hosts refuse to serve it, so
             # it is hashed apart and a publish's served-file check skips it.
             "server_config": {HTACCESS: sha256(files[HTACCESS])},
+            # A viewing copy (file.view_url) is a derivative served by the site, never a
+            # replacement: its hash sits beside the original's (roadmap E2).
+            **({"derivatives": {d.slug: {"source_sha256": d.sha256, "view_sha256": d.view_sha256}
+                                for d in m.documents if d.view_sha256}}
+               if any(d.view_sha256 for d in m.documents) else {}),
             "files": {p: sha256(b) for p, b in sorted(files.items()) if p != HTACCESS}}
     files[LOCK] = (json.dumps(lock, indent=1, sort_keys=True) + "\n").encode()
     return files
@@ -324,10 +459,31 @@ def published(files: dict[str, bytes], logical: str) -> str:
 
 
 def write(files: dict[str, bytes], out: Path) -> None:
-    for rel, data in files.items():
-        p = out / rel
-        p.parent.mkdir(parents=True, exist_ok=True)
-        p.write_bytes(data)
+    """Write the render to `out` all at once: into a sibling copy of the tree on disk
+    (so files no longer in the room stay until the publish step removes them), then
+    swapped in with two renames. A failure while writing leaves the previous tree
+    as it was and removes the copy."""
+    out = Path(out).resolve()
+    out.parent.mkdir(parents=True, exist_ok=True)
+    tmp = out.with_name(f".{out.name}.new")
+    old = out.with_name(f".{out.name}.old")
+    for left in (tmp, old):
+        if left.exists():
+            shutil.rmtree(left)
+    try:
+        if out.is_dir():
+            shutil.copytree(out, tmp, symlinks=True)
+        for rel, data in files.items():
+            p = tmp / rel
+            p.parent.mkdir(parents=True, exist_ok=True)
+            p.write_bytes(data)
+    except BaseException:
+        shutil.rmtree(tmp, ignore_errors=True)
+        raise
+    if out.exists():
+        out.rename(old)
+    tmp.rename(out)
+    shutil.rmtree(old, ignore_errors=True)
 
 
 def _without_pagefind(lock: bytes) -> bytes:

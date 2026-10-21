@@ -3,7 +3,7 @@
 #
 # READ-ONLY, writes nothing on the host. Run from the Mac, slugs as arguments:
 #
-#   ssh gg-shared bash -s -- $(jq -r '.documents[].slug' M.json) \
+#   ssh $DD_HOST bash -s -- $(jq -r '.documents[].slug' M.json) \
 #     < roomkit/exporters/deflockdane-fetch-pages.sh > pages.tsv
 #   python -m roomkit.cli parity --manifest M.json --pages pages.tsv
 #

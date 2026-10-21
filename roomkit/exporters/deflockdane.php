@@ -4,7 +4,7 @@
  *
  * READ-ONLY. Run from the Mac, script on stdin, nothing copied to the host:
  *
- *   ssh gg-shared '~/bin/wp --path=$HOME/domains/deflockdane.org/public_html eval-file -' \
+ *   ssh $DD_HOST '~/bin/wp --path=$HOME/domains/deflockdane.org/public_html eval-file -' \
  *     < roomkit/exporters/deflockdane.php > dd-manifest.json
  *
  * Prints one JSON manifest (roomkit/manifest.py) of the public
@@ -49,28 +49,29 @@ $rows = $wpdb->get_results(
     ARRAY_A
 );
 
-function roomkit_dd_view_url(array $doc, string $inline_url): string {
+function roomkit_dd_view_url(array $doc, string $inline_url): array {
     // get_view_copy() without its transient: same conditions, hashed every time.
+    // [url, its sha256], or ['', ''].
     $sha = strtolower((string) ($doc['file_sha256'] ?? ''));
     $dir = Deflock_Reading_Room_Storage::private_storage_dir();
     if (!preg_match('/^[a-f0-9]{64}$/', $sha) || $dir === '' || $inline_url === '') {
-        return '';
+        return ['', ''];
     }
     $base = trailingslashit($dir) . 'view/' . $sha;
     $path = $base . '.pdf';
     if (!is_file($base . '.json') || !is_readable($path)) {
-        return '';
+        return ['', ''];
     }
     $meta = json_decode((string) file_get_contents($base . '.json'), true);
     if (!is_array($meta) || empty($meta['ok']) || ($meta['source_sha256'] ?? '') !== $sha) {
-        return '';
+        return ['', ''];
     }
     $view = strtolower((string) ($meta['view_sha256'] ?? ''));
     if (!preg_match('/^[a-f0-9]{64}$/', $view) || (int) filesize($path) !== (int) ($meta['view_bytes'] ?? -1)
         || !hash_equals($view, (string) hash_file('sha256', $path))) {
-        return '';
+        return ['', ''];
     }
-    return add_query_arg(['v' => substr($view, 0, 12), 'view' => '1'], remove_query_arg('v', $inline_url));
+    return [add_query_arg(['v' => substr($view, 0, 12), 'view' => '1'], remove_query_arg('v', $inline_url)), $view];
 }
 
 // The archive shortcode's helpers are private; reflection reads them without
@@ -78,6 +79,69 @@ function roomkit_dd_view_url(array $doc, string $inline_url): string {
 $SC = 'Deflock_Reading_Room_Shortcode';
 $card_date = new ReflectionMethod($SC, 'format_date');
 $card_date->setAccessible(true);
+// The card thumbnail, copied into the room (manifest index.thumb): the preview the
+// /thumb/ route serves, read from the plugin's cache without get_thumbnail_path(),
+// which builds the cache when it is missing (a write). Its size order, repeated.
+$previews = new ReflectionMethod($S, 'get_private_preview_paths');
+$previews->setAccessible(true);
+function roomkit_dd_thumb(ReflectionMethod $previews, array $doc): ?array {
+    $cached = $previews->invoke(null, (int) ($doc['attachment_id'] ?? 0));
+    foreach (['thumbnail', 'medium', 'large', 'full'] as $size) {
+        if (!empty($cached[$size])) {
+            $bytes = (string) file_get_contents((string) $cached[$size]);
+            $mime = (string) wp_check_filetype(wp_basename((string) $cached[$size]), null)['type'];
+            return ['mime' => $mime !== '' ? $mime : 'image/jpeg', 'sha256' => hash('sha256', $bytes),
+                    'data' => base64_encode($bytes)];
+        }
+    }
+    return null;
+}
+function roomkit_dd_suggest(array $archive, array $status_count = ['status' => [], 'kind' => []]): array {
+    $s = $archive['suggestions'];
+    $m = $archive['messages'];
+    $items = fn(array $list) => array_values(array_map(fn($it) => array_filter([
+        'label' => (string) $it['label'],
+        'query' => (string) $it['query'],
+        'count' => isset($it['count']) ? (int) $it['count'] : null,
+    ], fn($v) => $v !== null && $v !== ''), $list));
+    // The room's own groups: each item sets the finder's Status or Record kind filter.
+    $status_groups = [];
+    foreach (['status' => ['Status', ['Current', 'Past', 'Unknown']],
+              'kind' => ['Record kind', ['Surveillance monitoring', 'Procurement']]] as $facet => [$label, $order]) {
+        $opts = [];
+        foreach ($order as $v) {
+            if (isset($status_count[$facet][$v])) {
+                $opts[] = ['label' => $v === 'Unknown' ? 'Status unknown' : $v, 'facet' => $facet, 'value' => $v,
+                            'count' => $status_count[$facet][$v]];
+            }
+        }
+        if ($opts) {
+            $status_groups[] = ['label' => $label, 'items' => $opts, 'empty' => 3, 'typing' => 3];
+        }
+    }
+    return [
+        'labels' => ['top' => $m['topMatches'], 'recent_docs' => $m['recentDocuments'], 'recent_searches' => $m['recentSearches']],
+        'top' => (int) $archive['maxResults'],
+        'recent_docs' => array_map(fn($d) => basename(rtrim((string) wp_parse_url((string) $d['url'], PHP_URL_PATH), '/')), $s['recentDocs']),
+        'groups' => [
+            ['label' => $m['featuredQueries'], 'items' => $items($s['featuredQueries']), 'empty' => 6, 'typing' => 0],
+            ...$status_groups,
+            ['label' => $m['suggestedAgencies'], 'items' => $items($s['agencies']), 'empty' => 4, 'typing' => 4],
+            ['label' => $m['suggestedVendors'], 'items' => $items($s['vendors']), 'empty' => 4, 'typing' => 4],
+            ['label' => $m['suggestedTypes'], 'items' => $items($s['docTypes']), 'empty' => 4, 'typing' => 4],
+            ['label' => $m['suggestedYears'], 'items' => $items($s['years']), 'empty' => 0, 'typing' => 4],
+        ],
+        // What the live panel's scoreDoc reads for each record (prepareDoc), so the
+        // room's top matches rank as live's do.
+        'rank' => array_map(fn($d) => [
+            'slug' => (string) $d['slug'], 'title' => (string) $d['title'], 'agency' => (string) $d['agency'],
+            'summary' => (string) $d['summary'], 'date' => (string) $d['date'], 'year' => (string) $d['year'],
+            'doc_type' => (string) $d['docType'],
+            'aliases' => array_values(array_map('strval', (array) $d['aliases'])),
+            'vendors' => array_values(array_map('strval', (array) $d['vendors'])),
+        ], $archive['docs']),
+    ];
+}
 $vendor_map = class_exists('Deflock_Reading_Room_Entities') ? Deflock_Reading_Room_Entities::approved_by_doc(['vendor']) : [];
 // These two lists live inline in Deflock_Reading_Room_Shortcode::render();
 // repeated here, and a drift shows as a category the live index groups differently.
@@ -93,8 +157,28 @@ $agency_aliases = [
     'Village of Maple Bluff PD' => 'Maple Bluff Police Department',
 ];
 
+// What the live index's finder narrows by (agency, document type, vendor, year), from
+// the shortcode's own payload builder fed what render() feeds it, so each record's
+// facet pages hold what live filtering by that value holds (browse.py).
+$payload = new ReflectionMethod($SC, 'build_archive_search_payload');
+$payload->setAccessible(true);
+$browse_by_slug = [];
+$archive = $payload->invoke(null, $S::get_docs(['visibility' => 'public', 'limit' => 200]), $categories, $agency_aliases, '');
+foreach ($archive['docs'] as $p) {
+    $browse_by_slug[(string) $p['slug']] = array_filter([
+        'agency' => array_values(array_filter([(string) $p['agency']])),
+        'type' => array_values(array_filter([(string) $p['docType']])),
+        'vendor' => array_values(array_unique(array_filter(array_map('strval', (array) $p['vendors'])))),
+        'year' => array_values(array_filter([(string) $p['year']])),
+    ]);
+}
+
 $docs = [];
 $problems = [];
+// Each record's status and kind as its page words them (Template::record_status,
+// plugin 0.9.0); null for a record never classified, or on an older plugin.
+$status_of = fn(array $doc) => method_exists($T, 'record_status') ? $T::record_status($doc) : null;
+$status_count = ['status' => [], 'kind' => []];
 foreach ((array) $rows as $doc) {
     $slug = (string) $doc['slug'];
     $path = $S::get_file_path($doc);
@@ -141,9 +225,10 @@ foreach ((array) $rows as $doc) {
         'mime' => $mime,
     ];
     if ($ext === 'pdf') {
-        $view = roomkit_dd_view_url($doc, $inline);
+        [$view, $view_sha] = roomkit_dd_view_url($doc, $inline);
         if ($view !== '') {
             $file['view_url'] = $view;
+            $file['view_sha256'] = $view_sha;
         }
         $file['poster_url'] = $S::get_thumbnail_url($doc, 'large');
     }
@@ -156,6 +241,7 @@ foreach ((array) $rows as $doc) {
         'label' => (string) $v['label'],
         'url' => home_url('/reading-room/entity/vendor/' . rawurlencode((string) $v['slug']) . '/'),
     ], $vendor_map[(int) $doc['id']] ?? []);
+    $st = $status_of($doc);
     $row_display = [
         'released' => $date !== '' && $date !== '0000-00-00' ? $T::format_display_date($date) : '',
         'details' => [
@@ -163,6 +249,10 @@ foreach ((array) $rows as $doc) {
             ['label' => 'Document date', 'value' => $T::format_display_date($date)],
             ['label' => 'Contract start', 'value' => $T::format_display_date((string) ($doc['contract_start'] ?? ''))],
             ['label' => 'Contract end', 'value' => $T::format_display_date((string) ($doc['contract_end'] ?? ''))],
+            ...($st !== null ? [
+                array_filter(['label' => 'Status', 'value' => $st['status'], 'note' => $st['basis']], fn($v) => $v !== ''),
+                ['label' => 'Record kind', 'value' => $st['kind']],
+            ] : []),
             $source_url !== ''
                 ? ['label' => 'Source', 'value' => $source_label ?: $source_url, 'url' => $source_url]
                 : ['label' => 'Source', 'value' => $source_label ?: 'Not listed yet'],
@@ -202,9 +292,35 @@ foreach ((array) $rows as $doc) {
     $row_index = [
         'group' => $agency_c,
         'facets' => (object) array_filter(['year' => strlen($date) >= 4 && $date !== '0000-00-00' ? substr($date, 0, 4) : '']),
+        'browse' => (object) ($browse_by_slug[$slug] ?? []),
         'card_date' => $date !== '' && $date !== '0000-00-00' ? $card_date->invoke(null, $date) : '',
-        'thumb_url' => (int) ($doc['attachment_id'] ?? 0) > 0 ? $S::get_thumbnail_url($doc, 'thumbnail') : '',
     ];
+    if ($st !== null) {
+        $row_index['badge'] = $st['label'] === 'Unknown' ? 'Status unknown' : $st['label'];
+        $row_index['badge_kind'] = strtolower($st['label']);
+        $row_index['badge_sr'] = 'Status: ';
+        // The end a current record is winding down to, and the monitoring subgroup.
+        $row_index['meta'] = array_values(array_filter([
+            $st['status'] !== $st['label'] ? 'Ending ' . $T::format_display_date((string) $doc['status_until']) : '',
+            $st['kind'] === 'Surveillance monitoring' ? $st['kind'] : '',
+        ]));
+        $row_index['facets'] = (object) ((array) $row_index['facets'] + ['status' => $st['label'], 'kind' => $st['kind']]);
+        $row_index['browse'] = (object) ((array) $row_index['browse'] + ['status' => [$st['label']], 'kind' => [$st['kind']]]);
+        $status_count['status'][$st['label']] = ($status_count['status'][$st['label']] ?? 0) + 1;
+        $status_count['kind'][$st['kind']] = ($status_count['kind'][$st['kind']] ?? 0) + 1;
+    }
+    // A card shows a thumbnail when the record has an attachment (the shortcode's test).
+    // Cached: the room's own copy. Not cached: a PDF's is rendered on its first request,
+    // so the card keeps the live route; anything else has none (live answers 404, a
+    // broken image), so the card shows none.
+    if ((int) ($doc['attachment_id'] ?? 0) > 0) {
+        $thumb = roomkit_dd_thumb($previews, $doc);
+        if ($thumb !== null) {
+            $row_index['thumb'] = $thumb;
+        } elseif ($ext === 'pdf') {
+            $row_index['thumb_url'] = $S::get_thumbnail_url($doc, 'thumbnail');
+        }
+    }
     // --- end display fields ---
 
     $row = [
@@ -325,7 +441,28 @@ try {
             'groups' => $categories,
             'group_label' => 'Agency',
             'empty_group_text' => 'No records have been released for this agency yet.',
-            'facets' => [['name' => 'year', 'label' => 'Year']],
+            'facets' => array_merge($status_count['status'] ? [
+                ['name' => 'status', 'label' => 'Status'],
+                ['name' => 'kind', 'label' => 'Record kind'],
+            ] : [], [['name' => 'year', 'label' => 'Year']]),
+            // The finder's suggestion panel, from the same payload (manifest site.index.suggest).
+            // The counts per group are the archive script's renderEmptyState and
+            // renderQueryState (assets/js/deflock-reading-room.js), repeated.
+            'suggest' => roomkit_dd_suggest($archive, $status_count),
+            // No live page words these; the room's own copy, kept here with the site's.
+            'browse' => [
+                'heading' => 'Browse records by',
+                'facets' => [
+                    ['name' => 'agency', 'label' => 'Agency', 'title' => 'Records from {value}'],
+                    ['name' => 'type', 'label' => 'Record type', 'title' => 'Record type: {value}'],
+                    ['name' => 'vendor', 'label' => 'Vendor', 'title' => 'Records naming {value}'],
+                    ['name' => 'year', 'label' => 'Year', 'title' => 'Records from {value}'],
+                    ...($status_count['status'] ? [
+                        ['name' => 'status', 'label' => 'Status', 'title' => 'Status: {value}', 'room_only' => true],
+                        ['name' => 'kind', 'label' => 'Record kind', 'title' => 'Record kind: {value}', 'room_only' => true],
+                    ] : []),
+                ],
+            ],
         ],
     ],
     'exported_by' => 'roomkit/exporters/deflockdane.php',

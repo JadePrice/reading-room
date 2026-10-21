@@ -24,7 +24,8 @@ roomkit composes no citation: every reference string comes from the export.
       "source": {"<plugin file>": "<sha256>"},            (optional; not rendered)
       "citations": [{"slug", "stable_key", "document_id", "page_id", "page_number",
                      "offset_start", "offset_end", "provenance_level",
-                     "ocr_confidence", "citation_type", "bounding_box", "text"}],
+                     "ocr_confidence", "citation_type", "bounding_box", "text",
+                     "file_sha256"?}],            (optional: the record's file hash when cited)
       "excluded": [{"stable_key", "problem"}]             (optional; rows the exporter
                                                            could not ship, said out loud)
     }
@@ -41,8 +42,10 @@ whose document_id is not that record's; a stable_key that is not
 sha256("{document_id}|{page_number}|{start}|{end}") (an empty page number for a
 document-scope page, as GGRR_Citations::stable_key); a quoted text that is not
 the page text between those offsets (counted in code points, as PHP's mb_*
-functions count); two rows with one key; a page `cite` that is not the shape
-above.
+functions count); a `file_sha256` that is not the record's current file hash
+("source changed since this was cited"; the key does not hash the file, so this
+is the guard against a replaced file); two rows with one key; a page `cite` that
+is not the shape above.
 """
 
 from __future__ import annotations
@@ -130,10 +133,11 @@ def parse(raw: object, docs: dict, excluded: dict | None = None) -> tuple[dict |
     if not isinstance(rows, list):
         return None, problems + ["passages.citations is not a list"]
     out: dict[str, dict] = {}
+    pins: dict[str, str] = {}
     later: list[tuple[str, str]] = []
     for i, row in enumerate(rows):
         where = f"passages.citations[{i}]"
-        if not isinstance(row, dict) or set(row) != {"slug", *SHAPE}:
+        if not isinstance(row, dict) or not {"slug", *SHAPE} <= set(row) <= {"slug", *SHAPE, "file_sha256"}:
             problems.append(f"{where} is not {{slug, {', '.join(SHAPE)}}}")
             continue
         key, slug = row["stable_key"], row["slug"]
@@ -153,6 +157,18 @@ def parse(raw: object, docs: dict, excluded: dict | None = None) -> tuple[dict |
         if doc.document_id != row["document_id"]:
             problems.append(f"{where}: document_id {row['document_id']} is not {slug}'s ({doc.document_id})")
             continue
+        pinned = row.get("file_sha256")
+        if pinned is not None:
+            if not (isinstance(pinned, str) and HEX64.match(pinned)):
+                problems.append(f"{where}: file_sha256 is not 64 lowercase hex characters")
+                continue
+            if not doc.has_file:
+                problems.append(f"{where}: file_sha256 pins a file, and {slug} has none (text only)")
+                continue
+            if pinned != doc.sha256:
+                problems.append(f"{where}: source changed since this was cited ({slug}'s file is "
+                                f"{doc.sha256[:12]}, the citation pins {pinned[:12]})")
+                continue
         if not (isinstance(key, str) and key == stable_key(row["document_id"], pn, s, e)):
             problems.append(f"{where}: stable_key is not sha256(document_id|page|start|end)")
             continue
@@ -181,12 +197,17 @@ def parse(raw: object, docs: dict, excluded: dict | None = None) -> tuple[dict |
                 problems.append(f"{where}: text is not page {pn}'s text from {s} to {e}")
                 continue
         out[key] = {k: row[k] for k in SHAPE}
+        if pinned is not None:
+            pins[key] = pinned
     if problems:
         return None, problems
-    return {"api": api, "citations": dict(sorted(out.items())),
+    return {"api": api, "citations": dict(sorted(out.items())), "pins": pins,
             "excluded": [(e["stable_key"], e["problem"].strip()) for e in ex] + later}, []
 
 
 def citations_json(block: dict) -> dict:
     """citations.json: each curated key as `ggrr/v1/citation?key=` answers it."""
-    return {"citations": {k: {"found": True, "citation": c} for k, c in block["citations"].items()}}
+    pins = block.get("pins", {})
+    # `file_sha256` sits beside `citation`, not in it: the citation stays the live answer's shape.
+    return {"citations": {k: {"found": True, "citation": c} | ({"file_sha256": pins[k]} if k in pins else {})
+                          for k, c in block["citations"].items()}}
