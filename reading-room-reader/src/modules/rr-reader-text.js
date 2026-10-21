@@ -47,6 +47,7 @@
                 if (!r.ok) { throw new Error('HTTP ' + r.status); }
                 var cl = r.headers.get('content-length');
                 if (cl && parseInt(cl, 10) > MAX_TEXT_SIZE) { throw new Error('too-large'); }
+                // Read in chunks and stop at the cap: a chunked response has no content-length.
                 if (!r.body || !r.body.getReader) {
                     return r.text().then(function (t) {
                         if (t.length > MAX_TEXT_SIZE) { throw new Error('too-large'); }
@@ -76,6 +77,7 @@
                 });
             })
             .then(function (text) {
+                if (text.length > MAX_TEXT_SIZE) { tooBig(); return; }
                 var pre = document.createElement('pre');
                 pre.className = 'rr-reader__text';
                 // Scrollable region: focusable so keyboard users can scroll it.

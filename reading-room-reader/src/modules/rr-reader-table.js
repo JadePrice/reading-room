@@ -458,6 +458,8 @@
                 R.emit(container, 'ready', { total: allRows.length });
             })
             .catch(function (err) {
+                // No dead controls beside the fallback links (as the image module).
+                [toolbar, wrap, citationBar, footer].forEach(function (n) { if (n.parentNode) { n.parentNode.removeChild(n); } });
                 if (err && err.message === 'too-large') {
                     R.fail(container, R.msg('tableTooLarge', 'This dataset is too large to preview inline. Use the download buttons.'));
                     return;

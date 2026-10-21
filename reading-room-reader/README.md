@@ -19,6 +19,7 @@ vendor/pdfjs/                    pinned pdf.js 3.11.174 (pdf.min.js + worker); s
 sync.sh                          copy src/ + pdf.js into a plugin's assets/vendor/, write MANIFEST.sha256
 VERSION                          semver, bump on change (must match VERSION in rr-reader.js; tested)
 PORTING.md                       GG ↔ dd feature-port map
+contract/*.schema.json           doc-search and passage (site REST responses), pages (roomkit's pages.json); tests/reading_room_reader/test_contract.py
 ```
 
 Tests: `tests/reading_room_reader/` at the repo root. `test_engine_contract.py` runs anywhere; `test_reader_browser.py` drives the engine in Playwright Chromium against a generated local site (skips if Chromium is not installed).
@@ -95,6 +96,13 @@ The loader dispatches bubbling DOM events on the mount: `rr-reader:ready` (`{tot
 
 pdf.js is pinned at **3.11.174** in `vendor/pdfjs/`. The text layer uses `pdfjsLib.renderTextLayer`, which pdf.js 4 removed; under a different major the pages still render but the mount gets `data-text-layer="unavailable"` (selection and in-page highlight are gone, server search still works). Upgrading pdf.js is an engine change with its own test run, never a drop-in.
 
+The vendored files are upstream's, byte for byte: `pdfjs-dist@3.11.174` `build/`, compared with the jsDelivr copy on 2026-10-21. `tests/reading_room_reader/test_engine_contract.py` fails if either changes without this table changing with it.
+
+| File | sha256 |
+|---|---|
+| `pdf.min.js` | `5b5799e6f8c680663207ac5b42ee14eed2a406fa7af48f50c154f0c0b1566946` |
+| `pdf.worker.min.js` | `feabdf309770ed24bba31a5467836cdc8cf639c705af27d52b585b041bb8527b` |
+
 ## Back-compat
 
 The loader also matches `.ggrr-reader[data-file-url]`, reads `window.ggrrReaderConfig` as a fallback, and aliases `window.GGRRReader = RRReader`; `rr-cite.js` also wires `[data-ggrr-cite-copy]`. So glassgovernment.org's current template works against the vendored engine unchanged. Aliases are removed once both sites emit `.rr-reader`.
@@ -111,9 +119,18 @@ Verified WCAG 2.2 AA on both consumers (light GG + dark dd), desktop and 375px m
 - **Touch targets** — every button and input is ≥ 44×44 (base button has `min-width:44px` so single-glyph match-nav buttons qualify).
 - **Keyboard** — stage is focusable (`role="document"`); Arrow/PageUp/PageDown page, `+`/`-` zoom, Enter in search jumps to next match, Esc closes the lightbox.
 - **Lightbox** — opens as `role="dialog"` `aria-modal="true"`, moves focus into the stage, traps Tab / Shift+Tab within the reader's controls while open, and returns focus to the trigger on close.
-- **Reduced motion / reflow** — button transitions drop under `prefers-reduced-motion`; toolbar wraps and spread forces single below 760px with no horizontal scroll.
+- **Reduced motion / reflow** — button transitions, the image module's zoom and box transitions and its transcript scroll drop under `prefers-reduced-motion` (`test_engine_contract.py` holds every module that moves to it); toolbar wraps and spread forces single below 760px with no horizontal scroll.
 
 **Re-verify per release:** `tests/reading_room_reader/test_reader_browser.py` runs axe (WCAG 2.0–2.2 A/AA) over the mounted reader with search results and the cite panel open, checks every visible control is ≥ 44×44, and drives keyboard paging and the lightbox focus trap. The claims above hold for the engine's own palette; each site's bridge still needs a live audit.
+
+## Releasing the engine
+
+1. Change `src/`, then bump `VERSION` and `var VERSION` in `src/rr-reader.js` together (`test_engine_contract.py` checks they match).
+2. Run `PYTHONPATH=. pytest tests/reading_room_reader tests/roomkit -q` from the repo root (browser tests need Playwright Chromium).
+3. Re-vendor into each site with `./sync.sh <plugin>/assets`, which writes `MANIFEST.sha256`; driftkit then reports the site copy against this engine. Deploying the plugin is the site's own release.
+4. Re-vendoring pdf.js: replace both files in `vendor/pdfjs/` with the upstream `pdfjs-dist` build, compare them with the published package, update the table under "pdf.js pin", and run the tests. A different major needs the text-layer work described there.
+
+The roomkit room ships `src/` and `vendor/pdfjs/` as they are in this repo, under fingerprinted names; a rebuild picks up a change with no sync step.
 
 ## Provenance
 
@@ -128,6 +145,8 @@ v0.4.1 (2026-10-07), from the first live check of 0.4.0 on deflockdane.org: sear
 v0.5.0 (2026-10-07): `data-poster`, a server-rendered page-1 image shown while pdf.js loads (see Large files).
 
 v0.7.0 (2026-10-15): static search hits carry the hit's span (GG `locate` semantics) so per-hit Cite works in static mode; a page's `cite` in pages.json serves "Cite page" with no request and is the fallback when the passage route fails or times out (8 s). Sites on 0.6.0 lose nothing: without `cite` and without static mode the panel behaves as before. For roomkit's passage citations (plan Task 12).
+
+v0.8.0 (2026-10-21): the image module shows multi-page scans with page images and OCR boxes from pages.json (a transcript pane beside the image, box and token linked); `rr-reader-table.js` shows CSV/TSV as a sortable, filterable, paged grid with row and cell citations and a 5 MB cap; pdf.js opens with `isEvalSupported: false` (CVE-2024-4367); the image module's motion stops under `prefers-reduced-motion`; a table that fails to load removes its controls before the fallback links; the text module stops reading at its 1 MB cap as the file streams in (from the standalone repo), so a response with no content-length is capped too. Sites on 0.7.0 lose nothing by staying; re-sync to get the security fix.
 
 v0.6.0 (2026-10-08): static mode. `data-pages-url` and `RRReader.searchPages` give in-document search without a route (see Static mode). A slow search answer can no longer overwrite a newer one. Sites on 0.5.0 lose nothing by staying there; no re-sync is needed unless a site wants static search.
 

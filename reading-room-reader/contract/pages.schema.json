@@ -1,0 +1,54 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://llm-wiki.local/reading-room-reader/contract/pages.schema.json",
+  "title": "Reading room page texts (pages.json)",
+  "description": "A record's page texts, written by roomkit build.py as <slug>/pages.<hash>.json and read by the reader's PDF and image modules through data-pages-url (in-document search, the transcript pane, OCR boxes, per-page citations). Pages are 1..N in order (manifest.py refuses anything else). A box is [ymin, xmin, ymax, xmax] as fractions of the page; manifest.py also refuses ymin >= ymax or xmin >= xmax, which JSON Schema cannot compare.",
+  "type": "object",
+  "required": ["slug", "total", "pages"],
+  "additionalProperties": false,
+  "properties": {
+    "slug": { "type": "string", "pattern": "^[a-z0-9][a-z0-9-]*$" },
+    "total": { "type": "integer", "minimum": 1 },
+    "pages": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/page" } }
+  },
+  "$defs": {
+    "page": {
+      "type": "object",
+      "required": ["n", "provenance", "text"],
+      "additionalProperties": false,
+      "properties": {
+        "n": { "type": "integer", "minimum": 1 },
+        "provenance": { "type": "string" },
+        "text": { "type": "string" },
+        "image_url": { "type": "string", "minLength": 1 },
+        "boxes": { "type": "array", "items": { "$ref": "#/$defs/box" } },
+        "cite": {
+          "description": "The site's page citation (pack features.passage-cite; roomkit passages.py cite_problem).",
+          "type": "object",
+          "required": ["reference", "provenance_level", "ocr_confidence"],
+          "additionalProperties": false,
+          "properties": {
+            "reference": { "type": "string", "minLength": 1 },
+            "provenance_level": { "type": "string" },
+            "ocr_confidence": { "type": ["number", "null"] }
+          }
+        }
+      }
+    },
+    "box": {
+      "type": "object",
+      "required": ["box"],
+      "additionalProperties": false,
+      "properties": {
+        "box": {
+          "type": "array",
+          "minItems": 4,
+          "maxItems": 4,
+          "items": { "type": "number", "minimum": 0, "maximum": 1 }
+        },
+        "text": { "type": "string" },
+        "confidence": { "type": ["number", "null"], "minimum": 0, "maximum": 1 }
+      }
+    }
+  }
+}

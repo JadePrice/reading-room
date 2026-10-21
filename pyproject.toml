@@ -41,6 +41,10 @@ ocr = [
     "ocrmypdf>=16.0.0",
     "pdfplumber>=0.11.0",
 ]
+browser = [
+    "playwright>=1.40",
+    "pymupdf>=1.23",
+]
 search = [
     "pagefind[bin]==1.5.2",
 ]

@@ -3,7 +3,7 @@
 ## 1. Executive Summary
 
 Reading Room provides a local-first, zero-telemetry reading room engine designed for transparency archives, public records repositories, and civic document collections. While the initial release focused on PDF reading and in-browser search, investigative and civic archives routinely encounter evidence formats beyond single or multi-page PDFs, including:
-- High-resolution document scans and photographic evidence (JPEG, PNG, WebP, TIFF).
+- High-resolution document scans and photographic evidence (JPEG, PNG, WebP; TIFF is download-only, see 2.1).
 - Structured tabular data (CSV, TSV) from open-data disclosures and FOIA releases.
 - Timestamped audio/video records (body cameras, depositions, city council hearings).
 - Historical web captures (WARC/WACZ files).
@@ -18,26 +18,43 @@ All format extensions must strictly satisfy these foundational principles:
 4. **Zero-Dependency Vanilla Client:** The front-end reader engine (`reading-room-reader`) remains pure vanilla JavaScript and CSS, adhering to standard DOM and web APIs without heavy front-end frameworks (React, Vue) or bundler bloat.
 5. **Fail-Closed Privacy & Safety:** PII masking (e.g. SSNs), manifest schema validation, and coordinate bounds checking fail closed. Verification copies and search indexes must never leak unredacted sensitive values.
 
+### Status (engine 0.8.0, 2026-10-21)
+
+What this specification describes against what the code does today. LLM_WIKI is
+canonical; this repo is its mirror.
+
+| Item | Status | Where |
+| :--- | :--- | :--- |
+| Box validation: `[ymin, xmin, ymax, xmax]` in 0..1, inversions refused | Done | `roomkit/manifest.py`; `reading-room-reader/contract/pages.schema.json` |
+| `image_url` and `boxes` in `pages.json` | Done | `roomkit/build.py` |
+| Multi-page scans: prev/next, page jump, zoom, 90° rotation, fullscreen | Done | `rr-reader-image.js` |
+| Transcript pane, box overlays, `#page=N&box=…` deep links, in-document search | Done | `rr-reader-image.js` |
+| Thumbnail ribbon | Not built | |
+| CSV/TSV grid: sort, filter, pagination, `#row=N&col=M` links, citation copy, 5 MB cap | Done | `rr-reader-table.js` |
+| Virtualized scrolling for large tables | Not built (pagination instead; over 5 MB falls back to download) | |
+| TIFF | Download only: browsers other than Safari cannot draw it, so `manifest.py` lists it in `DOWNLOAD_ONLY` and no reader mounts | |
+| Audio/video, WARC/WACZ | Not scheduled | see the conditions under section 3 |
+
 ---
 
 ## 2. Inventory of Format Families & Scope Audit
 
 ### 2.1 Multi-Page Scans & High-Resolution Image Sets
 * **Use Case:** Historical public records, hand-signed resolutions, deeds, and unsearchable document image sets.
-* **Format Scope:** JPEG, PNG, WebP, TIFF, SVG.
-* **Existing Foundation:** `rr-reader-image.js` provides single-image viewing, async decoding, and basic fullscreen toggling.
-* **Gaps:** Lacks pagination/spread controls for multi-page scan sets, deep zoom/pan, rotation controls for sideways scans, and thumbnail ribbons.
+* **Format Scope:** JPEG, PNG, WebP, GIF, SVG. TIFF stays download-only: most browsers cannot render it, so a scan set ships WebP page images (`pages[].image_url`) beside the original TIFF.
+* **Existing Foundation:** `rr-reader-image.js` provides single images and multi-page scan sets with page controls, zoom, 90° rotation and fullscreen.
+* **Gaps:** Thumbnail ribbon; deep zoom tiles for very large scans.
 
 ### 2.2 OCR-to-Image Verification
 * **Use Case:** Archival accountability and transcript auditing. Enables researchers to cross-verify OCR transcription against original scans.
-* **Existing Foundation:** `roomkit/ocr.py` runs Tesseract OCR and PDF/A compilation. `passage.schema.json` defines bounding box schema fields.
-* **Gaps:** Need normalized coordinate bounds validation in `manifest.py`, side-by-side split view in `rr-reader-image.js`, SVG coordinate highlighting overlays, and `#page=N&box=ymin,xmin,ymax,xmax` deep link routing.
+* **Existing Foundation:** `roomkit/ocr.py` runs Tesseract OCR and PDF/A compilation. `manifest.py` validates normalized boxes; `rr-reader-image.js` draws the transcript pane, box overlays and `#page=N&box=ymin,xmin,ymax,xmax` deep links. The data contract is `reading-room-reader/contract/pages.schema.json`.
+* **Gaps:** None in this phase.
 
 ### 2.3 Tabular Data (CSV/TSV)
 * **Use Case:** Campaign finance ledgers, vendor payment registries, municipal salary lists, and police incident data.
 * **Format Scope:** CSV, TSV.
-* **Existing Foundation:** `rr-reader-text.js` renders raw plain text with a 1MB safety cap.
-* **Gaps:** Lacks interactive grid rendering, sortable columns, virtualized scrolling for large datasets, and cell-level/row-level citation anchors (`#row=42&col=3`).
+* **Existing Foundation:** `rr-reader-table.js` renders an accessible grid with RFC 4180 parsing, sortable columns, filtering, pagination, `#row=42&col=3` anchors and citation copy. Cells are text nodes, never HTML. Files over 5 MB fall back to the download link.
+* **Gaps:** Virtualized scrolling, if pagination proves too slow on real datasets.
 
 ### 2.4 Audio & Video Evidence
 * **Use Case:** Police body-worn cameras, public hearings, depositions, and 911 calls.
@@ -48,7 +65,7 @@ All format extensions must strictly satisfy these foundational principles:
 ### 2.5 Archived Web Captures (WARC / WACZ)
 * **Use Case:** Preserved government agency websites, official statements, and deleted online postings.
 * **Format Scope:** WARC, WACZ.
-* **Evaluation:** Full replay requires heavy WASM service workers (e.g., ReplayWeb.page) and strict sandbox isolation (`sandbox="allow-scripts allow-same-origin"`) to prevent script breakout. Recommended for deferred adoption after scan and tabular viewers.
+* **Evaluation:** Full replay requires heavy WASM service workers (e.g., ReplayWeb.page). Archived pages are hostile content, so replay must run on a separate origin: `sandbox="allow-scripts allow-same-origin"` on a same-origin iframe is no sandbox at all, because the framed script can reach its parent and remove the attribute. Use `allow-scripts` without `allow-same-origin`, or a dedicated replay domain. Not scheduled.
 
 ---
 
@@ -61,6 +78,8 @@ All format extensions must strictly satisfy these foundational principles:
 | **Tabular Data (CSV/TSV)** | High | Medium | Low | Low (sanitize cell HTML injection) | **Phase 2** |
 | **Audio / Video Records** | High | Medium | Medium | Medium (large file streaming, codecs) | **Phase 3** |
 | **Web Archives (WARC/WACZ)** | Medium-High | High | High | High (WASM footprint, XSS attack surface) | **Phase 4** |
+
+Phases 1 and 2 are built. Phases 3 and 4 are not scheduled; each new reader needs, before it is proposed: a written data contract, an adversarial test fixture and an accessibility test, all before any code.
 
 ---
 
@@ -107,7 +126,7 @@ To support multi-format evidence without schema fragmentation, documents utilize
 
 ---
 
-## 5. Phase 1 Technical Specification: Scan Viewer & OCR Verification
+## 5. Phase 1 Technical Specification: Scan Viewer & OCR Verification (built; kept as the record of intent)
 
 ### 5.1 Python Generator (`roomkit`)
 - **`manifest.py`**:

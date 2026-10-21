@@ -22,7 +22,7 @@
     // is what people get. Modules replace the container's contents on mount;
     // the loader keeps a copy of the block and fail() puts it back.
 
-    var VERSION = '0.7.0';
+    var VERSION = '0.8.0';
     var config = window.rrReaderConfig || window.ggrrReaderConfig || {};
     var registry = [];
     var fallbacks = {};   // data-reader-id -> pristine copy of [data-reader-fallback]

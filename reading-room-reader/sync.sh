@@ -12,6 +12,7 @@
 #   <assets>/vendor/rr-reader/modules/rr-reader-pdf.js   (pdf; depends on the loader + pdf.js 3.x)
 #   <assets>/vendor/rr-reader/modules/rr-reader-image.js (optional; images)
 #   <assets>/vendor/rr-reader/modules/rr-reader-text.js  (optional; txt/md/csv/json/xml/html)
+#   <assets>/vendor/rr-reader/modules/rr-reader-table.js (optional; csv/tsv as a grid; loaded before text wins csv)
 #   <assets>/vendor/rr-reader/modules/rr-cite.js         (optional; self-wires [data-rr-cite-copy] buttons)
 # and emit a .rr-reader[data-file-url] mount container per document.
 set -euo pipefail

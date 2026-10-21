@@ -980,7 +980,9 @@
                     R.fail(container, R.msg('slowLoad', 'This file is taking a long time to load. You can keep waiting or open it directly.'));
                 }
             }, config.slowLoadMs > 0 ? config.slowLoadMs : LOAD_SLOW_MS);
-            window.pdfjsLib.getDocument(ctx.fileUrl).promise.then(function (pdf) {
+            // isEvalSupported:false closes CVE-2024-4367 (pdf.js <= 4.1.392 runs
+            // font data through eval); the pinned 3.11.174 has no upstream fix.
+            window.pdfjsLib.getDocument({ url: ctx.fileUrl, isEvalSupported: false }).promise.then(function (pdf) {
                 window.clearTimeout(loadTimer);
                 // A slow load already put the fallback links back; the reader
                 // has the file now, so take the page back from them.
