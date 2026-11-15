@@ -1,0 +1,11 @@
+{#- What a missing path gets, so a miss never reaches WordPress. -#}
+{% from "room/partials/macros.html" import crumbs, root %}
+{{ root("doc", theme_key) }}
+<div class="room__shell">
+<div class="room__topline">{{ crumbs(not_found.crumbs) }}</div>
+<header class="room__head"><p class="room__eyebrow">{{ not_found.room_label }}</p>
+<h1 class="room__title">Document not found</h1>
+<p class="room__lede">This record is missing or not public. <a href="{{ at }}">Back to the reading room</a>.</p>
+</header>
+</div>
+</main>

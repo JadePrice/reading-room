@@ -1,0 +1,2085 @@
+=== .htaccess ===
+# Written by roomkit. Cache policy: build.py module docstring.
+ErrorDocument 404 /reading-room/404.html
+<IfModule mod_headers.c>
+<FilesMatch "\.[0-9a-f]{12}\.(css|js|json)$">
+Header set Cache-Control "public, max-age=31536000, immutable"
+</FilesMatch>
+<FilesMatch "\.html$">
+Header set Cache-Control "public, max-age=0, s-maxage=3600, must-revalidate"
+</FilesMatch>
+</IfModule>
+
+=== 404.html ===
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Not found | Reading Room</title>
+<link rel="stylesheet" href="/reading-room/assets/room.5c58cd70651c.css">
+</head>
+<body class="room-plain">
+<a class="room__skip" href="#room-content">Skip to the records</a>
+<header class="room-chrome room-chrome--head">
+<div class="room-chrome__bar">
+<p class="room-chrome__brand"><a class="room-chrome__home" href="https://example.org/">Riverbend Records Office</a></p>
+<nav class="room-chrome__nav" aria-label="Records office">
+<details class="room-chrome__menu"><summary class="room-chrome__menu-label">Menu</summary>
+<ul class="room-chrome__links">
+<li><a href="https://example.org/records/">Records</a></li>
+<li class="room-chrome__group"><details><summary>About</summary><ul><li><a href="https://example.org/about/">The office</a></li><li><a href="https://example.org/requests/">Ask for a record</a></li></ul></details></li>
+</ul>
+</details>
+</nav>
+</div>
+</header>
+<main id="room-content" class="room room--doc" tabindex="-1" data-room-theme-key="riverbend-scheme">
+<div class="room__shell">
+<div class="room__topline"><nav class="room__crumbs" aria-label="Breadcrumb"><ol><li><a href="/reading-room/">Records</a></li><li><span aria-current="page">Not found</span></li></ol></nav></div>
+<header class="room__head"><p class="room__eyebrow">Records</p>
+<h1 class="room__title">Document not found</h1>
+<p class="room__lede">This record is missing or not public. <a href="/reading-room/">Back to the reading room</a>.</p>
+</header>
+</div>
+</main>
+<footer class="room-chrome room-chrome--foot">
+<div class="room-chrome__bar">
+<div class="room-chrome__col">
+<h2 class="room-chrome__col-h">Visit</h2>
+<ul><li><a href="https://example.org/visit/">Hours and address</a></li></ul>
+</div>
+<div class="room-chrome__col">
+<h2 class="room-chrome__col-h">Policies</h2>
+<ul><li><a href="https://example.org/privacy/">Privacy</a></li><li><a href="https://example.org/corrections/">Corrections</a></li></ul>
+</div>
+<p class="room-chrome__text">Riverbend is not a real place. This pack shows what a pack can set.</p>
+</div>
+</footer>
+<script src="/reading-room/assets/room.e9fe4f1715fc.js"></script>
+</body>
+</html>
+
+=== assets/room-search.614f485a8d05.js ===
+(function () {
+  "use strict";
+  // The index's finder when the pack turns corpus search on (search.py). Text is
+  // searched in the room's own Pagefind index (pagefind/, shipped with the room;
+  // nothing is fetched from a server). Facet selects narrow both the text results
+  // and, with no text, the cards on the page. Suggestions come from the same
+  // index: a WAI-ARIA combobox over a grouped listbox, in the site's own groups and
+  // words when the page carries them (manifest site.index.suggest), else one group
+  // per facet select.
+  var root = document.getElementById("room-content");
+  if (!root) { return; }
+  var finder = root.querySelector("[data-room-search]");
+  if (!finder) { return; }
+  // room.js's card engine: filters (facets, vendor, year range) and the flat sort.
+  var R = window.roomCards;
+  if (!R) { return; }
+  var form = finder.querySelector("form");
+  var q = document.getElementById("room-q");
+  var listbox = document.getElementById("room-suggest");
+  var facets = Array.prototype.slice.call(finder.querySelectorAll("[data-room-facet]"));
+  var cards = Array.prototype.slice.call(root.querySelectorAll(".room__card"));
+  var flat = root.querySelector("[data-room-flat]");
+  var sections = Array.prototype.slice.call(root.querySelectorAll("[data-room-section]"));
+  var count = finder.querySelector("[data-room-count]");
+  var empty = root.querySelector("[data-room-empty]");
+  var jump = root.querySelector("[data-room-jump]");
+  var results = root.querySelector("[data-room-results]");
+  var list = root.querySelector("[data-room-results-list]");
+  var more = root.querySelector("[data-room-more]");
+  var BASE = finder.getAttribute("data-room-pagefind");
+  var RECENT = finder.getAttribute("data-room-recent-key");
+  var PAGE = 20, TOP = 5, PER_FACET = 4, KEEP = 5;
+  // The site's own reading of a query (manifest site.index.search_terms, site A's
+  // SiteA_Search::terms + sanitize_boolean_query): lowercase a-z0-9 words of at least
+  // `min` characters, the first `max`. "" when none is left: the site's page then
+  // matches its rows' text only. Without the setting, the query as typed.
+  var TERMS = (finder.getAttribute("data-room-terms") || "").split(" ").map(Number);
+  // Pagefind's ranking weights from the site pack (search_ranking); absent, its defaults.
+  var RANKING = null;
+  try { RANKING = JSON.parse(finder.getAttribute("data-room-ranking") || "null"); } catch (e) {}
+  function pagefindQuery(text) {
+    if (!TERMS[0]) { return text; }
+    return text.toLowerCase().split(/[^a-z0-9]+/).filter(function (t) { return t.length >= TERMS[0]; })
+      .slice(0, TERMS[1]).join(" ");
+  }
+  window.roomSearchQuery = pagefindQuery;
+  // The site's other half (site A, with search_terms): a record whose row text holds the
+  // whole query, as typed, is a hit too (site-a-reading-room.js matches(): data-search
+  // indexOf(q)). Those come first, in list order, then the word hits in Pagefind's order.
+  function cardHit(c) {
+    var a = c.querySelector(".room__card-title a");
+    var url = a.getAttribute("href");
+    return { slug: slugOf(url), data: function () {
+      return Promise.resolve({ url: url, meta: { title: a.textContent }, excerpt: "", sub_results: [] });
+    } };
+  }
+  function phraseHits(text, keep) {
+    var lc = text.toLowerCase();
+    return cards.filter(function (c) { return (c.getAttribute("data-room-text") || "").indexOf(lc) !== -1 && keep(c); })
+      .sort(function (a, b) { return parseInt(a.getAttribute("data-room-n") || "0", 10) - parseInt(b.getAttribute("data-room-n") || "0", 10); })
+      .map(cardHit);
+  }
+  var SITE = null;
+  try { SITE = JSON.parse((finder.querySelector("[data-room-suggest]") || {}).textContent || "null"); } catch (e) {}
+  var total = cards.length;
+  var byUrl = {}, bySlug = {};
+  function slugOf(u) { return String(u || "").replace(/[?#].*$/, "").replace(/\/+$/, "").split("/").pop(); }
+  cards.forEach(function (c) {
+    var a = c.querySelector(".room__card-title a");
+    if (a) { byUrl[a.getAttribute("href")] = c; bySlug[slugOf(a.getAttribute("href"))] = c; }
+  });
+  finder.hidden = false;
+
+  // --- the index, loaded once, on first use --------------------------------------
+  var loading = null;
+  function engine() {
+    if (!loading) {
+      loading = import(BASE + "pagefind.js").then(function (pf) {
+        // Pagefind's URLs are /<slug>/; the room is served at BASE's parent.
+        var opts = { baseUrl: BASE.replace(/pagefind\/$/, ""), excerptLength: 24 };
+        if (RANKING) { opts.ranking = RANKING; }
+        return Promise.resolve(pf.options(opts))
+          .then(function () { return pf.init ? pf.init() : null; })
+          .then(function () { return pf; });
+      }).catch(function () { return null; });
+    }
+    return loading;
+  }
+
+  function noun() { return count.getAttribute(total === 1 ? "data-room-one" : "data-room-other"); }
+  // Pagefind filters for the controls that are set: a facet or vendor is one value; a
+  // year range is every year option inside it (Pagefind has no range filter).
+  function pagefindFilters() {
+    var k = R.controls(), out = {};
+    k.facets.forEach(function (s) { out[s.name] = s.value; });
+    k.multis.forEach(function (s) { out[s.getAttribute("data-room-multi")] = s.value; });
+    var byName = {};
+    k.ranges.forEach(function (s) { (byName[s.getAttribute("data-room-range")] = byName[s.getAttribute("data-room-range")] || []).push(s); });
+    Object.keys(byName).forEach(function (name) {
+      var opts = Array.prototype.slice.call(byName[name][0].options).map(function (o) { return o.value; }).filter(Boolean);
+      var years = opts.filter(function (v) {
+        return byName[name].every(function (s) {
+          var y = parseInt(v, 10), b = parseInt(s.value, 10);
+          return s.getAttribute("data-room-bound") === "from" ? y >= b : y <= b;
+        });
+      });
+      out[name] = { any: years.length ? years : ["-"] };
+    });
+    return out;
+  }
+
+  // --- no text (or no index): filter the cards already on the page ----------------
+  function showCards(words) {
+    results.hidden = true;
+    R.apply(words);
+  }
+
+  // --- text: ranked results from the index -----------------------------------------
+  function decode(s) {
+    return new DOMParser().parseFromString("<!doctype html><body>" + s, "text/html").body.textContent;
+  }
+  // Pagefind's excerpts mark hits with <mark>; everything else is set as text.
+  function excerpt(el, html) {
+    String(html || "").split(/<mark>|<\/mark>/).forEach(function (part, i) {
+      var t = decode(part);
+      if (!t) { return; }
+      if (i % 2) { var m = document.createElement("mark"); m.textContent = t; el.appendChild(m); }
+      else { el.appendChild(document.createTextNode(t)); }
+    });
+  }
+  function el(tag, cls, text) {
+    var e = document.createElement(tag);
+    if (cls) { e.className = cls; }
+    if (text) { e.textContent = text; }
+    return e;
+  }
+  function resultItem(d) {
+    var li = el("li", "room__result");
+    var h = el("h3", "room__result-title");
+    var a = el("a", "", (d.meta && d.meta.title) || d.url);
+    a.href = d.url;
+    h.appendChild(a);
+    li.appendChild(h);
+    var card = byUrl[d.url];
+    var bits = card ? [".room__card-date", ".room__card-meta"].map(function (sel) {
+      var x = card.querySelector(sel);
+      return x ? x.textContent.trim() : "";
+    }).filter(Boolean) : [];
+    if (bits.length) { li.appendChild(el("p", "room__result-meta", bits.join(" · "))); }
+    var ex = el("p", "room__result-excerpt");
+    excerpt(ex, d.excerpt);
+    li.appendChild(ex);
+    var pages = (d.sub_results || []).filter(function (s) { return /#page-\d+$/.test(s.url); }).slice(0, 3);
+    if (pages.length) {
+      var ul = el("ul", "room__result-pages");
+      pages.forEach(function (s) {
+        var pli = el("li");
+        var pa = el("a", "", "Page " + s.url.replace(/^.*#page-/, ""));
+        pa.href = s.url;
+        pli.appendChild(pa);
+        var pe = el("span", "room__result-page-ex");
+        excerpt(pe, s.excerpt);
+        pli.appendChild(document.createTextNode(" "));
+        pli.appendChild(pe);
+        ul.appendChild(pli);
+      });
+      li.appendChild(ul);
+    }
+    var actions = el("div", "room__result-actions");
+    var citeBtn = el("button", "room__btn-cite", "Copy Citation");
+    citeBtn.type = "button";
+    citeBtn.setAttribute("aria-label", "Copy citation for " + ((d.meta && d.meta.title) || "document"));
+    citeBtn.addEventListener("click", function (evt) {
+      evt.preventDefault();
+      evt.stopPropagation();
+      var title = (d.meta && d.meta.title) || d.url;
+      var dateEl = card ? card.querySelector(".room__card-date") : null;
+      var date = dateEl ? dateEl.textContent.trim() : "";
+      var citeText = title + (date ? " (" + date + ")" : "") + ". " + window.location.origin + (d.url.charAt(0) === "/" ? d.url : "/" + d.url);
+      function show(label) {
+        citeBtn.textContent = label;
+        citeBtn.setAttribute("data-copied", "true");
+        setTimeout(function () {
+          citeBtn.textContent = "Copy Citation";
+          citeBtn.removeAttribute("data-copied");
+        }, 2000);
+      }
+      function failed() { show("Copy failed"); }
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(citeText).then(function () { show("Copied!"); }, failed);
+      } else {
+        failed();
+      }
+    });
+    actions.appendChild(citeBtn);
+
+    var dlLink = card ? (card.querySelector(".room__card-dl") || card.querySelector("a[download]")) : null;
+    var openLink = el("a", "room__btn-open", dlLink ? "Download PDF" : "Open Document");
+    openLink.href = dlLink ? dlLink.getAttribute("href") : d.url;
+    if (dlLink) { openLink.setAttribute("download", ""); }
+    actions.appendChild(openLink);
+
+    li.appendChild(actions);
+    return li;
+  }
+
+  var token = 0, hits = [], drawn = 0;
+  // Each page waits for the one before it: a page of whole-query hits (cards, no fetch)
+  // resolves at once, and a quick second click must not land it ahead of Pagefind's.
+  var drawing = Promise.resolve();
+  function drawMore(my) {
+    var next = hits.slice(drawn, drawn + PAGE);
+    drawn += next.length;
+    more.hidden = drawn >= hits.length;
+    var data = Promise.all(next.map(function (r) { return r.data(); }));
+    drawing = drawing.then(function () { return data; }).then(function (ds) {
+      if (my !== token) { return; }
+      ds.forEach(function (d) { list.appendChild(resultItem(d)); });
+    });
+    return drawing;
+  }
+  function showResults(found, my) {
+    hits = found; drawn = 0; drawing = Promise.resolve();
+    list.textContent = "";
+    sections.forEach(function (sec) { sec.hidden = true; });
+    if (flat) { flat.hidden = true; }
+    if (jump) { jump.hidden = true; }
+    results.hidden = !found.length;
+    if (empty) { empty.hidden = found.length > 0; }
+    count.textContent = found.length + " of " + total + " " + noun() + " match";
+    if (window.roomPager) { window.roomPager.off(); }
+    return drawMore(my);
+  }
+
+  // A sort other than default orders text hits as it orders cards (room.js compare), by
+  // the record each hit is: Pagefind result id -> URL from result-urls.json, then the card.
+  var urlsLoading = null;
+  function resultUrls() {
+    if (!urlsLoading) {
+      urlsLoading = window.fetch(BASE + "result-urls.json").then(function (r) { return r.ok ? r.json() : {}; })
+        .catch(function () { return {}; });
+    }
+    return urlsLoading;
+  }
+  function sorted(found) {
+    var how = R.sortKey();
+    if (!how || !found.length) { return Promise.resolve(found); }
+    return resultUrls().then(function (urls) {
+      var card = function (r) { return bySlug[r.slug || slugOf(urls[r.id])]; };
+      if (!found.every(card)) { return found; }
+      var cmp = R.compare(how);
+      var n = function (r) { return parseInt(card(r).getAttribute("data-room-n"), 10); };
+      return found.slice().sort(function (a, b) { return n(a) - n(b); })
+        .sort(function (a, b) { return cmp(card(a), card(b)); });
+    });
+  }
+
+  // Pagefind's hits for the words, and with search_terms the cards holding the whole
+  // query first (each once). `keep` is the card filter the controls set.
+  function textHits(pf, text, words, filters, keep) {
+    return pf.search(words, { filters: filters }).then(function (res) {
+      var found = (res && res.results) || [];
+      if (!TERMS[0]) { return found; }
+      var first = phraseHits(text, keep);
+      if (!first.length) { return found; }
+      return resultUrls().then(function (urls) {
+        var seen = {};
+        first.forEach(function (h) { seen[h.slug] = 1; });
+        return first.concat(found.filter(function (r) { return !seen[slugOf(urls[r.id])]; }));
+      });
+    });
+  }
+  // What a search for `text` lists, unfiltered, as URLs: for search_parity.py.
+  window.roomSearchHits = function (text) {
+    return engine().then(function (pf) {
+      var words = pagefindQuery(text);
+      if (!pf || !words) { return []; }
+      return textHits(pf, text, words, {}, function () { return true; })
+        .then(function (rs) { return Promise.all(rs.map(function (r) { return r.data(); })); })
+        .then(function (ds) { return ds.map(function (d) { return d.url; }); });
+    });
+  };
+
+  function run(push) {
+    var text = q.value.trim();
+    var my = ++token;
+    if (push) { R.push(text); }
+    if (R.refresh) { R.refresh(text); }
+    if (!text) { showCards([]); return; }
+    engine().then(function (pf) {
+      if (my !== token) { return; }
+      if (!pf) { showCards(text.toLowerCase().split(/\s+/).filter(Boolean)); return; }
+      var words = pagefindQuery(text);
+      if (!words) { showCards([text.toLowerCase()]); return; }
+      return textHits(pf, text, words, pagefindFilters(), R.passes).then(sorted).then(function (found) {
+        if (my === token) { return showResults(found, my); }
+      });
+    });
+  }
+
+  // --- suggestions: a combobox over a grouped listbox ------------------------------
+  var options = [], current = -1, sugToken = 0, dismissed = false;
+
+  function recent() {
+    try { return JSON.parse(window.localStorage.getItem(RECENT) || "[]").filter(function (s) { return typeof s === "string"; }); }
+    catch (e) { return []; }
+  }
+  function remember(text) {
+    text = (text || "").trim();
+    if (!text) { return; }
+    var keep = [text].concat(recent().filter(function (s) { return s !== text; })).slice(0, KEEP);
+    try { window.localStorage.setItem(RECENT, JSON.stringify(keep)); } catch (e) {}
+  }
+
+  function close() {
+    sugToken += 1;
+    listbox.hidden = true;
+    listbox.textContent = "";
+    options = []; current = -1;
+    q.setAttribute("aria-expanded", "false");
+    q.removeAttribute("aria-activedescendant");
+  }
+  function setActive(i) {
+    if (current >= 0 && options[current]) { options[current].node.setAttribute("aria-selected", "false"); }
+    current = i;
+    if (i < 0 || !options[i]) { q.removeAttribute("aria-activedescendant"); return; }
+    options[i].node.setAttribute("aria-selected", "true");
+    q.setAttribute("aria-activedescendant", options[i].node.id);
+    if (options[i].node.scrollIntoView) { options[i].node.scrollIntoView({ block: "nearest" }); }
+  }
+  function choose(o) {
+    dismissed = true;
+    close();
+    if (o.kind === "doc") { remember(q.value); window.location.href = o.url; return; }
+    if (o.kind === "go") { window.location.href = o.url; return; }
+    if (o.kind === "fill") { q.value = o.value; }
+    if (o.kind === "facet") { o.select.value = o.value; q.value = ""; }
+    if (o.kind === "query") { q.value = o.value; remember(o.value); }
+    run(true);
+  }
+  function draw(groups, first) {
+    listbox.textContent = "";
+    options = []; current = -1;
+    groups.filter(function (g) { return g.items.length; }).forEach(function (g, gi) {
+      var box = el("div", "room__suggest-group");
+      if (g.label) {
+        box.setAttribute("role", "group");
+        var h = el("div", "room__suggest-h", g.label);
+        h.id = "room-suggest-g" + gi;
+        h.setAttribute("role", "presentation");
+        box.setAttribute("aria-labelledby", h.id);
+        box.appendChild(h);
+      } else {
+        box.setAttribute("role", "presentation");
+      }
+      g.items.forEach(function (it) {
+        var o = el("div", "room__suggest-opt", it.label);
+        o.id = "room-suggest-o" + options.length;
+        o.setAttribute("role", "option");
+        o.setAttribute("aria-selected", "false");
+        if (it.note) { o.appendChild(el("span", "room__suggest-note", it.note)); }
+        if (it.url) { o.setAttribute("data-room-url", it.url); }
+        it.node = o;
+        o.addEventListener("mousedown", function (e) { e.preventDefault(); });
+        o.addEventListener("click", function () { choose(it); });
+        options.push(it);
+        box.appendChild(o);
+      });
+      listbox.appendChild(box);
+    });
+    if (!options.length) { close(); return; }
+    listbox.hidden = false;
+    q.setAttribute("aria-expanded", "true");
+    q.removeAttribute("aria-activedescendant");
+    if (first) { setActive(0); }
+  }
+  function docs(res, label, n) {
+    return Promise.all(((res && res.results) || []).slice(0, n || TOP).map(function (r) { return r.data(); }))
+      .then(function (ds) {
+        return { label: label, items: ds.map(function (d) { return { kind: "doc", url: d.url, label: (d.meta && d.meta.title) || d.url }; }) };
+      });
+  }
+  function facetGroups(text, counts) {
+    var lc = text.toLowerCase();
+    return facets.map(function (s) {
+      var label = (finder.querySelector('label[for="' + s.id + '"]') || {}).textContent || s.name;
+      var vals = Array.prototype.slice.call(s.options).map(function (o) { return o.value; })
+        .filter(function (v) { return v && v.toLowerCase().indexOf(lc) !== -1; }).slice(0, PER_FACET);
+      return { label: label, items: vals.map(function (v) {
+        var n = counts && counts[s.name] ? counts[s.name][v] : null;
+        return { kind: "facet", select: s, value: v, label: v,
+                 note: typeof n === "number" ? " (" + n + " " + (n === 1 ? count.getAttribute("data-room-one") : count.getAttribute("data-room-other")) + ")" : "" };
+      }) };
+    });
+  }
+  // site B's site-b-reading-room.js normalize(), scoreDoc() and getRankedDocs(), ported
+  // unchanged, so a site panel matches and ranks as the site's own panel does.
+  function norm(v) {
+    return String(v || "").toLowerCase().replace(/&/g, " and ").replace(/[\u2019']/g, "")
+      .replace(/[^a-z0-9]+/g, " ").replace(/\s+/g, " ").trim();
+  }
+  var RANKED = SITE && SITE.rank ? SITE.rank.map(function (r) {
+    return { r: r, title: norm(r.title), agency: norm(r.agency), summary: norm(r.summary), type: norm(r.doc_type),
+             year: norm(r.year), aliases: norm(r.aliases.join(" ")),
+             all: norm([r.title, r.agency, r.summary, r.doc_type, r.year].concat(r.aliases, r.vendors).join(" ")) };
+  }) : null;
+  function score(d, query) {
+    var s = 0;
+    if (!query) { return s; }
+    if (d.title === query) { s += 120; }
+    if (d.title.indexOf(query) === 0) { s += 80; } else if (d.title.indexOf(query) !== -1) { s += 52; }
+    if (d.agency === query) { s += 70; }
+    if (d.agency.indexOf(query) === 0) { s += 44; } else if (d.agency.indexOf(query) !== -1) { s += 28; }
+    if (d.type && d.type === query) { s += 30; } else if (d.type && d.type.indexOf(query) !== -1) { s += 18; }
+    if (d.aliases.indexOf(query) !== -1) { s += 24; }
+    if (d.summary.indexOf(query) !== -1) { s += 12; }
+    if (d.year === query) { s += 10; }
+    if (s > 0 && d.all.indexOf(query) !== -1) { s += 4; }
+    if (s > 0 && d.r.date) { s += Math.max(0, 8 - Math.min(8, new Date().getFullYear() - Number((d.r.year || "").slice(0, 4) || 0))); }
+    return s;
+  }
+  function stamp(v) { var t = v ? Date.parse(v) : 0; return isFinite(t) ? t : 0; }
+  function rankDocs(text, label, n) {
+    var query = norm(text);
+    var hits = RANKED.map(function (d) { return { d: d, s: score(d, query) }; })
+      .filter(function (e) { return e.s > 0; })
+      .sort(function (a, b) {
+        if (a.s === b.s) { return (stamp(b.d.r.date) - stamp(a.d.r.date)) || String(a.d.r.title).localeCompare(String(b.d.r.title)); }
+        return b.s - a.s;
+      });
+    return { label: label, items: hits.slice(0, n).map(function (e) { return { kind: "doc", url: e.d.r.url, label: e.d.r.label }; }) };
+  }
+  function siteGroups(text) {
+    var lc = RANKED ? norm(text) : text.toLowerCase();
+    return SITE.groups.map(function (g) {
+      var n = text ? g.typing : g.empty;
+      var items = text ? g.items.filter(function (it) {
+        var hay = it.label + " " + (it.facet ? it.value : it.query);
+        return (RANKED ? norm(hay) : hay.toLowerCase()).indexOf(lc) !== -1;
+      }) : g.items;
+      return { label: g.label, items: items.slice(0, n).map(function (it) {
+        var note = typeof it.count === "number" ? " (" + it.count + " " + count.getAttribute(it.count === 1 ? "data-room-one" : "data-room-other") + ")" : "";
+        // A facet item sets that filter, as the finder's own facet suggestions do.
+        var sel = it.facet ? facets.filter(function (s) { return s.getAttribute("data-room-facet") === it.facet; })[0] : null;
+        if (it.facet) { return sel ? { kind: "facet", select: sel, value: it.value, label: it.label, note: note } : null; }
+        return { kind: "query", value: it.query, label: it.label, note: note };
+      }).filter(Boolean) };
+    });
+  }
+  function siteJobs(pf, text) {
+    var L = SITE.labels, jobs = [];
+    if (!text) {
+      jobs.push(Promise.resolve({ label: L.recent_docs, items: SITE.recent_docs.map(function (d) { return { kind: "doc", url: d.url, label: d.label }; }) }));
+      jobs.push(Promise.resolve({ label: L.recent_searches, items: recent().map(function (s) { return { kind: "query", value: s, label: s }; }) }));
+    } else if (RANKED) {
+      jobs.push(Promise.resolve(rankDocs(text, L.top, SITE.top)));
+    } else if (pf) {
+      jobs.push(pf.search(text).then(function (r) { return docs(r, L.top, SITE.top); }));
+    }
+    jobs.push(Promise.resolve(siteGroups(text)));
+    return jobs;
+  }
+  // A flat list (site.index.suggest style "list", site A), ported from site-a-reading-room:
+  // localSuggestions() (site-a-reading-room.js) over the documents and their collections in
+  // list order; SiteA_Suggest::build() (class-site-a-suggest.php), the ranking the site's
+  // /suggest endpoint answers with; and site-a-suggest-combobox.js's dedupeMerge() and
+  // defaultRenderLabel(). The site's local titles are the row's text, badge included; the
+  // room's are the title (finder_parity.py's suggest check says so).
+  var LIST = SITE && SITE.style === "list" ? SITE : null;
+  var pool = [];
+  if (LIST) {
+    (function () {
+      var seen = {};
+      function add(item) {
+        var key = item.type + "|" + item.label.toLowerCase();
+        if (item.label && !seen[key]) { seen[key] = 1; pool.push(item); }
+      }
+      LIST.docs.forEach(function (d) {
+        add({ type: "document", label: d[0] });
+        var g = LIST.groups[d[1]];
+        if (g && g.label && g.url) { add({ type: "collection", label: g.label, url: g.url }); }
+      });
+    })();
+  }
+  function localSuggestions(v) {
+    v = (v || "").toLowerCase();
+    if (!v) { return []; }
+    return pool.filter(function (item) { return item.label.toLowerCase().indexOf(v) !== -1; }).slice(0, LIST.local);
+  }
+  // 0 exact, 1 prefix, 2 contains, null none (match_rank).
+  function matchRank(hay, needle) {
+    if (!needle || !hay) { return null; }
+    var h = hay.toLowerCase(), n = needle.toLowerCase();
+    if (h === n) { return 0; }
+    if (h.indexOf(n) === 0) { return 1; }
+    if (h.indexOf(n) !== -1) { return 2; }
+    return null;
+  }
+  // strcasecmp: ASCII letters folded, then byte order.
+  function caseCmp(a, b) {
+    var fold = function (x) { return x.replace(/[A-Z]/g, function (c) { return c.toLowerCase(); }); };
+    a = fold(a); b = fold(b);
+    return a < b ? -1 : (a > b ? 1 : 0);
+  }
+  function byRank(a, b) {
+    if (a.rank !== b.rank) { return a.rank - b.rank; }
+    var ac = a.count || 0, bc = b.count || 0;
+    if (ac !== bc) { return bc - ac; }
+    return caseCmp(a.label, b.label);
+  }
+  function build(text) {
+    var C = LIST.caps;
+    function bucket(rows, type, b, cap) {
+      return rows.map(function (r) {
+        var rank = matchRank(r.label, text);
+        return rank === null ? null : { rank: rank, bucket: b, type: type || r.type, label: r.label, url: r.url,
+                                        count: typeof r.count === "number" ? r.count : null };
+      }).filter(Boolean).sort(byRank).slice(0, cap);
+    }
+    var docs = LIST.docs.map(function (d) { return { label: d[0] }; });
+    var merged = bucket(LIST.entities, "", 0, C.entity)
+      .concat(bucket(LIST.collections, "collection", 1, C.collection), bucket(docs, "document", 2, C.document));
+    merged.sort(function (a, b) {
+      if (a.rank !== b.rank) { return a.rank - b.rank; }
+      if (a.bucket !== b.bucket) { return a.bucket - b.bucket; }
+      return byRank(a, b);
+    });
+    return merged.slice(0, C.total);
+  }
+  function listGroup(text) {
+    if (!text) { return { label: "", items: [] }; }
+    var local = localSuggestions(text), remote = text.length >= LIST.min ? build(text) : [];
+    var seen = {}, out = [];
+    local.concat(remote).forEach(function (item) {
+      var key = item.type + "|" + item.label.toLowerCase();
+      if (seen[key]) { return; }
+      seen[key] = 1;
+      out.push(item);
+    });
+    return { label: "", items: out.slice(0, LIST.caps.total).map(function (item) {
+      var label = (LIST.prefix[item.type] || "") + item.label +
+        (typeof item.count === "number" ? LIST.count.replace("{n}", item.count) : "");
+      // A document filters the list to its title, as the site's box does; the rest open their page.
+      return item.type === "document" ? { kind: "fill", value: item.label, label: label }
+                                      : { kind: "go", url: item.url, label: label };
+    }) };
+  }
+
+  function suggest(first) {
+    var text = q.value.trim(), my = ++sugToken;
+    if (LIST) {
+      var g = listGroup(text);
+      if (document.activeElement === q) { draw([g], first); }
+      return;
+    }
+    engine().then(function (pf) {
+      if (my !== sugToken) { return; }
+      var jobs;
+      if (SITE) {
+        jobs = siteJobs(pf, text);
+      } else if (!text) {
+        jobs = [Promise.resolve({ label: "Recent searches", items: recent().map(function (s) { return { kind: "query", value: s, label: s }; }) })];
+        if (pf) { jobs.push(pf.search(null, { sort: { date: "desc" } }).then(function (r) { return docs(r, "Recent documents"); })); }
+      } else {
+        jobs = pf ? [pf.search(text).then(function (r) { return docs(r, "Top matches"); })] : [];
+        jobs.push((pf ? pf.filters() : Promise.resolve(null)).then(function (c) { return facetGroups(text, c); }));
+      }
+      return Promise.all(jobs).then(function (gs) {
+        if (my !== sugToken || document.activeElement !== q) { return; }
+        draw([].concat.apply([], gs), first);
+      });
+    });
+  }
+
+  // --- wiring -------------------------------------------------------------------------
+  var timer = null;
+  q.addEventListener("focus", function () { engine(); });
+  q.addEventListener("input", function () {
+    window.clearTimeout(timer);
+    dismissed = false;
+    timer = window.setTimeout(function () { run(true); if (!dismissed) { suggest(false); } }, 150);
+  });
+  q.addEventListener("click", function () { if (listbox.hidden && !q.value.trim()) { suggest(false); } });
+  q.addEventListener("blur", function () { window.setTimeout(function () { if (document.activeElement !== q) { close(); } }, 150); });
+  q.addEventListener("keydown", function (e) {
+    var open = !listbox.hidden && options.length;
+    if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+      e.preventDefault();
+      if (!open) { suggest(true); return; }
+      var n = options.length;
+      setActive(e.key === "ArrowDown" ? (current + 1) % n : (current <= 0 ? n - 1 : current - 1));
+    } else if (e.key === "Enter" && open && current >= 0) {
+      e.preventDefault();
+      choose(options[current]);
+    } else if (e.key === "Escape") {
+      dismissed = true;
+      if (open) { e.preventDefault(); close(); }
+    } else if (e.key === "Tab") {
+      close();
+    }
+  });
+  Array.prototype.forEach.call(R.all, function (s) { s.addEventListener("change", function () { run(true); }); });
+  more.addEventListener("click", function () { drawMore(token); });
+  form.addEventListener("submit", function (e) { e.preventDefault(); dismissed = true; close(); remember(q.value); run(true); });
+  form.addEventListener("reset", function () { window.setTimeout(function () { close(); run(true); q.focus(); }, 0); });
+
+  // The site's empty state offers a few searches (site.index.suggest no_results).
+  if (LIST && empty) {
+    var nr = LIST.no_results;
+    empty.appendChild(document.createTextNode(" " + nr.lead + " "));
+    nr.words.forEach(function (w, i) {
+      if (i) { empty.appendChild(document.createTextNode(i === nr.words.length - 1 ? (nr.words.length > 2 ? ", " : " ") + nr.or + " " : ", ")); }
+      var a = el("a", "", w);
+      a.href = "?q=" + encodeURIComponent(w);
+      a.addEventListener("click", function (e) { e.preventDefault(); q.value = w; remember(w); run(true); });
+      empty.appendChild(a);
+    });
+    empty.appendChild(document.createTextNode("."));
+  }
+
+  var params = new URLSearchParams(window.location.search);
+  q.value = params.get("q") || params.get("rr_search") || "";
+  run(false);
+}());
+
+=== assets/room.5c58cd70651c.css ===
+/* roomkit shared reading-room styles. Tokens come from the site's theme. */
+#room-content{--room-page-bg:transparent;--room-page-ink:#1d1b18;--room-page-ink-soft:#5b5650;--room-page-link:#1f4e8c;
+--room-surface:#fff;--room-surface-sunk:#f4f2ee;--room-ink:#1d1b18;--room-ink-soft:#57524b;--room-rule:#d9d4cc;
+--room-link:#1f4e8c;--room-accent:#1d1b18;--room-on-accent:#fff;--room-focus:#b3541e;
+--room-font-body:inherit;--room-font-display:inherit;--room-font-mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+--room-radius:12px;--room-radius-pill:999px;--room-measure:68ch}
+#room-content{display:block;background:var(--room-page-bg);color:var(--room-page-ink);font-family:var(--room-font-body);
+line-height:1.6;padding:24px 16px 64px;outline:none}
+#room-content *,#room-content *::before,#room-content *::after{box-sizing:border-box}
+#room-content [hidden]{display:none!important}
+#room-content .room__shell{max-width:1200px;margin:0 auto}
+#room-content a{color:var(--room-page-link);text-decoration:underline;text-underline-offset:.15em}
+#room-content a:focus-visible,#room-content button:focus-visible,#room-content input:focus-visible,#room-content select:focus-visible{outline:3px solid var(--room-focus);outline-offset:2px}
+#room-content h1,#room-content h2,#room-content h3{font-family:var(--room-font-display);color:inherit;line-height:1.2;margin:0}
+#room-content p{margin:0;color:inherit}
+#room-content ul,#room-content ol{margin:0;padding:0;list-style:none}
+#room-content .room__sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+#room-content .room__topline{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px;margin-bottom:24px}
+#room-content .room__crumbs ol{display:flex;flex-wrap:wrap;gap:4px 0;font-size:.9rem;color:var(--room-page-ink-soft)}
+#room-content .room__crumbs li+li::before{content:"/";margin:0 .5em;opacity:.7}
+#room-content .room__crumbs a{color:var(--room-page-link)}
+#room-content .room__head{max-width:var(--room-measure);margin-bottom:24px}
+#room-content .room__eyebrow{font-size:.8rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--room-page-ink-soft);margin-bottom:8px}
+#room-content .room__eyebrow a{color:inherit}
+#room-content .room__title{font-size:clamp(1.8rem,1.2rem + 2.4vw,2.8rem);color:var(--room-page-ink);margin:0;overflow-wrap:anywhere}
+#room-content .room__titlerow{display:flex;flex-wrap:wrap;align-items:center;gap:6px 12px;margin-bottom:12px}
+#room-content .room__badge{display:inline-block;vertical-align:middle;font-family:var(--room-font-body);font-size:.75rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:2px 8px;border:1px solid currentColor;border-radius:4px;color:var(--room-page-ink-soft)}
+#room-content .room__badge--hate-warning{color:#f5a9b8;background:#000000;border-color:currentColor}
+#room-content .room__released{font-weight:600;color:var(--room-page-ink-soft);margin-bottom:12px}
+#room-content .room__lede{font-size:1.05rem;color:var(--room-page-ink)}
+#room-content .room__stats{display:flex;flex-wrap:wrap;gap:8px 24px;margin-top:16px;color:var(--room-page-ink-soft)}
+#room-content .room__stat{font-family:var(--room-font-display);font-size:1.4rem;font-weight:700;color:var(--room-page-ink);margin-right:.25em}
+#room-content .room__head-link{margin-top:12px;color:var(--room-page-ink-soft)}
+#room-content .room__notice{max-width:var(--room-measure);margin:0 0 24px;padding:14px 18px;border-left:4px solid var(--room-accent);background:var(--room-surface);color:var(--room-ink);border-radius:4px}
+#room-content .room__gate{margin:16px 0 24px;padding:12px 16px;background:var(--room-surface);border:1px solid var(--room-rule);border-radius:var(--room-radius)}
+#room-content .room__gate .rr-reader__fallback-links{margin-bottom:8px}
+#room-content .room__notice h2{font-size:.85rem;letter-spacing:.06em;text-transform:uppercase;margin-bottom:6px}
+#room-content .room__notice p{font-size:.95rem}
+#room-content .room__notice-report{margin-top:8px;color:var(--room-ink-soft)}
+#room-content .room__jump{margin-bottom:24px}
+#room-content .room__jump ul{display:flex;flex-wrap:wrap;gap:8px}
+#room-content .room__jump-label{font-size:.8rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--room-page-ink-soft);margin-bottom:8px}
+#room-content .room__jump a{display:inline-flex;align-items:center;min-height:44px;padding:8px 16px;border:1px solid var(--room-rule);border-radius:var(--room-radius-pill);background:var(--room-surface);color:var(--room-link);text-decoration:none;font-weight:600;overflow-wrap:anywhere}
+#room-content .room__jump a:hover{text-decoration:underline}
+#room-content .room__body{display:grid;gap:24px;grid-template-columns:minmax(0,1fr)}
+#room-content .room__reader,#room-content .room__panel{background:var(--room-surface);color:var(--room-ink);border:1px solid var(--room-rule);border-radius:var(--room-radius);padding:20px}
+#room-content .room__reader a,#room-content .room__panel a{color:var(--room-link)}
+#room-content .room__reader-h,#room-content .room__panel h2{font-size:1.15rem;margin-bottom:12px;color:var(--room-ink)}
+#room-content .room__rail{display:grid;gap:16px;grid-template-columns:minmax(0,1fr);min-width:0}
+#room-content .room__panel,#room-content .room__reader{min-width:0}
+@media (min-width:960px){#room-content .room__rail{display:block;columns:2 340px;column-gap:16px}#room-content .room__rail>.room__panel{break-inside:avoid;margin-bottom:16px}}
+#room-content .room__dl{display:grid;gap:12px;margin:0}
+#room-content .room__dl dt{font-size:.8rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--room-ink-soft)}
+#room-content .room__dl dd{margin:2px 0 0;color:var(--room-ink);overflow-wrap:anywhere}
+#room-content .room__hash{font-family:var(--room-font-mono);font-size:.82rem;word-break:break-all;color:var(--room-ink);background:none}
+#room-content .room__note{display:block;font-size:.85rem;color:var(--room-ink-soft);margin-top:2px}
+#room-content .room__actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:16px}
+#room-content .room__archive{margin-top:12px}
+#room-content .rr-reader{--rr-paper:var(--room-surface);--rr-paper-raised:var(--room-surface);--rr-paper-sunk:var(--room-surface-sunk);
+--rr-ink:var(--room-ink);--rr-ink-soft:var(--room-ink-soft);--rr-ink-faint:var(--room-ink-soft);--rr-rule:var(--room-rule);
+--rr-accent:var(--room-link);--rr-focus:var(--room-focus);--rr-mono:var(--room-font-mono)}
+#room-content .room__btn{display:inline-flex;align-items:center;justify-content:center;min-height:44px;padding:8px 18px;border:2px solid var(--room-accent);border-radius:var(--room-radius-pill);background:var(--room-accent);color:var(--room-on-accent);font:inherit;font-weight:700;text-decoration:none;cursor:pointer}
+#room-content .room__btn--ghost{background:transparent;color:var(--room-ink)}
+#room-content .room__topline .room__btn--ghost{color:var(--room-page-ink);border-color:var(--room-page-ink-soft)}
+#room-content a.room__btn{color:var(--room-on-accent)}
+#room-content a.room__btn--ghost{color:var(--room-ink)}
+#room-content .room__btn:hover{text-decoration:underline}
+#room-content .room__cite-text{font-size:.92rem;color:var(--room-ink);padding:10px 12px;border-left:3px solid var(--room-rule);background:var(--room-surface-sunk);border-radius:0 6px 6px 0;overflow-wrap:anywhere;margin-bottom:10px}
+#room-content .room__cite-copy[data-copied="1"]{border-color:var(--room-link);color:var(--room-link)}
+#room-content .room__blurb{font-size:.85rem;color:var(--room-ink-soft);margin:-6px 0 10px}
+#room-content .room__chips{display:flex;flex-wrap:wrap;gap:6px}
+#room-content .room__links{display:grid;gap:8px}
+#room-content .room__item{display:inline-flex;flex-wrap:wrap;align-items:baseline;gap:2px 8px;max-width:100%;color:var(--room-ink)}
+#room-content .room__chips .room__item{padding:4px 10px;border:1px solid var(--room-rule);border-left-width:3px;border-radius:4px;background:var(--room-surface-sunk);text-decoration:none}
+#room-content .room__chips a.room__item:hover{border-color:var(--room-link)}
+#room-content a.room__item .room__item-label{color:var(--room-link);text-decoration:underline}
+#room-content .room__item-kind{font-size:.75rem;letter-spacing:.05em;text-transform:uppercase;color:var(--room-ink-soft)}
+#room-content .room__item-quote{flex-basis:100%;font-size:.8rem;font-style:italic;color:var(--room-ink-soft);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+#room-content .room__item-meta{flex-basis:100%;font-size:.8rem;color:var(--room-ink-soft)}
+#room-content .room__notes{font-size:.95rem;overflow-wrap:anywhere}
+#room-content .room__panel,#room-content .room__lede,#room-content .room__card{overflow-wrap:anywhere}
+#room-content .room__view-note{font-size:.85rem;color:var(--room-ink-soft);margin-top:10px}
+#room-content .rr-reader__fallback-links{display:flex;flex-wrap:wrap;gap:8px}
+#room-content .rr-reader__object{display:block;width:100%;min-height:78vh;margin-top:12px;border:1px solid var(--room-rule);background:#fff}
+@media (min-width:760px){#room-content .rr-reader__object{min-height:max(22rem,calc(100vh - 6rem))}}
+/* the record page's header on a desktop: short, so the reader shows on load. The head takes the
+   column's start (eyebrow and release date on one line, a smaller title, the summary at two lines
+   with a "Full summary" toggle), the file meta and the jump links its end; a notice stays full
+   width above the reader. Scoped to the record's shell (not the 404 page); the selectors outrank a
+   mapped theme's body.room-plain rules. */
+#room-content .room__more{display:none}
+@media (min-width:960px){
+#room-content.room.room--doc .room__shell--record{display:grid;grid-template-columns:minmax(0,1fr) fit-content(22rem);column-gap:32px;align-items:start}
+#room-content.room.room--doc .room__shell--record>*{grid-column:1/-1;min-width:0}
+#room-content.room--doc .room__shell--record .room__topline{grid-row:1;margin-bottom:12px}
+#room-content.room--doc .room__shell--record .room__header-meta{grid-column:2;grid-row:2;flex-direction:column;align-items:flex-start;margin:0 0 12px}
+#room-content.room--doc .room__shell--record .room__head{grid-column:1;grid-row:2/4;max-width:none;margin:0 0 12px;display:flex;flex-wrap:wrap;align-items:baseline;column-gap:16px}
+#room-content.room--doc .room__shell--record .room__eyebrow{order:1;margin-bottom:4px}
+#room-content.room--doc .room__shell--record .room__released{order:2;margin-bottom:4px}
+#room-content.room--doc .room__shell--record .room__titlerow{order:3;flex:1 0 100%;margin-bottom:8px}
+#room-content.room--doc .room__shell--record .room__title{font-size:1.75rem;line-height:1.25;letter-spacing:normal}
+#room-content.room--doc .room__shell--record .room__lede{order:4;flex:1 1 0;min-width:0}
+#room-content.room--doc .room__shell--record .room__head:has(.room__more:not([open])) .room__lede{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+#room-content.room--doc .room__shell--record .room__more{order:5;display:block;flex:none;align-self:flex-end}
+#room-content.room--doc .room__shell--record .room__more summary{display:inline-flex;align-items:center;min-height:44px;cursor:pointer;font-weight:700;color:var(--room-page-link);text-decoration:underline;text-underline-offset:.15em}
+#room-content.room--doc .room__shell--record .room__more[open] .room__more-closed,#room-content.room--doc .room__shell--record .room__more:not([open]) .room__more-open{display:none}
+#room-content.room--doc .room__shell--record .room__jump{grid-column:2;grid-row:3;margin-bottom:16px}
+#room-content.room--doc .room__shell--record .room__notice{grid-row:4;max-width:none;margin-bottom:16px}
+#room-content.room--doc .room__shell--record .room__body{grid-row:5}
+}
+/* the record page on a phone (under 760px): the document comes first. Order on screen: top line, the
+   title with its badge, a one-line release date, the summary at three lines (a no-JS "Full summary"
+   toggle opens it), any notice, one row of jump links, the reader; then the details and cite panels,
+   then the file meta (original file, Internet Archive). Source order = this order, so Tab follows what is shown. .room__body dissolves into the shell so the
+   reader and the rail can be ordered around the meta box. */
+@media (max-width:759px){
+#room-content.room--doc{padding-top:8px}
+#room-content.room--doc .room__shell--record{display:flex;flex-direction:column;gap:8px}
+#room-content.room--doc .room__shell--record>*{order:20;margin:0;min-width:0}
+#room-content.room--doc .room__shell--record>.room__topline{order:1;margin:0}
+#room-content.room--doc .room__shell--record>.room__head{order:2;max-width:none}
+#room-content.room--doc .room__shell--record>.room__notice{order:3;max-width:none;padding:8px 12px}
+#room-content.room--doc .room__shell--record>.room__notice h2{margin-bottom:2px}
+#room-content.room--doc .room__shell--record>.room__notice p+p{margin-top:4px}
+#room-content.room--doc .room__shell--record>.room__jump{order:4}
+#room-content.room--doc .room__shell--record>.room__body{display:contents}
+#room-content.room--doc .room__shell--record .room__reader{order:5}
+#room-content.room--doc .room__shell--record>.room__header-meta{order:9}
+#room-content.room--doc .room__shell--record>.room__body>.room__rail{order:8}
+#room-content.room--doc .room__shell--record .room__eyebrow{margin-bottom:2px;font-size:.75rem}
+#room-content.room--doc .room__shell--record .room__titlerow{margin-bottom:4px}
+#room-content.room--doc .room__shell--record .room__title{font-size:1.3rem;line-height:1.25}
+#room-content.room--doc .room__shell--record .room__released{margin-bottom:4px;font-size:.9rem}
+#room-content.room--doc .room__shell--record .room__lede{font-size:.95rem;line-height:1.5}
+#room-content.room--doc .room__shell--record .room__head:has(.room__more) .room__lede{display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+#room-content.room--doc .room__shell--record .room__head:has(.room__more[open]) .room__lede{display:block;overflow:visible}
+#room-content.room--doc .room__shell--record .room__more{display:block}
+#room-content.room--doc .room__shell--record .room__more summary{display:inline-flex;align-items:center;min-height:44px;cursor:pointer;font-weight:700;color:var(--room-page-link);text-decoration:underline;text-underline-offset:.15em}
+#room-content.room--doc .room__shell--record .room__more[open] .room__more-closed,#room-content.room--doc .room__shell--record .room__more:not([open]) .room__more-open{display:none}
+#room-content.room--doc .room__shell--record .room__jump{margin:0}
+#room-content.room--doc .room__shell--record .room__jump ul{flex-direction:row;flex-wrap:nowrap;gap:8px}
+#room-content.room--doc .room__shell--record .room__jump li{flex:1 1 0;min-width:0}
+#room-content.room--doc .room__shell--record .room__jump a{width:100%;justify-content:center;padding:8px 6px}
+#room-content.room--doc .room__shell--record .room__reader{padding:8px}
+#room-content.room--doc .room__shell--record .room__badge{font-size:.75rem;letter-spacing:.03em;padding:1px 5px}
+#room-content.room--doc .room__shell--record .room__titlerow{gap:4px 8px}
+#room-content.room--doc .room__shell--record .room__reader-h{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;margin:0}
+#room-content.room--doc .room__shell--record .room__head{display:flex;flex-wrap:wrap;align-items:baseline;column-gap:12px}
+#room-content.room--doc .room__shell--record .room__eyebrow{order:1;margin-bottom:2px}
+#room-content.room--doc .room__shell--record .room__released{order:2;margin-bottom:2px}
+#room-content.room--doc .room__shell--record .room__titlerow{order:3;flex:1 0 100%}
+#room-content.room--doc .room__shell--record .room__lede{order:4;flex:1 0 100%}
+#room-content.room--doc .room__shell--record .room__more{order:5}
+}
+/* index */
+#room-content .room__finder{background:var(--room-surface);color:var(--room-ink);border:1px solid var(--room-rule);border-radius:var(--room-radius);padding:16px 20px;margin-bottom:24px}
+#room-content .room__search{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:12px 16px;align-items:end}
+#room-content .room__search--server{margin-bottom:16px}
+#room-content .room__field{display:grid;gap:4px;min-width:0}
+#room-content .room__field--q{grid-column:1/-1}
+#room-content .room__field select{width:100%}
+#room-content .room__jump summary{cursor:pointer;min-height:44px;display:flex;align-items:center;font-weight:700;color:var(--room-page-link)}
+#room-content .room__jump details ul{margin-top:8px}
+#room-content .room__field label{font-size:.8rem;font-weight:700;letter-spacing:.04em;color:var(--room-ink-soft)}
+#room-content .room__field input,#room-content .room__field select{min-height:44px;padding:8px 12px;border:1px solid var(--room-ink-soft);border-radius:8px;background:var(--room-surface);color:var(--room-ink);font:inherit;max-width:100%}
+#room-content .room__field--buttons{display:flex;gap:8px}
+#room-content .room__count{margin-top:12px;font-size:.9rem;color:var(--room-ink-soft)}
+#room-content .room__more-filters{grid-column:1/-1}
+#room-content .room__more-filters>summary{display:inline-flex;align-items:center;gap:.35em;min-height:44px;cursor:pointer;font-weight:700;color:var(--room-link)}
+#room-content .room__more-body{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:12px 16px;align-items:end;padding-top:8px}
+#room-content .room__chips{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0 0;padding:0;list-style:none}
+#room-content .room__chip{min-height:44px;padding:8px 12px;border:1px solid var(--room-ink-soft);border-radius:var(--room-radius-pill,4px);background:var(--room-surface-sunk);color:var(--room-ink);font:inherit;font-size:.9rem;cursor:pointer}
+#room-content .room__chip:hover{border-color:var(--room-ink)}
+#room-content .room__undated{margin:8px 0 0;font-size:.9rem;color:var(--room-page-ink-soft)}
+#room-content .room__newest{margin:24px 0}
+#room-content .room__newest-list{margin:0;padding:0;list-style:none;display:grid;gap:12px}
+#room-content .room__newest-list a{font-weight:700}
+#room-content .room__newest-meta{display:block;font-size:.9rem;color:var(--room-page-ink-soft)}
+#room-content .room__section{margin-bottom:40px;scroll-margin-top:16px}
+#room-content .room__section-h{font-size:1.4rem;color:var(--room-page-ink);padding-bottom:8px;border-bottom:1px solid var(--room-rule);margin-bottom:16px}
+#room-content .room__section-n{font-family:var(--room-font-body);font-size:.85rem;font-weight:600;color:var(--room-page-ink-soft);margin-left:.4em}
+#room-content .room__section-empty{color:var(--room-page-ink-soft)}
+#room-content .room__cards--cards{display:grid;gap:16px;grid-template-columns:repeat(auto-fill,minmax(260px,1fr))}
+#room-content .room__cards--rows{display:grid;gap:0;border-top:1px solid var(--room-rule)}
+#room-content .room__card{background:var(--room-surface);color:var(--room-ink);border:1px solid var(--room-rule);border-radius:var(--room-radius);padding:16px;display:flex;flex-direction:column;gap:12px}
+#room-content .room__cards--rows .room__card{border-width:0 0 1px;border-radius:0;padding:14px 4px;background:transparent;color:var(--room-page-ink)}
+#room-content .room__cards--rows .room__card-title a{color:var(--room-page-link)}
+#room-content .room__cards--rows .room__card-date,#room-content .room__cards--rows .room__card-meta,#room-content .room__cards--rows .room__card-summary{color:var(--room-page-ink-soft)}
+#room-content .room__thumb{display:flex;justify-content:center;padding:10px;background:var(--room-surface-sunk);border-radius:8px}
+#room-content .room__thumb img{display:block;width:auto;max-width:100%;height:150px;object-fit:contain;border-radius:4px;box-shadow:0 1px 4px rgba(0,0,0,.15)}
+#room-content .room__card-body{display:grid;gap:6px}
+#room-content .room__card-date,#room-content .room__card-meta{font-size:.85rem;color:var(--room-ink-soft)}
+#room-content .room__card-title{font-size:1.05rem;font-family:var(--room-font-body);font-weight:700}
+#room-content .room__card-title a{color:var(--room-link)}
+#room-content .room__card-summary{font-size:.92rem;color:var(--room-ink);display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden}
+#room-content .room__empty{padding:20px;background:var(--room-surface);color:var(--room-ink);border:1px solid var(--room-rule);border-radius:var(--room-radius)}
+@media (max-width:600px){#room-content{padding:16px 16px 48px}#room-content .room__reader,#room-content .room__panel{padding:16px}
+#room-content .room__jump ul{flex-direction:column}#room-content .room__jump a{width:100%}}
+@media print{#room-content .room__jump,#room-content .room__finder,#room-content .room__toggle{display:none!important}}
+#room-content .room__cgrid-fold{margin:24px 0}
+#room-content .room__cgrid-fold>summary{display:inline-flex;align-items:center;min-height:44px;cursor:pointer;font-weight:700;color:var(--room-page-link)}
+#room-content .room__cgrid-fold[open]>summary{margin-bottom:12px}
+#room-content .room__finder[data-room-compact] .room__search,#room-content .room__finder[data-room-compact] .room__more-body{grid-template-columns:repeat(auto-fill,minmax(140px,1fr))}
+#room-content .room__finder[data-room-compact] .room__field:has(>[data-room-facet="group"]){grid-column:1/-1}
+#room-content .room__newest--thumb{display:grid;grid-template-columns:72px 1fr;grid-template-rows:auto 1fr;column-gap:12px;align-items:start}
+#room-content .room__newest--thumb>.room__newest-img{grid-row:1/span 2;width:72px;height:auto;aspect-ratio:auto;border:1px solid var(--room-rule);border-radius:4px;background:var(--room-surface)}
+#room-content .room__newest--thumb>.room__newest-meta{grid-column:2}
+#room-content .room__lead-tabs{margin:24px 0}
+#room-content .room__lead-tabs>.room__newest{margin:0}
+#room-content .room__lead-tabs--on>.room__newest{padding-top:16px}
+#room-content .room__tabs{display:flex;flex-wrap:wrap;gap:8px;border-bottom:1px solid var(--room-rule)}
+#room-content .room__tab{min-height:44px;padding:8px 16px;margin-bottom:-1px;border:1px solid transparent;border-bottom:3px solid transparent;background:none;color:var(--room-ink);font:inherit;font-weight:700;cursor:pointer}
+#room-content .room__tab[aria-selected="true"]{border-bottom-color:var(--room-link);color:var(--room-link)}
+#room-content .room__tab:hover{border-bottom-color:var(--room-rule)}
+#room-content .room__tab[aria-selected="true"]:hover{border-bottom-color:var(--room-link)}
+@media (min-width:760px){#room-content .room__newest-list{grid-template-columns:repeat(2,minmax(0,1fr));gap:20px 28px}#room-content .room__newest--thumb{grid-template-columns:96px 1fr}#room-content .room__newest--thumb>.room__newest-img{width:96px}}
+#room-content .room__finder[data-room-compact] .room__field--buttons{grid-column:1/-1}
+/* roomkit: the room's own header, navigation and footer.
+   Every rule is scoped under body.room-plain and every color is a --room-* token (the pack's;
+   css.theme_css puts them on the body too).
+   The wide-screen rules are chrome-wide.css: room.chrome_css() wraps them in a media query at the
+   pack's chrome.inline_from, because a media query cannot read a custom property. */
+body.room-plain{--room-font-body:inherit;--room-font-display:inherit;--room-radius:12px;--room-radius-pill:999px;
+margin:0;background:var(--room-page-bg);color:var(--room-page-ink);font-family:var(--room-font-body);line-height:1.6}
+body.room-plain .room__skip{position:absolute;left:-9999px;top:0;z-index:1000;padding:12px 16px;background:var(--room-accent);color:var(--room-on-accent);border-radius:var(--room-radius);font-weight:700}
+body.room-plain .room__skip:focus{left:16px;top:16px}
+body.room-plain .room__skip:focus,body.room-plain .room-chrome a:focus-visible,body.room-plain .room-chrome summary:focus-visible{outline:3px solid var(--room-focus);outline-offset:2px}
+body.room-plain .room-chrome{background:var(--room-page-bg);color:var(--room-page-ink)}
+body.room-plain .room-chrome *,body.room-plain .room-chrome *::before,body.room-plain .room-chrome *::after{box-sizing:border-box}
+body.room-plain .room-chrome a{color:var(--room-page-link);text-underline-offset:.15em}
+body.room-plain .room-chrome ul{margin:0;padding:0;list-style:none}
+body.room-plain .room-chrome p{margin:0}
+body.room-plain .room-chrome__bar{max-width:1232px;margin:0 auto;padding:12px 16px;display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px 24px}
+body.room-plain .room-chrome--head{border-bottom:1px solid var(--room-rule)}
+/* The site name never wraps (it is one line at every width); the tagline may. The brand cannot shrink
+   below the name, and the nav never shrinks, so its links never wrap into a second row: a nav too wide
+   for the row moves below instead, which pack.chrome.inline_from is measured to prevent. */
+body.room-plain .room-chrome__brand{display:flex;flex-direction:column;flex:1 1 10rem}
+body.room-plain .room-chrome__home{font-family:var(--room-font-display);font-size:1.25rem;font-weight:700;line-height:1.2;text-decoration:none;color:var(--room-page-ink);white-space:nowrap}
+body.room-plain .room-chrome a.room-chrome__home{color:var(--room-page-ink)}
+body.room-plain .room-chrome__home:hover{text-decoration:underline}
+body.room-plain .room-chrome__tagline{font-size:.85rem;color:var(--room-page-ink-soft)}
+body.room-plain .room-chrome summary{cursor:pointer;min-height:44px;display:flex;align-items:center;gap:.5em;list-style:none}
+body.room-plain .room-chrome summary::-webkit-details-marker{display:none}
+/* display:flex drops the disclosure marker, so every summary draws its own caret: it says "opens". */
+body.room-plain .room-chrome summary::after{content:"";flex:none;width:.45em;height:.45em;border-right:2px solid currentColor;border-bottom:2px solid currentColor;transform:translateY(-20%) rotate(45deg)}
+body.room-plain .room-chrome details[open]>summary::after{transform:translateY(20%) rotate(-135deg)}
+body.room-plain .room-chrome__group>details>summary{color:var(--room-page-link);text-decoration:underline;text-underline-offset:.15em}
+body.room-plain .room-chrome__menu-label{padding:8px 16px;border:1px solid var(--room-page-ink-soft);border-radius:var(--room-radius-pill);font-weight:700}
+body.room-plain .room-chrome__menu[open]{flex-basis:100%}
+body.room-plain .room-chrome__links{padding-top:8px}
+body.room-plain .room-chrome__links a{display:flex;align-items:center;min-height:44px;padding:4px 0}
+body.room-plain .room-chrome__group ul{padding-left:16px}
+body.room-plain .room-chrome__nav{flex:0 0 auto}
+body.room-plain .room-chrome__nav:has(.room-chrome__menu[open]){flex-basis:100%}
+body.room-plain .room-chrome__notice{max-width:1232px;margin:0 auto;padding:8px 16px;background:var(--room-surface-sunk);color:var(--room-ink)}
+body.room-plain .room-chrome__notice a{color:var(--room-link)}
+body.room-plain .room-chrome--foot{border-top:1px solid var(--room-rule);font-size:.9rem;color:var(--room-page-ink-soft)}
+body.room-plain .room-chrome--foot .room-chrome__bar{display:block;padding:24px 16px 32px}
+body.room-plain .room-chrome__col{margin-bottom:16px}
+body.room-plain .room-chrome__col ul{display:flex;flex-wrap:wrap;gap:4px 20px}
+body.room-plain .room-chrome__col a{display:inline-flex;align-items:center;min-height:44px}
+body.room-plain .room-chrome__col-h{font-family:var(--room-font-display);font-size:.8rem;letter-spacing:.1em;text-transform:uppercase;margin:0 0 4px;color:var(--room-page-ink)}
+body.room-plain .room-chrome__text+.room-chrome__text{margin-top:8px}
+@media print{body.room-plain .room-chrome__nav{display:none}}
+/* Buttons: hover swaps fill and outline, from tokens, the same for every pack. Both states are
+   pairs pack.py already holds to 4.5:1 (ink on surface, on-accent on accent), and the fill
+   change is accent against surface, which it holds to 3:1. */
+body.room-plain #room-content .room__btn:hover{background:var(--room-surface);border-color:var(--room-accent);color:var(--room-ink)}
+body.room-plain #room-content .room__btn--ghost:hover{background:var(--room-accent);border-color:var(--room-accent);color:var(--room-on-accent)}
+@supports selector(::details-content){@media (min-width:40em){
+/* roomkit: the room's header at and above the pack's chrome.inline_from.
+   room.chrome_css() emits this inside
+     @supports selector(::details-content){@media (min-width:<chrome.inline_from>){ ... }}
+   A media query cannot use var(), so the width comes from pack data when the stylesheet is built.
+   Only where ::details-content exists can a closed <details> show its content; elsewhere the menu
+   stays a disclosure at every width. Dropdowns open toward the start from their summary's end, so a
+   group near the end of the row stays inside the header's content box (the nav sits at the end). */
+body.room-plain .room-chrome summary.room-chrome__menu-label{display:none}
+body.room-plain .room-chrome__menu::details-content{content-visibility:visible}
+body.room-plain .room-chrome__links{display:flex;flex-wrap:wrap;align-items:center;gap:0 16px;padding-top:0}
+body.room-plain .room-chrome__group{position:relative}
+body.room-plain .room-chrome__group ul{position:absolute;z-index:10;top:100%;right:0;left:auto;min-width:16rem;max-width:min(24rem,calc(100vw - 32px));padding:8px 16px;background:var(--room-surface);color:var(--room-ink);border:1px solid var(--room-rule);border-radius:var(--room-radius)}
+body.room-plain .room-chrome__group ul a{color:var(--room-link)}
+}}
+/* corpus search (pack features.corpus-search): the suggestion list and the text results. Tokens only. */
+#room-content .room__combo{position:relative}
+#room-content .room__combo input{width:100%}
+#room-content .room__suggest{position:absolute;z-index:20;left:0;right:0;top:calc(100% + 4px);max-height:min(60vh,26rem);overflow-y:auto;padding:6px 0;background:var(--room-surface);color:var(--room-ink);border:1px solid var(--room-ink-soft);border-radius:8px;box-shadow:0 6px 20px rgba(0,0,0,.18)}
+#room-content .room__suggest-group+.room__suggest-group{border-top:1px solid var(--room-rule);margin-top:4px;padding-top:4px}
+#room-content .room__suggest-h{padding:6px 14px 2px;font-size:.75rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--room-ink-soft)}
+#room-content .room__suggest-opt{display:flex;flex-wrap:wrap;align-items:baseline;gap:0 .3em;min-height:44px;padding:10px 14px;cursor:pointer;color:var(--room-ink);overflow-wrap:anywhere;border-left:3px solid transparent}
+#room-content .room__suggest-opt:hover{background:var(--room-surface-sunk)}
+#room-content .room__suggest-opt[aria-selected="true"]{background:var(--room-surface-sunk);border-left-color:var(--room-focus);outline:2px solid var(--room-focus);outline-offset:-2px}
+#room-content .room__suggest-note{color:var(--room-ink-soft);font-size:.85rem}
+#room-content .room__results{margin-bottom:24px}
+#room-content .room__results-list{display:grid;gap:12px}
+#room-content .room__result{background:var(--room-surface);color:var(--room-ink);border:1px solid var(--room-rule);border-radius:var(--room-radius);padding:16px;display:grid;gap:6px;overflow-wrap:anywhere}
+#room-content .room__result a{color:var(--room-link)}
+#room-content .room__result-title{font-family:var(--room-font-body);font-size:1.05rem;font-weight:700}
+#room-content .room__result-meta{font-size:.85rem;color:var(--room-ink-soft)}
+#room-content .room__result-excerpt,#room-content .room__result-pages{font-size:.92rem;color:var(--room-ink)}
+#room-content .room__result mark{background:var(--room-surface-sunk);color:var(--room-ink);font-weight:700;text-decoration:underline;text-decoration-color:var(--room-focus);text-underline-offset:.15em}
+#room-content .room__result-pages{display:grid;gap:4px;padding-left:12px;border-left:3px solid var(--room-rule)}
+#room-content .room__result-pages a{font-weight:700}
+#room-content .room__result-page-ex{color:var(--room-ink-soft)}
+#room-content .room__result-actions{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-top:6px;padding-top:8px;border-top:1px solid var(--room-rule)}
+#room-content .room__btn-cite,#room-content .room__btn-open{display:inline-flex;align-items:center;min-height:var(--target-min,24px);padding:4px 10px;font-size:.8rem;font-weight:600;font-family:inherit;border-radius:var(--room-radius,4px);text-decoration:none;cursor:pointer;transition:background-color .15s ease}
+#room-content .room__btn-cite{background:var(--room-surface-sunk);color:var(--room-ink);border:1px solid var(--room-rule)}
+#room-content .room__btn-cite:hover{border-color:var(--room-ink-soft)}
+#room-content .room__btn-cite[data-copied="true"]{background:var(--room-focus);color:var(--room-surface);border-color:var(--room-focus)}
+#room-content .room__btn-open{background:transparent;color:var(--room-link);border:1px solid var(--room-link)}
+#room-content .room__btn-open:hover{background:var(--room-surface-sunk)}
+#room-content .room__more{margin-top:12px}
+#room-content,body.room-plain{--room-accent:#1b5c48;--room-focus:#9a3f16;--room-font-body:Georgia,"Times New Roman",serif;--room-font-display:inherit;--room-ink:#16241e;--room-ink-soft:#475850;--room-link:#1b5c48;--room-on-accent:#ffffff;--room-page-bg:#f5f7f4;--room-page-ink:#16241e;--room-page-ink-soft:#475850;--room-page-link:#1b5c48;--room-rule:#c9d5cd;--room-surface:#ffffff;--room-surface-sunk:#ecf1ed;}
+@media (prefers-color-scheme:dark){#room-content:not([data-room-theme="light"]),body.room-plain:not(:has(#room-content[data-room-theme="light"])){--room-accent:#8ccfb4;--room-focus:#f0a277;--room-ink:#e1eae4;--room-ink-soft:#a6b6ad;--room-link:#8ccfb4;--room-on-accent:#0f1713;--room-page-bg:#0f1713;--room-page-ink:#e1eae4;--room-page-ink-soft:#a6b6ad;--room-page-link:#8ccfb4;--room-rule:#33443a;--room-surface:#16211b;--room-surface-sunk:#1c2922;}
+}
+#room-content[data-room-theme="dark"],body.room-plain:has(#room-content[data-room-theme="dark"]){--room-accent:#8ccfb4;--room-focus:#f0a277;--room-ink:#e1eae4;--room-ink-soft:#a6b6ad;--room-link:#8ccfb4;--room-on-accent:#0f1713;--room-page-bg:#0f1713;--room-page-ink:#e1eae4;--room-page-ink-soft:#a6b6ad;--room-page-link:#8ccfb4;--room-rule:#33443a;--room-surface:#16211b;--room-surface-sunk:#1c2922;}
+
+=== assets/room.e9fe4f1715fc.js ===
+(function () {
+  "use strict";
+  var root = document.getElementById("room-content");
+  if (!root) { return; }
+  var KEY = root.getAttribute("data-room-theme-key");
+  var toggle = root.querySelector("[data-room-toggle]");
+  if (toggle && KEY) {
+    var sysDark = function () { return window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches; };
+    var apply = function (v) {
+      if (v === "light" || v === "dark") { root.setAttribute("data-room-theme", v); } else { root.removeAttribute("data-room-theme"); }
+      var dark = v === "dark" || (v !== "light" && sysDark());
+      toggle.textContent = dark ? "Light" : "Dark";
+      toggle.setAttribute("aria-label", dark ? "Switch to the light reading theme" : "Switch to the dark reading theme");
+      toggle.setAttribute("aria-pressed", dark ? "true" : "false");
+    };
+    var saved = null;
+    try { saved = window.localStorage.getItem(KEY); } catch (e) {}
+    apply(saved);
+    toggle.hidden = false;
+    toggle.addEventListener("click", function () {
+      var dark = root.getAttribute("data-room-theme") === "dark" || (!root.hasAttribute("data-room-theme") && sysDark());
+      var next = dark ? "light" : "dark";
+      try { window.localStorage.setItem(KEY, next); } catch (e) {}
+      apply(next);
+    });
+  }
+  var gateBtn = root.querySelector("[data-room-gate-open]");
+  if (gateBtn) {
+    gateBtn.hidden = false;
+    gateBtn.addEventListener("click", function () {
+      var reader = root.querySelector(".rr-reader[data-gate-file-url]");
+      if (!reader) { return; }
+      reader.setAttribute("data-file-url", reader.getAttribute("data-gate-file-url"));
+      reader.removeAttribute("data-gate-file-url");
+      reader.hidden = false;
+      var gate = gateBtn.closest("[data-room-gate]") || gateBtn;
+      gate.hidden = true;
+      if (window.RRReader && typeof window.RRReader.mountAll === "function") {
+        window.RRReader.mountAll();
+      }
+      reader.focus();
+    });
+  }
+  // The newest and recently added lists (pack layout.newest + layout.added) as two tabs.
+  // Without this script both lists show, one after the other, each under its heading.
+  var tabsBox = root.querySelector("[data-room-tabs]");
+  var panels = tabsBox ? Array.prototype.slice.call(tabsBox.querySelectorAll("[data-room-tab-panel]")) : [];
+  if (panels.length > 1) {
+    var bar = document.createElement("div");
+    bar.className = "room__tabs";
+    bar.setAttribute("role", "tablist");
+    var tabs = panels.map(function (p, i) {
+      var h = p.querySelector(".room__section-h");
+      var t = document.createElement("button");
+      t.type = "button";
+      t.className = "room__tab";
+      t.id = p.id + "-tab";
+      t.setAttribute("role", "tab");
+      t.setAttribute("aria-controls", p.id);
+      t.textContent = h ? h.textContent : "";
+      if (h) { h.classList.add("room__sr"); }
+      p.setAttribute("role", "tabpanel");
+      p.setAttribute("aria-labelledby", t.id);
+      p.tabIndex = 0;
+      bar.appendChild(t);
+      return t;
+    });
+    var pick = function (i, focus) {
+      tabs.forEach(function (t, j) {
+        t.setAttribute("aria-selected", j === i ? "true" : "false");
+        t.tabIndex = j === i ? 0 : -1;
+        panels[j].hidden = j !== i;
+      });
+      if (focus) { tabs[i].focus(); }
+    };
+    tabs.forEach(function (t, i) {
+      t.addEventListener("click", function () { pick(i, false); });
+      t.addEventListener("keydown", function (e) {
+        var n = tabs.length, to = null;
+        if (e.key === "ArrowRight") { to = (i + 1) % n; }
+        else if (e.key === "ArrowLeft") { to = (i - 1 + n) % n; }
+        else if (e.key === "Home") { to = 0; }
+        else if (e.key === "End") { to = n - 1; }
+        if (to !== null) { e.preventDefault(); pick(to, true); }
+      });
+    });
+    tabsBox.insertBefore(bar, panels[0]);
+    tabsBox.classList.add("room__lead-tabs--on");
+    pick(0, false);
+  }
+  // The card engine (filters, flat sort) serves both finders: this file's own
+  // ([data-room-finder]) and corpus search's ([data-room-search], room-search.js, which
+  // loads after this file and calls window.roomCards for everything but text search).
+  var searchFinder = root.querySelector("[data-room-search]");
+  var finder = root.querySelector("[data-room-finder]") || searchFinder;
+  if (!finder) { return; }
+  var form = finder.querySelector("form");
+  var q = document.getElementById("room-q");
+  var facets = Array.prototype.slice.call(finder.querySelectorAll("[data-room-facet]"));
+  var multis = Array.prototype.slice.call(finder.querySelectorAll("[data-room-multi]"));
+  var ranges = Array.prototype.slice.call(finder.querySelectorAll("[data-room-range]"));
+  var sorter = finder.querySelector("[data-room-sort]");
+  var cards = Array.prototype.slice.call(root.querySelectorAll(".room__card"));
+  cards.forEach(function (c, i) { c.setAttribute("data-room-i", i); });
+  var sections = Array.prototype.slice.call(root.querySelectorAll("[data-room-section]"));
+  var count = finder.querySelector("[data-room-count]");
+  var empty = root.querySelector("[data-room-empty]");
+  var jump = root.querySelector("[data-room-jump]");
+  var total = cards.length;
+  var params = new URLSearchParams(window.location.search);
+  facets.concat(multis, ranges, sorter ? [sorter] : []).forEach(function (s) { var v = params.get(s.name); if (v) { s.value = v; } });
+  function attr(card, name) {
+    return name === "group" ? card.getAttribute("data-room-group") : card.getAttribute("data-room-f-" + name);
+  }
+  function multiValues(card, name) {
+    try { return JSON.parse(card.getAttribute("data-room-m-" + name) || "[]"); } catch (e) { return []; }
+  }
+  // A sort other than "default" lists every card as one flat list, as the site's own list
+  // does: start from the manifest's order (data-room-n, the site's list order), then a stable
+  // sort with the site's comparator (site A site-a-reading-room.js applySort): title on the trimmed,
+  // lowercased sort text with localeCompare; dates as strings, undated last either way.
+  // "default" puts every card back in its group, in the exported order.
+  var groupsEl = root.querySelector(".room__groups");
+  var flat = root.querySelector("[data-room-flat]");
+  var homes = cards.map(function (c) { return c.parentNode; });
+  var flatOn = false;
+  function titleKey(c) { return (c.getAttribute("data-room-title") || "").trim().toLowerCase(); }
+  function order() {
+    if (!sorter || !flat) { return; }
+    var how = sorter.value;
+    if (["title", "date-desc", "date-asc"].indexOf(how) === -1) {
+      if (flatOn) {
+        cards.forEach(function (c, i) { homes[i].appendChild(c); });
+        flat.hidden = true;
+        if (groupsEl) { groupsEl.hidden = false; }
+        flatOn = false;
+      }
+      return;
+    }
+    var items = cards.slice().sort(function (a, b) {
+      return parseInt(a.getAttribute("data-room-n"), 10) - parseInt(b.getAttribute("data-room-n"), 10);
+    });
+    items.sort(compare(how));
+    items.forEach(function (c) { flat.appendChild(c); });
+    if (groupsEl) { groupsEl.hidden = true; }
+    flat.hidden = false;
+    flatOn = true;
+  }
+  function inRange(c, s) {
+    var y = parseInt(attr(c, s.getAttribute("data-room-range")), 10);
+    if (isNaN(y)) { return false; }
+    return s.getAttribute("data-room-bound") === "from" ? y >= parseInt(s.value, 10) : y <= parseInt(s.value, 10);
+  }
+  function controls() {
+    var on = function (s) { return s.value; };
+    return { facets: facets.filter(on), multis: multis.filter(on), ranges: ranges.filter(on) };
+  }
+  // A card passes every control that is set (no text); `skip`, a control to leave out
+  // (an option's count asks what that select would show with the others as they are).
+  function passes(c, skip) {
+    var k = controls(), keep = function (s) { return s !== skip; };
+    return k.facets.filter(keep).every(function (s) { return attr(c, s.name) === s.value; })
+      && k.multis.filter(keep).every(function (s) { return multiValues(c, s.getAttribute("data-room-multi")).indexOf(s.value) !== -1; })
+      && (skip === "ranges" ? true : k.ranges.filter(keep).every(function (s) { return inRange(c, s); }));
+  }
+  // layout.finder compact (data-room-compact): each option's count, a chip per control
+  // that is set, how many are set under More filters, a line saying how many undated
+  // records a year filter hides, and the blocks above the list ([data-room-lead]: the
+  // newest records, the collections table) out of the way while anything is set.
+  var compact = finder.hasAttribute("data-room-compact");
+  var chips = finder.querySelector("[data-room-chips]");
+  var moreBox = finder.querySelector("[data-room-more-filters]");
+  var moreN = finder.querySelector("[data-room-more-n]");
+  var undated = root.querySelector("[data-room-undated]");
+  var leads = Array.prototype.slice.call(root.querySelectorAll("[data-room-lead]"));
+  var counted = facets.concat(multis);
+  counted.forEach(function (s) {
+    Array.prototype.forEach.call(s.options, function (o) { o.setAttribute("data-room-label", o.textContent); });
+  });
+  function labelOf(s) {
+    var l = finder.querySelector('label[for="' + s.id + '"]');
+    return l ? l.textContent.trim() : s.name;
+  }
+  function optionText(s) {
+    var o = s.options[s.selectedIndex];
+    return o ? (o.getAttribute("data-room-label") || o.textContent) : s.value;
+  }
+  function refresh(text) {
+    if (!compact) { return; }
+    var k = controls(), set = k.facets.concat(k.multis, k.ranges);
+    var filtering = set.length > 0 || !!(text && text.trim());
+    leads.forEach(function (el) { el.hidden = filtering; });
+    counted.forEach(function (s) {
+      var n = {}, name = s.getAttribute("data-room-multi");
+      cards.forEach(function (c) {
+        if (!passes(c, s)) { return; }
+        (name ? multiValues(c, name) : [attr(c, s.name)]).forEach(function (v) { n[v] = (n[v] || 0) + 1; });
+      });
+      Array.prototype.forEach.call(s.options, function (o) {
+        if (!o.value) { return; }
+        var x = n[o.value] || 0;
+        o.textContent = o.getAttribute("data-room-label") + " (" + x + ")";
+        o.disabled = x === 0 && o.value !== s.value;
+      });
+    });
+    if (chips) {
+      chips.textContent = "";
+      set.forEach(function (s) {
+        var li = document.createElement("li"), b = document.createElement("button");
+        var what = labelOf(s) + ": " + optionText(s);
+        b.type = "button";
+        b.className = "room__chip";
+        b.textContent = what;
+        var x = document.createElement("span");
+        x.setAttribute("aria-hidden", "true");
+        x.textContent = " \u00d7";
+        b.appendChild(x);
+        b.setAttribute("aria-label", "Remove filter " + what);
+        b.addEventListener("click", function () {
+          s.value = "";
+          s.dispatchEvent(new Event("change"));
+          if (q) { q.focus(); }
+        });
+        li.appendChild(b);
+        chips.appendChild(li);
+      });
+      chips.hidden = set.length === 0;
+    }
+    if (moreN && moreBox) {
+      var inside = set.filter(function (s) { return moreBox.contains(s); }).length;
+      moreN.textContent = inside ? "(" + inside + " set)" : "";
+    }
+    if (undated) {
+      var hidden = 0;
+      if (k.ranges.length) {
+        var by = k.ranges[0].getAttribute("data-room-range");
+        cards.forEach(function (c) {
+          if (isNaN(parseInt(attr(c, by), 10)) && passes(c, "ranges")) { hidden += 1; }
+        });
+      }
+      undated.textContent = hidden ? undated.getAttribute(hidden === 1 ? "data-room-undated-one" : "data-room-undated-other").replace("{n}", hidden) : "";
+      undated.hidden = hidden === 0;
+    }
+  }
+  if (moreBox && controls().facets.concat(controls().multis, controls().ranges).some(function (s) { return moreBox.contains(s); })) {
+    moreBox.open = true;
+  }
+  // Show the cards that hold every word and pass every control; returns how many.
+  function filterCards(words) {
+    order();
+    var k = controls(), active = k.facets, activeM = k.multis, activeR = k.ranges;
+    var activeM = multis.filter(function (s) { return s.value; });
+    var activeR = ranges.filter(function (s) { return s.value; });
+    var shown = 0;
+    cards.forEach(function (c) {
+      var text = c.getAttribute("data-room-text") || "";
+      var hit = words.every(function (w) { return text.indexOf(w) !== -1; })
+        && active.every(function (s) { return attr(c, s.name) === s.value; })
+        && activeM.every(function (s) { return multiValues(c, s.getAttribute("data-room-multi")).indexOf(s.value) !== -1; })
+        && activeR.every(function (s) { return inRange(c, s); });
+      c.hidden = !hit;
+      if (hit) { shown += 1; }
+    });
+    var filtering = words.length > 0 || active.length > 0 || activeM.length > 0 || activeR.length > 0;
+    sections.forEach(function (sec) {
+      var list = sec.querySelectorAll(".room__card");
+      var any = Array.prototype.some.call(list, function (c) { return !c.hidden; });
+      sec.hidden = filtering && !any;
+    });
+    if (jump) { jump.hidden = filtering || flatOn; }
+    if (empty) { empty.hidden = shown > 0; }
+    // The nouns are the pack's (data-room-one/-other); nothing here builds a plural.
+    var noun = count.getAttribute(total === 1 ? "data-room-one" : "data-room-other");
+    count.textContent = filtering ? shown + " of " + total + " " + noun + " match" : total + " " + noun;
+    refresh(words.join(" "));
+    if (window.roomPager) { window.roomPager.after(); }
+    return shown;
+  }
+  // The query string: text, then every control that is set, then a non-default sort.
+  function push(text) {
+    if (!(window.history && window.history.replaceState)) { return; }
+    var k = controls(), p = new URLSearchParams();
+    if (text) { p.set("q", text); }
+    k.facets.concat(k.multis, k.ranges).forEach(function (s) { p.set(s.name, s.value); });
+    if (sorter && sorter.value && sorter.selectedIndex > 0) { p.set(sorter.name, sorter.value); }
+    var qs = p.toString();
+    window.history.replaceState(null, "", window.location.pathname + (qs ? "?" + qs : ""));
+  }
+  function sortKey() { return sorter && flat && ["title", "date-desc", "date-asc"].indexOf(sorter.value) !== -1 ? sorter.value : ""; }
+  // Card order for a sort, for room-search.js to order text hits the same way.
+  function compare(how) {
+    return function (a, b) {
+      if (how === "title") { return titleKey(a).localeCompare(titleKey(b)); }
+      var da = a.getAttribute("data-room-date") || "", db = b.getAttribute("data-room-date") || "";
+      if (!da && !db) { return 0; }
+      if (!da) { return 1; }
+      if (!db) { return -1; }
+      return how === "date-asc" ? da.localeCompare(db) : db.localeCompare(da);
+    };
+  }
+  window.roomCards = {
+    apply: filterCards, push: push, sortKey: sortKey, compare: compare, controls: controls,
+    inRange: inRange, passes: function (c) { return passes(c); }, refresh: refresh, all: finder.querySelectorAll("[data-room-facet],[data-room-multi],[data-room-range],[data-room-sort]")
+  };
+  if (searchFinder) { return; }
+  finder.hidden = false;
+  q.value = params.get("q") || params.get("rr_search") || "";
+  function run(pushIt) {
+    filterCards(q.value.toLowerCase().split(/\s+/).filter(Boolean));
+    if (pushIt) { push(q.value.trim()); }
+  }
+  var timer = null;
+  q.addEventListener("input", function () { window.clearTimeout(timer); timer = window.setTimeout(function () { run(true); }, 150); });
+  facets.concat(multis, ranges, sorter ? [sorter] : []).forEach(function (s) { s.addEventListener("change", function () { run(true); }); });
+  form.addEventListener("submit", function (e) { e.preventDefault(); run(true); });
+  form.addEventListener("reset", function () { window.setTimeout(function () { run(true); q.focus(); }, 0); });
+  run(false);
+}());
+
+=== assets/rr-config.7854e4c23fe0.js ===
+window.rrReaderConfig = {"docSearchUrl": "", "passageUrl": "", "pdfJsUrl": "/reading-room/assets/vendor/pdfjs/pdf.min.1a12e2ef3e98.js", "pdfWorkerUrl": "/reading-room/assets/vendor/pdfjs/pdf.worker.min.e738705f74c2.js"};
+
+=== assets/vendor/pdfjs/pdf.min.1a12e2ef3e98.js ===
+/* golden stand-in for vendor/pdfjs/pdf.min.js */
+
+=== assets/vendor/pdfjs/pdf.worker.min.e738705f74c2.js ===
+/* golden stand-in for vendor/pdfjs/pdf.worker.min.js */
+
+=== assets/vendor/rr-reader/VERSION ===
+0.0.0-golden
+
+=== assets/vendor/rr-reader/modules/rr-cite.7b88f6a61cce.js ===
+/* golden stand-in for src/modules/rr-cite.js */
+
+=== assets/vendor/rr-reader/modules/rr-reader-image.75f822f44d86.js ===
+/* golden stand-in for src/modules/rr-reader-image.js */
+
+=== assets/vendor/rr-reader/modules/rr-reader-pdf.3930bcfcf48b.js ===
+/* golden stand-in for src/modules/rr-reader-pdf.js */
+
+=== assets/vendor/rr-reader/modules/rr-reader-text.83792d749e4d.js ===
+/* golden stand-in for src/modules/rr-reader-text.js */
+
+=== assets/vendor/rr-reader/rr-reader.6cd02f3098f6.js ===
+/* golden stand-in for src/rr-reader.js */
+
+=== big-report/index.html ===
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Big Report: “Quoted” &amp; &lt;b&gt;bold&lt;/b&gt; café | Reading Room</title>
+<link rel="canonical" href="https://example.test/reading-room/big-report/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Reading Room">
+<meta property="og:title" content="Big Report: “Quoted” &amp; &lt;b&gt;bold&lt;/b&gt; café">
+<meta property="og:url" content="https://example.test/reading-room/big-report/">
+<meta name="description" content="A  summary	with   odd
+whitespace &amp; &lt;tags&gt; and &quot;quotes&quot;.">
+<meta property="og:description" content="A  summary	with   odd
+whitespace &amp; &lt;tags&gt; and &quot;quotes&quot;.">
+<meta property="og:image" content="https://example.test/thumb/big.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="stylesheet" href="/reading-room/assets/room.5c58cd70651c.css">
+</head>
+<body class="room-plain">
+<a class="room__skip" href="#room-content">Skip to the records</a>
+<header class="room-chrome room-chrome--head">
+<div class="room-chrome__bar">
+<p class="room-chrome__brand"><a class="room-chrome__home" href="https://example.org/">Riverbend Records Office</a></p>
+<nav class="room-chrome__nav" aria-label="Records office">
+<details class="room-chrome__menu"><summary class="room-chrome__menu-label">Menu</summary>
+<ul class="room-chrome__links">
+<li><a href="https://example.org/records/">Records</a></li>
+<li class="room-chrome__group"><details><summary>About</summary><ul><li><a href="https://example.org/about/">The office</a></li><li><a href="https://example.org/requests/">Ask for a record</a></li></ul></details></li>
+</ul>
+</details>
+</nav>
+</div>
+</header>
+<main id="room-content" class="room room--doc" tabindex="-1" data-room-theme-key="riverbend-scheme">
+<div class="room__shell room__shell--record">
+<div class="room__topline"><nav class="room__crumbs" aria-label="Breadcrumb"><ol><li><a href="/reading-room/">Records</a></li><li><span aria-current="page">Big Report: “Quoted” &amp; &lt;b&gt;bold&lt;/b&gt; café</span></li></ol></nav><button type="button" class="room__btn room__btn--ghost room__toggle" data-room-toggle aria-pressed="false" hidden>Dark</button></div>
+<header class="room__head">
+<p class="room__eyebrow"><span>Second Agency</span></p>
+<div class="room__titlerow"><h1 class="room__title">Big Report: “Quoted” &amp; &lt;b&gt;bold&lt;/b&gt; café</h1><span class="room__badge room__badge--third-party">Third-party record</span></div>
+<p class="room__released">Released June 2025</p>
+<p class="room__lede">A  summary	with   odd
+whitespace &amp; &lt;tags&gt; and &quot;quotes&quot;.</p>
+</header>
+<nav class="room__jump" aria-label="On this page"><ul>
+<li><a href="#room-reader">Document</a></li>
+<li><a href="#room-details">Details</a></li>
+<li><a href="#room-cite">Cite</a></li>
+</ul></nav>
+<div class="room__body">
+<section class="room__reader" id="room-reader" aria-labelledby="room-reader-h">
+<h2 id="room-reader-h" class="room__reader-h">Document</h2>
+  <div class="rr-reader" data-file-url="https://example.test/view/big-report.pdf" data-ext="pdf" data-mime="application/pdf" data-slug="big-report" data-title="Big Report: “Quoted” &amp; &lt;b&gt;bold&lt;/b&gt; café" data-poster="https://example.test/thumb/big.png" data-features="spread,lightbox,fullscreen">
+    <p class="rr-reader__status" data-reader-status role="status" aria-live="polite"></p>
+    <div class="rr-reader__fallback" data-reader-fallback>
+      <p class="rr-reader__fallback-links">
+        <a class="room__btn" href="/reading-room/big-report/file/" target="_blank" rel="noopener">Open the PDF<span class="room__sr"> in a new tab</span></a>
+        <a class="room__btn room__btn--ghost" href="/reading-room/big-report/file/?download=1">Download</a>
+      </p>
+          <noscript>
+            <object class="rr-reader__object" data="/reading-room/big-report/file/#page=1" type="application/pdf" aria-label="Big Report: “Quoted” &amp; &lt;b&gt;bold&lt;/b&gt; café (PDF)">
+              <p>This browser cannot show the PDF here. Use the links above.</p>
+            </object>
+          </noscript>
+    </div>
+  </div>
+  <p class="room__view-note">The reader shows a copy of this PDF arranged to load faster. Every page is identical. Download and Open give you the original file.</p>
+</section>
+<div class="room__rail">
+<section class="room__panel" id="room-details" aria-labelledby="room-details-h">
+<h2 id="room-details-h">Details</h2>
+<dl class="room__dl">
+<div><dt>Agency</dt><dd>O&#x27;Brien &amp; Sons</dd></div>
+<div><dt>Date</dt><dd>2025-06</dd></div>
+<div><dt>SHA-256</dt><dd><code class="room__hash">cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc</code></dd></div>
+</dl>
+<p class="room__actions">
+<a class="room__btn" href="/reading-room/big-report/file/" target="_blank" rel="noopener">Open the PDF<span class="room__sr"> in a new tab</span></a>
+<a class="room__btn room__btn--ghost" href="/reading-room/big-report/file/?download=1">Download</a>
+</p>
+</section>
+<section class="room__panel" id="room-cite" aria-labelledby="room-cite-h">
+<h2 id="room-cite-h">Cite this document</h2>
+<p class="room__cite-text">O&#x27;Brien &amp; Sons, &quot;Big Report&quot; (2025). https://example.test/reading-room/big-report/</p>
+<button type="button" class="room__btn room__btn--ghost room__cite-copy" data-rr-cite-copy data-cite="O&#x27;Brien &amp; Sons, &quot;Big Report&quot; (2025). https://example.test/reading-room/big-report/" data-cite-copied-label="Copied" hidden>Copy citation</button>
+</section>
+<section class="room__panel room__group" aria-labelledby="room-group-1">
+<h2 id="room-group-1">Mentions</h2>
+<ul class="room__chips">
+<li><span class="room__item"><span class="room__item-label">No URL</span><span class="room__item-kind">Org</span><span class="room__item-quote">&ldquo;a quote&rdquo;</span><span class="room__item-meta">m</span></span></li>
+</ul></section>
+<section class="room__panel" aria-labelledby="room-notes-h">
+<h2 id="room-notes-h">Notes</h2>
+<p class="room__notes">One<br>
+<br>
+Three &amp; &lt;four&gt;</p>
+</section>
+</div>
+</div>
+</div>
+</main>
+<footer class="room-chrome room-chrome--foot">
+<div class="room-chrome__bar">
+<div class="room-chrome__col">
+<h2 class="room-chrome__col-h">Visit</h2>
+<ul><li><a href="https://example.org/visit/">Hours and address</a></li></ul>
+</div>
+<div class="room-chrome__col">
+<h2 class="room-chrome__col-h">Policies</h2>
+<ul><li><a href="https://example.org/privacy/">Privacy</a></li><li><a href="https://example.org/corrections/">Corrections</a></li></ul>
+</div>
+<p class="room-chrome__text">Riverbend is not a real place. This pack shows what a pack can set.</p>
+</div>
+</footer>
+<script src="/reading-room/assets/room.e9fe4f1715fc.js"></script>
+<script src="/reading-room/assets/rr-config.7854e4c23fe0.js"></script>
+<script src="/reading-room/assets/vendor/rr-reader/rr-reader.6cd02f3098f6.js"></script>
+<script src="/reading-room/assets/vendor/pdfjs/pdf.min.1a12e2ef3e98.js"></script>
+<script src="/reading-room/assets/vendor/rr-reader/modules/rr-reader-pdf.3930bcfcf48b.js"></script>
+<script src="/reading-room/assets/vendor/rr-reader/modules/rr-cite.7b88f6a61cce.js"></script>
+</body>
+</html>
+
+=== camera-contract/index.html ===
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Camera Contract | Reading Room</title>
+<link rel="canonical" href="https://example.test/reading-room/camera-contract/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Reading Room">
+<meta property="og:title" content="Camera Contract">
+<meta property="og:url" content="https://example.test/reading-room/camera-contract/">
+<meta name="description" content="The contract.">
+<meta property="og:description" content="The contract.">
+<meta name="twitter:card" content="summary">
+<script type="application/ld+json">{"@type": "DigitalDocument", "name": "<\/script><script>alert(1)"}</script>
+<link rel="stylesheet" href="/reading-room/assets/room.5c58cd70651c.css">
+</head>
+<body class="room-plain">
+<a class="room__skip" href="#room-content">Skip to the records</a>
+<header class="room-chrome room-chrome--head">
+<div class="room-chrome__bar">
+<p class="room-chrome__brand"><a class="room-chrome__home" href="https://example.org/">Riverbend Records Office</a></p>
+<nav class="room-chrome__nav" aria-label="Records office">
+<details class="room-chrome__menu"><summary class="room-chrome__menu-label">Menu</summary>
+<ul class="room-chrome__links">
+<li><a href="https://example.org/records/">Records</a></li>
+<li class="room-chrome__group"><details><summary>About</summary><ul><li><a href="https://example.org/about/">The office</a></li><li><a href="https://example.org/requests/">Ask for a record</a></li></ul></details></li>
+</ul>
+</details>
+</nav>
+</div>
+</header>
+<main id="room-content" class="room room--doc" tabindex="-1" data-room-theme-key="riverbend-scheme">
+<div class="room__shell room__shell--record">
+<div class="room__topline"><nav class="room__crumbs" aria-label="Breadcrumb"><ol><li><a href="/reading-room/">Reading Room</a></li><li><span aria-current="page">Camera Contract</span></li></ol></nav><button type="button" class="room__btn room__btn--ghost room__toggle" data-room-toggle aria-pressed="false" hidden>Dark</button></div>
+<header class="room__head">
+<p class="room__eyebrow"><a href="/reading-room/">Reading Room</a></p>
+<div class="room__titlerow"><h1 class="room__title">Camera Contract</h1><span class="room__badge room__badge--government">Government record</span></div>
+<p class="room__released">Released January 31, 2026</p>
+<p class="room__lede">The contract.</p>
+</header>
+<aside class="room__notice" aria-labelledby="room-notice-h">
+<h2 id="room-notice-h">About the redactions</h2>
+<p>Kept as released.</p>
+<p class="room__notice-report">Write to us.</p>
+</aside>
+<nav class="room__jump" aria-label="On this page"><ul>
+<li><a href="#room-reader">Document</a></li>
+<li><a href="#room-details">Details</a></li>
+<li><a href="#room-cite">Cite</a></li>
+</ul></nav>
+<div class="room__body">
+<section class="room__reader" id="room-reader" aria-labelledby="room-reader-h">
+<h2 id="room-reader-h" class="room__reader-h">Document</h2>
+  <div class="rr-reader" data-file-url="/reading-room/camera-contract/file/?v=aaaaaaaaaaaa" data-ext="pdf" data-mime="application/pdf" data-slug="camera-contract" data-title="Camera Contract" data-pages-url="/reading-room/camera-contract/pages.4e1c9402b0b9.json" data-features="spread,search,lightbox,fullscreen">
+    <p class="rr-reader__status" data-reader-status role="status" aria-live="polite"></p>
+    <div class="rr-reader__fallback" data-reader-fallback>
+      <p class="rr-reader__fallback-links">
+        <a class="room__btn" href="/reading-room/camera-contract/file/?v=aaaaaaaaaaaa" target="_blank" rel="noopener">Open the PDF<span class="room__sr"> in a new tab</span></a>
+        <a class="room__btn room__btn--ghost" href="/reading-room/camera-contract/file/?download=1">Download</a>
+      </p>
+          <noscript>
+            <object class="rr-reader__object" data="/reading-room/camera-contract/file/?v=aaaaaaaaaaaa#page=1" type="application/pdf" aria-label="Camera Contract (PDF)">
+              <p>This browser cannot show the PDF here. Use the links above.</p>
+            </object>
+          </noscript>
+    </div>
+  </div>
+</section>
+<div class="room__rail">
+<section class="room__panel" id="room-details" aria-labelledby="room-details-h">
+<h2 id="room-details-h">Details</h2>
+<dl class="room__dl">
+<div><dt>Agency</dt><dd>Test Agency</dd></div>
+<div><dt>Source</dt><dd><a href="https://agency.example/doc" target="_blank" rel="noopener">Agency site<span class="room__sr"> (opens in a new tab)</span></a></dd></div>
+<div><dt>License</dt><dd>Public domain<span class="room__note">U.S. federal work</span></dd></div>
+<div><dt>SHA-256</dt><dd><code class="room__hash">aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa</code></dd></div>
+</dl>
+<p class="room__actions">
+<a class="room__btn" href="/reading-room/camera-contract/file/?v=aaaaaaaaaaaa" target="_blank" rel="noopener">Open the PDF<span class="room__sr"> in a new tab</span></a>
+<a class="room__btn room__btn--ghost" href="/reading-room/camera-contract/file/?download=1">Download</a>
+</p>
+<p class="room__archive"><a href="https://archive.org/details/x">Permanent copy at the Internet Archive</a></p>
+</section>
+<section class="room__panel" id="room-cite" aria-labelledby="room-cite-h">
+<h2 id="room-cite-h">Cite this document</h2>
+<p class="room__cite-text">Test Agency, Camera Contract (2026). https://example.test/reading-room/camera-contract/</p>
+<button type="button" class="room__btn room__btn--ghost room__cite-copy" data-rr-cite-copy data-cite="Test Agency, Camera Contract (2026). https://example.test/reading-room/camera-contract/" data-cite-copied-label="Copied" hidden>Copy citation</button>
+</section>
+<section class="room__panel room__group" aria-labelledby="room-group-1">
+<h2 id="room-group-1">Named in this document</h2>
+<p class="room__blurb">Matched verbatim.</p>
+<ul class="room__chips">
+<li><a class="room__item" href="https://example.test/reading-room/entity/vendor/flock/"><span class="room__item-label">Flock Safety</span><span class="room__item-kind">Vendor</span><span class="room__item-quote">&ldquo;flock safety inc&rdquo;</span></a></li>
+<li><span class="room__item"><span class="room__item-label">Unlinked Person</span><span class="room__item-kind">Person</span></span></li>
+</ul></section>
+<section class="room__panel room__group" aria-labelledby="room-group-2">
+<h2 id="room-group-2">Related documents</h2>
+<ul class="room__links">
+<li><a class="room__item" href="/reading-room/site-photo/"><span class="room__item-label">Site Photo</span><span class="room__item-meta">Photos</span></a></li>
+<li><a class="room__item" href="https://other.example/x" target="_blank" rel="noopener"><span class="room__item-label">Off-site page</span><span class="room__sr"> (opens in a new tab)</span></a></li>
+</ul></section>
+<section class="room__panel" aria-labelledby="room-notes-h">
+<h2 id="room-notes-h">Notes</h2>
+<p class="room__notes">Line one<br>
+Line two</p>
+</section>
+</div>
+</div>
+</div>
+</main>
+<footer class="room-chrome room-chrome--foot">
+<div class="room-chrome__bar">
+<div class="room-chrome__col">
+<h2 class="room-chrome__col-h">Visit</h2>
+<ul><li><a href="https://example.org/visit/">Hours and address</a></li></ul>
+</div>
+<div class="room-chrome__col">
+<h2 class="room-chrome__col-h">Policies</h2>
+<ul><li><a href="https://example.org/privacy/">Privacy</a></li><li><a href="https://example.org/corrections/">Corrections</a></li></ul>
+</div>
+<p class="room-chrome__text">Riverbend is not a real place. This pack shows what a pack can set.</p>
+</div>
+</footer>
+<script src="/reading-room/assets/room.e9fe4f1715fc.js"></script>
+<script src="/reading-room/assets/rr-config.7854e4c23fe0.js"></script>
+<script src="/reading-room/assets/vendor/rr-reader/rr-reader.6cd02f3098f6.js"></script>
+<script src="/reading-room/assets/vendor/pdfjs/pdf.min.1a12e2ef3e98.js"></script>
+<script src="/reading-room/assets/vendor/rr-reader/modules/rr-reader-pdf.3930bcfcf48b.js"></script>
+<script src="/reading-room/assets/vendor/rr-reader/modules/rr-cite.7b88f6a61cce.js"></script>
+</body>
+</html>
+
+=== camera-contract/pages.4e1c9402b0b9.json ===
+{"pages": [{"n": 1, "provenance": "pdf", "text": "Page one"}, {"n": 2, "provenance": "ocr", "text": "Page two"}], "schema_version": "1.0", "slug": "camera-contract", "total": 2}
+
+=== data-dump/index.html ===
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Data Dump | Reading Room</title>
+<link rel="canonical" href="https://example.test/reading-room/data-dump/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Reading Room">
+<meta property="og:title" content="Data Dump">
+<meta property="og:url" content="https://example.test/reading-room/data-dump/">
+<meta name="twitter:card" content="summary">
+<link rel="stylesheet" href="/reading-room/assets/room.5c58cd70651c.css">
+</head>
+<body class="room-plain">
+<a class="room__skip" href="#room-content">Skip to the records</a>
+<header class="room-chrome room-chrome--head">
+<div class="room-chrome__bar">
+<p class="room-chrome__brand"><a class="room-chrome__home" href="https://example.org/">Riverbend Records Office</a></p>
+<nav class="room-chrome__nav" aria-label="Records office">
+<details class="room-chrome__menu"><summary class="room-chrome__menu-label">Menu</summary>
+<ul class="room-chrome__links">
+<li><a href="https://example.org/records/">Records</a></li>
+<li class="room-chrome__group"><details><summary>About</summary><ul><li><a href="https://example.org/about/">The office</a></li><li><a href="https://example.org/requests/">Ask for a record</a></li></ul></details></li>
+</ul>
+</details>
+</nav>
+</div>
+</header>
+<main id="room-content" class="room room--doc" tabindex="-1" data-room-theme-key="riverbend-scheme">
+<div class="room__shell room__shell--record">
+<div class="room__topline"><nav class="room__crumbs" aria-label="Breadcrumb"><ol><li><a href="/reading-room/">Records</a></li><li><span aria-current="page">Data Dump</span></li></ol></nav><button type="button" class="room__btn room__btn--ghost room__toggle" data-room-toggle aria-pressed="false" hidden>Dark</button></div>
+<header class="room__head">
+<div class="room__titlerow"><h1 class="room__title">Data Dump</h1></div>
+</header>
+<nav class="room__jump" aria-label="On this page"><ul>
+<li><a href="#room-reader">File</a></li>
+<li><a href="#room-details">Details</a></li>
+<li><a href="#room-cite">Cite</a></li>
+</ul></nav>
+<div class="room__body">
+<section class="room__reader" id="room-reader" aria-labelledby="room-reader-h">
+<h2 id="room-reader-h" class="room__reader-h">File</h2>
+  <div class="room__download">
+      <p class="rr-reader__fallback-links">
+        <a class="room__btn" href="https://example.test/f/dump.xlsx" target="_blank" rel="noopener">Open the file<span class="room__sr"> in a new tab</span></a>
+        <a class="room__btn room__btn--ghost" href="https://example.test/f/dump.xlsx">Download</a>
+      </p>
+  </div>
+</section>
+<div class="room__rail">
+<section class="room__panel" id="room-details" aria-labelledby="room-details-h">
+<h2 id="room-details-h">Details</h2>
+<dl class="room__dl">
+<div><dt>SHA-256</dt><dd><code class="room__hash">dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd</code></dd></div>
+</dl>
+<p class="room__actions">
+<a class="room__btn" href="https://example.test/f/dump.xlsx" target="_blank" rel="noopener">Open the file<span class="room__sr"> in a new tab</span></a>
+<a class="room__btn room__btn--ghost" href="https://example.test/f/dump.xlsx">Download</a>
+</p>
+</section>
+<section class="room__panel" id="room-cite" aria-labelledby="room-cite-h">
+<h2 id="room-cite-h">Cite this document</h2>
+<p class="room__cite-text">Data Dump.</p>
+<button type="button" class="room__btn room__btn--ghost room__cite-copy" data-rr-cite-copy data-cite="Data Dump." data-cite-copied-label="Copied" hidden>Copy citation</button>
+</section>
+</div>
+</div>
+</div>
+</main>
+<footer class="room-chrome room-chrome--foot">
+<div class="room-chrome__bar">
+<div class="room-chrome__col">
+<h2 class="room-chrome__col-h">Visit</h2>
+<ul><li><a href="https://example.org/visit/">Hours and address</a></li></ul>
+</div>
+<div class="room-chrome__col">
+<h2 class="room-chrome__col-h">Policies</h2>
+<ul><li><a href="https://example.org/privacy/">Privacy</a></li><li><a href="https://example.org/corrections/">Corrections</a></li></ul>
+</div>
+<p class="room-chrome__text">Riverbend is not a real place. This pack shows what a pack can set.</p>
+</div>
+</footer>
+<script src="/reading-room/assets/room.e9fe4f1715fc.js"></script>
+<script src="/reading-room/assets/vendor/rr-reader/modules/rr-cite.7b88f6a61cce.js"></script>
+</body>
+</html>
+
+=== index.html ===
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Records</title>
+<link rel="canonical" href="https://example.test/reading-room/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Reading Room">
+<meta property="og:title" content="Records">
+<meta property="og:url" content="https://example.test/reading-room/">
+<meta name="description" content="Browse.">
+<meta property="og:description" content="Browse.">
+<meta name="twitter:card" content="summary">
+<link rel="stylesheet" href="/reading-room/assets/room.5c58cd70651c.css">
+</head>
+<body class="room-plain">
+<a class="room__skip" href="#room-content">Skip to the records</a>
+<header class="room-chrome room-chrome--head">
+<div class="room-chrome__bar">
+<p class="room-chrome__brand"><a class="room-chrome__home" href="https://example.org/">Riverbend Records Office</a></p>
+<nav class="room-chrome__nav" aria-label="Records office">
+<details class="room-chrome__menu"><summary class="room-chrome__menu-label">Menu</summary>
+<ul class="room-chrome__links">
+<li><a href="https://example.org/records/">Records</a></li>
+<li class="room-chrome__group"><details><summary>About</summary><ul><li><a href="https://example.org/about/">The office</a></li><li><a href="https://example.org/requests/">Ask for a record</a></li></ul></details></li>
+</ul>
+</details>
+</nav>
+</div>
+</header>
+<main id="room-content" class="room room--index" tabindex="-1" data-room-theme-key="riverbend-scheme">
+<div class="room__shell">
+<div class="room__topline"><nav class="room__crumbs" aria-label="Breadcrumb"><ol><li><a href="https://example.test/">Home</a></li><li><span aria-current="page">Records</span></li></ol></nav><button type="button" class="room__btn room__btn--ghost room__toggle" data-room-toggle aria-pressed="false" hidden>Dark</button></div>
+<header class="room__head">
+<p class="room__eyebrow">Reading Room</p>
+<h1 class="room__title">Records</h1>
+<p class="room__lede">Browse.</p>
+<ul class="room__stats"><li><span class="room__stat">5</span> records</li><li><span class="room__stat">4</span> departments</li><li><span class="room__stat">2025&ndash;2026</span></li></ul>
+<p class="room__head-link"><a href="https://example.test/maps/">Maps</a>: where the cameras are.</p>
+</header>
+<section class="room__finder" aria-label="Find a record" data-room-search data-room-pagefind="/reading-room/pagefind/" data-room-recent-key="room-recent-searches:/reading-room/" hidden>
+<form class="room__search" role="search" action="/reading-room/" method="get">
+<div class="room__field room__field--q"><label for="room-q">Search records</label>
+<div class="room__combo"><input type="search" id="room-q" name="q" autocomplete="off" placeholder="Words in the records, titles, agencies..." role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="room-suggest" aria-describedby="room-q-hint">
+<div class="room__suggest" id="room-suggest" role="listbox" aria-label="Suggestions" hidden></div></div><p class="room__sr" id="room-q-hint">Searches the text of every record. Suggestions appear as you type: arrow keys move through them, Enter chooses, Escape closes.</p></div>
+<div class="room__field"><label for="room-f-group">Department</label><select id="room-f-group" name="group" data-room-facet="group"><option value="">All</option><option value="Test Agency">Test Agency</option><option value="Second Agency">Second Agency</option><option value="Other records">Other records</option><option value="Third Agency">Third Agency</option></select></div>
+<div class="room__field"><label for="room-f-year">Year</label><select id="room-f-year" name="year" data-room-facet="year"><option value="">All</option><option value="2026">2026</option><option value="2025">2025</option><option value="2024">2024</option></select></div>
+<div class="room__field room__field--buttons">
+<button type="submit" class="room__btn">Search</button>
+<button type="reset" class="room__btn room__btn--ghost" data-room-clear>Clear</button></div>
+</form>
+<p class="room__count" role="status" aria-live="polite" data-room-count data-room-one="record" data-room-other="records">5 records</p>
+</section>
+<section class="room__results" aria-label="Search results" data-room-results hidden>
+<ol class="room__results-list" data-room-results-list></ol>
+<button type="button" class="room__btn room__btn--ghost room__more" data-room-more hidden>Show more results</button>
+</section>
+<nav class="room__jump room__jump--groups" aria-label="Go to a department" data-room-jump>
+<p class="room__jump-label">Go to a department</p><ul><li><a href="#test-agency">Test Agency</a></li><li><a href="#second-agency">Second Agency</a></li><li><a href="#other-records">Other records</a></li><li><a href="#third-agency">Third Agency</a></li></ul></nav>
+<div class="room__groups room__groups--cards">
+<section class="room__section" id="test-agency" aria-labelledby="test-agency-h" data-room-section>
+<h2 id="test-agency-h" class="room__section-h">Test Agency <span class="room__section-n">2</span></h2>
+<ul class="room__cards room__cards--cards"><li class="room__card" data-room-text="camera contract the contract. test agency test agency january 31, 2026 contract 12 pages 2026" data-room-group="Test Agency" data-room-f-year="2026"><a class="room__thumb" href="/reading-room/camera-contract/" tabindex="-1" aria-hidden="true"><img src="https://example.test/t.png" alt="" loading="lazy" decoding="async" width="116" height="150"></a><div class="room__card-body"><p class="room__card-date"><time datetime="2026-01-31">January 31, 2026</time></p><h3 class="room__card-title"><a href="/reading-room/camera-contract/">Camera Contract</a></h3><p class="room__card-meta">Contract &middot; 12 pages</p><p class="room__card-summary">The contract.</p></div></li><li class="room__card" data-room-text="site photo test agency 2024" data-room-group="Test Agency" data-room-f-year="2024"><div class="room__card-body"><p class="room__card-date">Date pending</p><h3 class="room__card-title"><a href="/reading-room/site-photo/">Site Photo</a></h3></div></li></ul>
+</section>
+<section class="room__section" id="second-agency" aria-labelledby="second-agency-h" data-room-section>
+<h2 id="second-agency-h" class="room__section-h">Second Agency <span class="room__section-n">1</span></h2>
+<ul class="room__cards room__cards--cards"><li class="room__card" data-room-text="big report: “quoted” &amp; &lt;b&gt;bold&lt;/b&gt; café a summary with odd whitespace &amp; &lt;tags&gt; and &quot;quotes&quot;. o&#x27;brien &amp; sons second agency june 2025 report 2025" data-room-group="Second Agency" data-room-f-year="2025"><div class="room__card-body"><p class="room__card-date"><time datetime="2025-06">June 2025</time></p><h3 class="room__card-title"><a href="/reading-room/big-report/">Big Report: “Quoted” &amp; &lt;b&gt;bold&lt;/b&gt; café</a></h3><p class="room__card-meta">Report</p><p class="room__card-summary">A  summary	with   odd
+whitespace &amp; &lt;tags&gt; and &quot;quotes&quot;.</p></div></li></ul>
+</section>
+<section class="room__section" id="empty-agency" aria-labelledby="empty-agency-h" data-room-section>
+<h2 id="empty-agency-h" class="room__section-h">Empty Agency <span class="room__section-n">0</span></h2>
+<p class="room__section-empty">No records have been released for this agency yet.</p>
+</section>
+<section class="room__section" id="other-records" aria-labelledby="other-records-h" data-room-section>
+<h2 id="other-records-h" class="room__section-h">Other records <span class="room__section-n">1</span></h2>
+<ul class="room__cards room__cards--cards"><li class="room__card" data-room-text="data dump" data-room-group=""><div class="room__card-body"><p class="room__card-date">Date pending</p><h3 class="room__card-title"><a href="/reading-room/data-dump/">Data Dump</a></h3></div></li></ul>
+</section>
+<section class="room__section" id="third-agency" aria-labelledby="third-agency-h" data-room-section>
+<h2 id="third-agency-h" class="room__section-h">Third Agency <span class="room__section-n">1</span></h2>
+<ul class="room__cards room__cards--cards"><li class="room__card" data-room-text="memo plain text memo. third agency undated" data-room-group="Third Agency" data-room-f-year=""><div class="room__card-body"><p class="room__card-date">Date pending</p><h3 class="room__card-title"><a href="/reading-room/memo-text/">Memo</a></h3><p class="room__card-summary">Plain text memo.</p></div></li></ul>
+</section>
+</div>
+<p class="room__empty" data-room-empty hidden>No records match. Try fewer words, or clear the filters.</p>
+</div>
+</main>
+<footer class="room-chrome room-chrome--foot">
+<div class="room-chrome__bar">
+<div class="room-chrome__col">
+<h2 class="room-chrome__col-h">Visit</h2>
+<ul><li><a href="https://example.org/visit/">Hours and address</a></li></ul>
+</div>
+<div class="room-chrome__col">
+<h2 class="room-chrome__col-h">Policies</h2>
+<ul><li><a href="https://example.org/privacy/">Privacy</a></li><li><a href="https://example.org/corrections/">Corrections</a></li></ul>
+</div>
+<p class="room-chrome__text">Riverbend is not a real place. This pack shows what a pack can set.</p>
+</div>
+</footer>
+<script src="/reading-room/assets/room.e9fe4f1715fc.js"></script>
+<script src="/reading-room/assets/room-search.614f485a8d05.js"></script>
+</body>
+</html>
+
+=== memo-text/index.html ===
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Memo | Reading Room</title>
+<link rel="canonical" href="https://example.test/reading-room/memo-text/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Reading Room">
+<meta property="og:title" content="Memo">
+<meta property="og:url" content="https://example.test/reading-room/memo-text/">
+<meta name="description" content="Plain text memo.">
+<meta property="og:description" content="Plain text memo.">
+<meta name="twitter:card" content="summary">
+<link rel="stylesheet" href="/reading-room/assets/room.5c58cd70651c.css">
+</head>
+<body class="room-plain">
+<a class="room__skip" href="#room-content">Skip to the records</a>
+<header class="room-chrome room-chrome--head">
+<div class="room-chrome__bar">
+<p class="room-chrome__brand"><a class="room-chrome__home" href="https://example.org/">Riverbend Records Office</a></p>
+<nav class="room-chrome__nav" aria-label="Records office">
+<details class="room-chrome__menu"><summary class="room-chrome__menu-label">Menu</summary>
+<ul class="room-chrome__links">
+<li><a href="https://example.org/records/">Records</a></li>
+<li class="room-chrome__group"><details><summary>About</summary><ul><li><a href="https://example.org/about/">The office</a></li><li><a href="https://example.org/requests/">Ask for a record</a></li></ul></details></li>
+</ul>
+</details>
+</nav>
+</div>
+</header>
+<main id="room-content" class="room room--doc" tabindex="-1" data-room-theme-key="riverbend-scheme">
+<div class="room__shell room__shell--record">
+<div class="room__topline"><nav class="room__crumbs" aria-label="Breadcrumb"><ol><li><a href="/reading-room/">Records</a></li><li><span aria-current="page">Memo</span></li></ol></nav><button type="button" class="room__btn room__btn--ghost room__toggle" data-room-toggle aria-pressed="false" hidden>Dark</button></div>
+<header class="room__head">
+<div class="room__titlerow"><h1 class="room__title">Memo</h1></div>
+<p class="room__lede">Plain text memo.</p>
+</header>
+<nav class="room__jump" aria-label="On this page"><ul>
+<li><a href="#room-reader">Document</a></li>
+<li><a href="#room-details">Details</a></li>
+<li><a href="#room-cite">Cite</a></li>
+</ul></nav>
+<div class="room__body">
+<section class="room__reader" id="room-reader" aria-labelledby="room-reader-h">
+<h2 id="room-reader-h" class="room__reader-h">Document</h2>
+  <div class="rr-reader" data-file-url="https://example.test/f/memo.txt" data-ext="txt" data-mime="text/plain" data-slug="memo-text" data-title="Memo" data-pages-url="/reading-room/memo-text/pages.6ee2eec3ca16.json" data-features="spread,search,lightbox,fullscreen">
+    <p class="rr-reader__status" data-reader-status role="status" aria-live="polite"></p>
+    <div class="rr-reader__fallback" data-reader-fallback>
+      <p class="rr-reader__fallback-links">
+        <a class="room__btn" href="https://example.test/f/memo.txt" target="_blank" rel="noopener">Open the file<span class="room__sr"> in a new tab</span></a>
+        <a class="room__btn room__btn--ghost" href="https://example.test/f/memo.txt">Download</a>
+      </p>
+    </div>
+  </div>
+</section>
+<div class="room__rail">
+<section class="room__panel" id="room-details" aria-labelledby="room-details-h">
+<h2 id="room-details-h">Details</h2>
+<dl class="room__dl">
+<div><dt>SHA-256</dt><dd><code class="room__hash">eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee</code></dd></div>
+</dl>
+<p class="room__actions">
+<a class="room__btn" href="https://example.test/f/memo.txt" target="_blank" rel="noopener">Open the file<span class="room__sr"> in a new tab</span></a>
+<a class="room__btn room__btn--ghost" href="https://example.test/f/memo.txt">Download</a>
+</p>
+</section>
+<section class="room__panel" id="room-cite" aria-labelledby="room-cite-h">
+<h2 id="room-cite-h">Cite this document</h2>
+<p class="room__cite-text">Memo, undated.</p>
+<button type="button" class="room__btn room__btn--ghost room__cite-copy" data-rr-cite-copy data-cite="Memo, undated." data-cite-copied-label="Copied" hidden>Copy citation</button>
+</section>
+</div>
+</div>
+</div>
+</main>
+<footer class="room-chrome room-chrome--foot">
+<div class="room-chrome__bar">
+<div class="room-chrome__col">
+<h2 class="room-chrome__col-h">Visit</h2>
+<ul><li><a href="https://example.org/visit/">Hours and address</a></li></ul>
+</div>
+<div class="room-chrome__col">
+<h2 class="room-chrome__col-h">Policies</h2>
+<ul><li><a href="https://example.org/privacy/">Privacy</a></li><li><a href="https://example.org/corrections/">Corrections</a></li></ul>
+</div>
+<p class="room-chrome__text">Riverbend is not a real place. This pack shows what a pack can set.</p>
+</div>
+</footer>
+<script src="/reading-room/assets/room.e9fe4f1715fc.js"></script>
+<script src="/reading-room/assets/rr-config.7854e4c23fe0.js"></script>
+<script src="/reading-room/assets/vendor/rr-reader/rr-reader.6cd02f3098f6.js"></script>
+<script src="/reading-room/assets/vendor/rr-reader/modules/rr-reader-text.83792d749e4d.js"></script>
+<script src="/reading-room/assets/vendor/rr-reader/modules/rr-cite.7b88f6a61cce.js"></script>
+</body>
+</html>
+
+=== memo-text/pages.6ee2eec3ca16.json ===
+{"pages": [{"n": 1, "provenance": "", "text": "memo body"}], "schema_version": "1.0", "slug": "memo-text", "total": 1}
+
+=== pagefind/input.json ===
+{
+"big-report/index.html": "<!doctype html><html lang=\"en\"><head><meta charset=\"utf-8\"></head><body><main data-pagefind-body><h1>Big Report: “Quoted” &amp; &lt;b&gt;bold&lt;/b&gt; café</h1><p>A  summary\twith   odd\nwhitespace &amp; &lt;tags&gt; and &quot;quotes&quot;.</p><p>O&#x27;Brien &amp; Sons, &quot;Big Report&quot; (2025). https://example.test/reading-room/big-report/</p><p>O&#x27;Brien &amp; Sons</p><p>Second Agency</p><p>One\n\nThree &amp; &lt;four&gt;</p><div data-pagefind-ignore><span data-pagefind-meta=\"title\">Big Report: “Quoted” &amp; &lt;b&gt;bold&lt;/b&gt; café</span><span data-pagefind-filter=\"group\">Second Agency</span><span data-pagefind-filter=\"year\">2025</span><span data-pagefind-sort=\"date\">2025-06</span></div></main></body></html>\n",
+"camera-contract/index.html": "<!doctype html><html lang=\"en\"><head><meta charset=\"utf-8\"></head><body><main data-pagefind-body><h1>Camera Contract</h1><p>The contract.</p><p>Test Agency, Camera Contract (2026). https://example.test/reading-room/camera-contract/</p><p>Test Agency</p><p>Test Agency</p><p>Line one\nLine two</p><h2 id=\"page-1\">Page 1</h2><p>Page one</p><h2 id=\"page-2\">Page 2</h2><p>Page two</p><div data-pagefind-ignore><span data-pagefind-meta=\"title\">Camera Contract</span><span data-pagefind-filter=\"group\">Test Agency</span><span data-pagefind-filter=\"year\">2026</span><span data-pagefind-sort=\"date\">2026-01-31</span></div></main></body></html>\n",
+"data-dump/index.html": "<!doctype html><html lang=\"en\"><head><meta charset=\"utf-8\"></head><body><main data-pagefind-body><h1>Data Dump</h1><p>Data Dump.</p><div data-pagefind-ignore><span data-pagefind-meta=\"title\">Data Dump</span></div></main></body></html>\n",
+"memo-text/index.html": "<!doctype html><html lang=\"en\"><head><meta charset=\"utf-8\"></head><body><main data-pagefind-body><h1>Memo</h1><p>Plain text memo.</p><p>Memo, undated.</p><p>Third Agency</p><h2>Page 1</h2><p>memo body</p><div data-pagefind-ignore><span data-pagefind-meta=\"title\">Memo</span><span data-pagefind-filter=\"group\">Third Agency</span></div></main></body></html>\n",
+"site-photo/index.html": "<!doctype html><html lang=\"en\"><head><meta charset=\"utf-8\"></head><body><main data-pagefind-body><h1>Site Photo</h1><p>Test Agency, Site Photo.</p><p>Test Agency</p><div data-pagefind-ignore><span data-pagefind-meta=\"title\">Site Photo</span><span data-pagefind-filter=\"group\">Test Agency</span><span data-pagefind-filter=\"year\">2024</span></div></main></body></html>\n"
+}
+
+=== room.lock.json ===
+{
+ "assets": {
+  "assets/room-search.js": "assets/room-search.614f485a8d05.js",
+  "assets/room.css": "assets/room.5c58cd70651c.css",
+  "assets/room.js": "assets/room.e9fe4f1715fc.js",
+  "assets/rr-config.js": "assets/rr-config.7854e4c23fe0.js",
+  "assets/vendor/pdfjs/pdf.min.js": "assets/vendor/pdfjs/pdf.min.1a12e2ef3e98.js",
+  "assets/vendor/pdfjs/pdf.worker.min.js": "assets/vendor/pdfjs/pdf.worker.min.e738705f74c2.js",
+  "assets/vendor/rr-reader/modules/rr-cite.js": "assets/vendor/rr-reader/modules/rr-cite.7b88f6a61cce.js",
+  "assets/vendor/rr-reader/modules/rr-reader-image.js": "assets/vendor/rr-reader/modules/rr-reader-image.75f822f44d86.js",
+  "assets/vendor/rr-reader/modules/rr-reader-pdf.js": "assets/vendor/rr-reader/modules/rr-reader-pdf.3930bcfcf48b.js",
+  "assets/vendor/rr-reader/modules/rr-reader-text.js": "assets/vendor/rr-reader/modules/rr-reader-text.83792d749e4d.js",
+  "assets/vendor/rr-reader/rr-reader.js": "assets/vendor/rr-reader/rr-reader.6cd02f3098f6.js",
+  "camera-contract/pages.json": "camera-contract/pages.4e1c9402b0b9.json",
+  "memo-text/pages.json": "memo-text/pages.6ee2eec3ca16.json"
+ },
+ "documents": 5,
+ "engine": "0.0.0-golden",
+ "files": {
+  "404.html": "c8dfb1ca4809af621f747f118a664ef53ac2a325f070d7d9d122214850e4f20f",
+  "assets/room-search.614f485a8d05.js": "614f485a8d0591b95f1dac5e02a3bdbbc02c05c83ea030029eb7f8a84efddc90",
+  "assets/room.5c58cd70651c.css": "5c58cd70651c0edb0ec9d813e432976c4432a3c2b8f14fe7c2952cdc56f25d96",
+  "assets/room.e9fe4f1715fc.js": "e9fe4f1715fc3b7749078cf2d563464b3f9e744301f3b92b680d890850e91b48",
+  "assets/rr-config.7854e4c23fe0.js": "7854e4c23fe06763a344b77bf2696e0cd4fbece115d6a94af0f194087ab84541",
+  "assets/vendor/pdfjs/pdf.min.1a12e2ef3e98.js": "1a12e2ef3e989e0b5d86cbf5cb4f66f95f3bfeecd532a71f8da22ef8de46d824",
+  "assets/vendor/pdfjs/pdf.worker.min.e738705f74c2.js": "e738705f74c22ec75eee1f7d8e6624c62966318aa98c9407bcc05f9b472b8aa1",
+  "assets/vendor/rr-reader/VERSION": "bfc8a738e574bc74e6588df4fa1e6ab6ced5c6139e7eb286e6835ffdcce0dc35",
+  "assets/vendor/rr-reader/modules/rr-cite.7b88f6a61cce.js": "7b88f6a61ccec090436865267f22769ef89b74422e376d7a68b39431a8aa3db1",
+  "assets/vendor/rr-reader/modules/rr-reader-image.75f822f44d86.js": "75f822f44d86f20874ee06a447da6731b91900e9cac1c0f50011a231c4b60646",
+  "assets/vendor/rr-reader/modules/rr-reader-pdf.3930bcfcf48b.js": "3930bcfcf48be14c49f9f13a1461e2c9c94dadd652ec33578dfbad7403aae564",
+  "assets/vendor/rr-reader/modules/rr-reader-text.83792d749e4d.js": "83792d749e4da7e8689c24e28f6b30b6a66e5992f10e8363db80f6c1ebb65139",
+  "assets/vendor/rr-reader/rr-reader.6cd02f3098f6.js": "6cd02f3098f69c3aa84eb84835199edce2e35c9e200a2b7152b6845e6afd5dec",
+  "big-report/index.html": "2c57c0de52f0725269e0ac438179e3197cca041902a9da8a328b6782dd586dbe",
+  "camera-contract/index.html": "d1f0ed5bdf2346136e7da2b18024e218ac0e1e8a038690d0ff4a131d20cf46b4",
+  "camera-contract/pages.4e1c9402b0b9.json": "4e1c9402b0b9813c3bcdc9033a1df0c9a0dfdbf867f266a2e6513c81b9f5c910",
+  "data-dump/index.html": "544a35c335b31a37d630f74493c7042781043b39f3ed4ea20e36e4b053c5e5f4",
+  "index.html": "9e4f55f769e2bc999f164469b00495b1482959225affbf2a6abf30d300a297ba",
+  "memo-text/index.html": "1ddbf4343052dbb2f2f63e1003b5a46e9c6b82cff68f2d6f304dff3dd33dfb6f",
+  "memo-text/pages.6ee2eec3ca16.json": "6ee2eec3ca16b0f67083cc94ad9910fc1ad14a6c4b20766e631f59fc0b596ee0",
+  "pagefind/input.json": "94584e3322c286d17a283f1052e9c69b9e89bad3070dd335bc2cb8cc016d7001",
+  "site-photo/index.html": "d53e5b7a8b4db67cd1023eefd37e9b83b3ca2e8a6d18eae9a1b88c528b74767c",
+  "sitemap.xml": "8e774bab510574e456b7854b574d91830de644d4444becd64bc2d81e61cd8a76"
+ },
+ "mount": "/reading-room/",
+ "noindex": false,
+ "pack": "59809c723927dc939ac3a1a77a1c61d2f780d0e8acda1ade9bdff1b8a5ab3850",
+ "roomkit": "0.3.0",
+ "schema": "1.0",
+ "search": {
+  "input": "e0175f6eb43d508b8b59179bb8cd99508c378c2c37504efe730b3e0fca3d5ac8",
+  "pagefind": "stand-in"
+ },
+ "server_config": {
+  ".htaccess": "3d68b03b3e7d66a7a232da80a8d4011fe38397e3b35778e8d11b64fc96fcb677"
+ }
+}
+
+=== site-photo/index.html ===
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Site Photo | Reading Room</title>
+<link rel="canonical" href="https://example.test/reading-room/site-photo/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Reading Room">
+<meta property="og:title" content="Site Photo">
+<meta property="og:url" content="https://example.test/reading-room/site-photo/">
+<meta name="twitter:card" content="summary">
+<link rel="stylesheet" href="/reading-room/assets/room.5c58cd70651c.css">
+</head>
+<body class="room-plain">
+<a class="room__skip" href="#room-content">Skip to the records</a>
+<header class="room-chrome room-chrome--head">
+<div class="room-chrome__bar">
+<p class="room-chrome__brand"><a class="room-chrome__home" href="https://example.org/">Riverbend Records Office</a></p>
+<nav class="room-chrome__nav" aria-label="Records office">
+<details class="room-chrome__menu"><summary class="room-chrome__menu-label">Menu</summary>
+<ul class="room-chrome__links">
+<li><a href="https://example.org/records/">Records</a></li>
+<li class="room-chrome__group"><details><summary>About</summary><ul><li><a href="https://example.org/about/">The office</a></li><li><a href="https://example.org/requests/">Ask for a record</a></li></ul></details></li>
+</ul>
+</details>
+</nav>
+</div>
+</header>
+<main id="room-content" class="room room--doc" tabindex="-1" data-room-theme-key="riverbend-scheme">
+<div class="room__shell room__shell--record">
+<div class="room__topline"><nav class="room__crumbs" aria-label="Breadcrumb"><ol><li><a href="/reading-room/">Records</a></li><li><span aria-current="page">Site Photo</span></li></ol></nav><button type="button" class="room__btn room__btn--ghost room__toggle" data-room-toggle aria-pressed="false" hidden>Dark</button></div>
+<header class="room__head">
+<div class="room__titlerow"><h1 class="room__title">Site Photo</h1></div>
+</header>
+<nav class="room__jump" aria-label="On this page"><ul>
+<li><a href="#room-reader">Document</a></li>
+<li><a href="#room-details">Details</a></li>
+<li><a href="#room-cite">Cite</a></li>
+</ul></nav>
+<div class="room__body">
+<section class="room__reader" id="room-reader" aria-labelledby="room-reader-h">
+<h2 id="room-reader-h" class="room__reader-h">Document</h2>
+  <div class="rr-reader" data-file-url="https://example.test/f/photo.png" data-ext="png" data-mime="image/png" data-slug="site-photo" data-title="Site Photo" data-features="spread,lightbox,fullscreen">
+    <p class="rr-reader__status" data-reader-status role="status" aria-live="polite"></p>
+    <div class="rr-reader__fallback" data-reader-fallback>
+      <p class="rr-reader__fallback-links">
+        <a class="room__btn" href="https://example.test/f/photo.png" target="_blank" rel="noopener">Open the file<span class="room__sr"> in a new tab</span></a>
+        <a class="room__btn room__btn--ghost" href="https://example.test/f/photo.png">Download</a>
+      </p>
+    </div>
+  </div>
+</section>
+<div class="room__rail">
+<section class="room__panel" id="room-details" aria-labelledby="room-details-h">
+<h2 id="room-details-h">Details</h2>
+<dl class="room__dl">
+<div><dt>SHA-256</dt><dd><code class="room__hash">bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb</code></dd></div>
+</dl>
+<p class="room__actions">
+<a class="room__btn" href="https://example.test/f/photo.png" target="_blank" rel="noopener">Open the file<span class="room__sr"> in a new tab</span></a>
+<a class="room__btn room__btn--ghost" href="https://example.test/f/photo.png">Download</a>
+</p>
+</section>
+<section class="room__panel" id="room-cite" aria-labelledby="room-cite-h">
+<h2 id="room-cite-h">Cite this document</h2>
+<p class="room__cite-text">Test Agency, Site Photo.</p>
+<button type="button" class="room__btn room__btn--ghost room__cite-copy" data-rr-cite-copy data-cite="Test Agency, Site Photo." data-cite-copied-label="Copied" hidden>Copy citation</button>
+</section>
+</div>
+</div>
+</div>
+</main>
+<footer class="room-chrome room-chrome--foot">
+<div class="room-chrome__bar">
+<div class="room-chrome__col">
+<h2 class="room-chrome__col-h">Visit</h2>
+<ul><li><a href="https://example.org/visit/">Hours and address</a></li></ul>
+</div>
+<div class="room-chrome__col">
+<h2 class="room-chrome__col-h">Policies</h2>
+<ul><li><a href="https://example.org/privacy/">Privacy</a></li><li><a href="https://example.org/corrections/">Corrections</a></li></ul>
+</div>
+<p class="room-chrome__text">Riverbend is not a real place. This pack shows what a pack can set.</p>
+</div>
+</footer>
+<script src="/reading-room/assets/room.e9fe4f1715fc.js"></script>
+<script src="/reading-room/assets/rr-config.7854e4c23fe0.js"></script>
+<script src="/reading-room/assets/vendor/rr-reader/rr-reader.6cd02f3098f6.js"></script>
+<script src="/reading-room/assets/vendor/rr-reader/modules/rr-reader-image.75f822f44d86.js"></script>
+<script src="/reading-room/assets/vendor/rr-reader/modules/rr-cite.7b88f6a61cce.js"></script>
+</body>
+</html>
+
+=== sitemap.xml ===
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+<url><loc>https://example.test/reading-room/</loc></url>
+<url><loc>https://example.test/reading-room/camera-contract/</loc></url>
+<url><loc>https://example.test/reading-room/site-photo/</loc></url>
+<url><loc>https://example.test/reading-room/big-report/</loc></url>
+<url><loc>https://example.test/reading-room/data-dump/</loc></url>
+<url><loc>https://example.test/reading-room/memo-text/</loc></url>
+</urlset>
+

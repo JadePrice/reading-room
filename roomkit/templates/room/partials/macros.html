@@ -1,0 +1,34 @@
+{#- Inline pieces: each macro renders on one line, with no newline of its own. -#}
+{% macro link(label, url, cls="", external=False) -%}
+{% if not url -%}
+<span{% if cls %} class="{{ cls }}"{% endif %}>{{ label }}</span>
+{%- else -%}
+<a{% if cls %} class="{{ cls }}"{% endif %} href="{{ url }}"{% if external %} target="_blank" rel="noopener"{% endif %}>{{ label }}
+{%- if external %}<span class="room__sr"> (opens in a new tab)</span>{% endif %}</a>
+{%- endif %}
+{%- endmacro %}
+
+{% macro crumbs(items) -%}
+{% if items -%}
+<nav class="room__crumbs" aria-label="Breadcrumb"><ol>
+{%- for c in items -%}
+{% if loop.last -%}
+<li><span aria-current="page">{{ c.label }}</span></li>
+{%- else -%}
+<li>{{ link(c.label, c.url) }}</li>
+{%- endif %}
+{%- endfor -%}
+</ol></nav>
+{%- endif %}
+{%- endmacro %}
+
+{#- Hidden until room.js runs: without JavaScript it could do nothing. -#}
+{% macro toggle(on) -%}
+{% if on -%}
+<button type="button" class="room__btn room__btn--ghost room__toggle" data-room-toggle aria-pressed="false" hidden>Dark</button>
+{%- endif %}
+{%- endmacro %}
+
+{% macro root(kind, theme_key) -%}
+<main id="room-content" class="room room--{{ kind }}" tabindex="-1"{% if theme_key %} data-room-theme-key="{{ theme_key }}"{% endif %}>
+{%- endmacro %}

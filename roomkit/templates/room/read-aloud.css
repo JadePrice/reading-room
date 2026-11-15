@@ -1,0 +1,22 @@
+/* The read-aloud panel (pack features.read-aloud; reading-room-reader/read-aloud). The player injects
+   its own light-theme fallback style; these #room-content rules win by specificity and draw the
+   panel from the room's tokens, so every pack and theme (dark included) keeps its contrast.
+   The panel sits after the reader, so it never moves anything above it. */
+#room-content .rr-aloud{margin:12px 0 0;padding:12px;border:1px solid var(--room-rule);border-radius:var(--room-radius);background:var(--room-surface);color:var(--room-ink-soft);font:inherit;font-size:1rem}
+#room-content .rr-aloud__row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+#room-content .rr-aloud__row label{display:inline-flex;flex:1 1 12rem;align-items:center;gap:6px;min-width:0;max-width:100%;color:var(--room-ink)}
+#room-content .rr-aloud__row label select{flex:1 1 auto;min-width:0;width:100%;text-overflow:ellipsis}
+#room-content .rr-aloud__row button,#room-content .rr-aloud__row select{min-height:44px;min-width:44px;max-width:100%;padding:8px 14px;border:2px solid var(--room-ink-soft);border-radius:var(--room-radius);background:var(--room-surface);color:var(--room-ink);font:inherit}
+#room-content .rr-aloud__row button{border-color:var(--room-accent);background:var(--room-accent);color:var(--room-on-accent);font-weight:700;cursor:pointer}
+#room-content .rr-aloud__row button[aria-pressed="true"]{border-color:var(--room-accent);background:var(--room-accent);color:var(--room-on-accent)}
+#room-content .rr-aloud__row button:disabled{cursor:default}
+#room-content .rr-aloud__row button:focus-visible,#room-content .rr-aloud__row select:focus-visible{outline:3px solid var(--room-focus);outline-offset:2px}
+#room-content .rr-aloud p.rr-aloud__status{margin:8px 0 0;color:var(--room-ink);font-size:.95rem}
+#room-content .rr-aloud p.rr-aloud__note{margin:6px 0 0;color:var(--room-ink-soft);font-size:.9rem;opacity:1}
+/* "Show page text": the shown page's text, selectable, so a scan's words can be picked for Read selection. */
+#room-content .rr-aloud__text{margin:10px 0 0;max-height:50vh;overflow:auto;padding:10px 12px;border:1px solid var(--room-rule);border-radius:var(--room-radius);background:var(--room-surface);color:var(--room-ink);line-height:1.55;font-size:1rem}
+#room-content .rr-aloud__text[hidden]{display:none}
+#room-content .rr-aloud__text:focus-visible{outline:3px solid var(--room-focus);outline-offset:2px}
+#room-content .rr-aloud__text p{margin:0 0 .75em;color:var(--room-ink)}
+#room-content .rr-aloud__text p.rr-aloud__text-note{color:var(--room-ink-soft);font-size:.9rem}
+#room-content .rr-aloud__text p.rr-aloud__text-page{font-weight:700;margin-top:.5em}

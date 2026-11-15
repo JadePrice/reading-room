@@ -1,0 +1,14 @@
+name: roomkit
+version: 1.0.0
+description: "Static reading room compiler, pack renderer, and corpus search"
+spine:
+  status: true
+  check: true
+  json_status: true
+verbs:
+  - status
+  - check
+json_status: true
+why: ""
+durable_wiki_page: "wiki/roomkit.md"
+readme: "roomkit/README.md"

@@ -1,0 +1,25 @@
+{#- The content element of the topics page (pack features.topics): every topic
+    with its count, in the site's order, each linking to its first page. Every
+    word is the export's (topics.py). -#}
+{% from "room/partials/macros.html" import root, link, toggle %}
+{{ root("topics", theme_key) }}
+{% with t = topics %}
+<div class="room__shell">
+<div class="room__topline">
+{%- if t.back %}<p class="room__back">{{ link(t.back.label, t.back.url) }}</p>{% endif %}{{ toggle(toggle_on) }}</div>
+<header class="room__head">
+<h1 class="room__title">{{ t.title }}</h1>
+<p class="room__tsub">{{ t.subtitle }}</p>
+</header>
+{% if not t.topics %}
+<p class="room__section-empty">{{ t.empty_text }}</p>
+{% else %}
+<ul class="room__tcards">
+{% for it in t.topics %}
+<li><a class="room__panel room__tcard" href="{{ it.url }}" data-room-topic="{{ it.slug }}"><span class="room__tcard-label">{{ it.label }}</span><span class="room__tcard-count">{{ it.count }}</span></a></li>
+{% endfor %}
+</ul>
+{% endif %}
+</div>
+{% endwith %}
+</main>

@@ -1,0 +1,9 @@
+#room-content .room__pager{margin:24px 0 8px;display:flex;flex-direction:column;align-items:center;gap:8px;text-align:center}
+#room-content .room__pager[hidden]{display:none}
+#room-content .room__pager-status{margin:0;color:var(--room-page-ink-soft)}
+#room-content .room__pager-list{list-style:none;margin:0;padding:0;display:flex;flex-wrap:wrap;justify-content:center;gap:6px}
+#room-content .room__pager-btn{min-width:44px;min-height:44px;padding:8px 12px;border:2px solid var(--room-page-ink-soft);border-radius:var(--room-radius-pill);background:transparent;color:var(--room-page-ink);font:inherit;font-weight:700;cursor:pointer}
+#room-content .room__pager-btn[aria-current="page"]{background:var(--room-accent);border-color:var(--room-accent);color:var(--room-on-accent);cursor:default}
+#room-content .room__pager-btn:disabled{opacity:.45;cursor:default}
+#room-content .room__pager-btn:focus-visible{outline:3px solid var(--room-focus);outline-offset:2px}
+#room-content .room__pager-gap{min-width:24px;align-self:center}

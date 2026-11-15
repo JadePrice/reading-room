@@ -1,0 +1,9 @@
+{#- The site's accessibility toolbar (pack a11y_toolbar): the plugin's own markup and
+    classes (wp-accessibility, wpa-toolbar.min.js), hidden until room-a11y.js runs. -#}
+<div class="{{ chrome.a11y.classes }}" data-room-a11y-contrast="{{ chrome.a11y.contrast_css }}" data-room-a11y-factor="{{ chrome.a11y.factor }}" hidden>
+<ul class="a11y-toolbar-list">
+{% for b in chrome.a11y.buttons %}
+<li class="a11y-toolbar-list-item"><button type="button" class="a11y-toggle a11y-toggle-{{ b.kind }} toggle-{{ b.kind }} room-a11y__{{ b.kind }}" data-id="{{ b.data_id }}" aria-pressed="false"><span class="offscreen">{{ b.label }}</span><span class="aticon aticon-{{ b.icon }}" aria-hidden="true"></span></button></li>
+{% endfor %}
+</ul>
+</div>

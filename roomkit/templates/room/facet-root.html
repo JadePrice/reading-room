@@ -1,0 +1,14 @@
+{#- The content element of one facet's own path (browse.py roots): its values as
+    links, so trimming a facet page's URL lands on a page, not a server error. -#}
+{% from "room/partials/macros.html" import crumbs, toggle, root %}
+{{ root("index", theme_key) }}
+<div class="room__shell" data-room-facet-root="{{ froot.key }}">
+<div class="room__topline">{{ crumbs(froot.crumbs) }}{{ toggle(toggle_on) }}</div>
+<header class="room__head">
+<h1 class="room__title">{{ froot.title }}</h1>
+<p class="room__head-link"><a href="{{ at }}">All records</a></p>
+</header>
+<nav class="room__jump room__browse" aria-label="{{ froot.title }}"><ul>
+{%- for v in froot["values"] %}<li><a href="{{ v.url }}">{{ v.label }} <span class="room__section-n">{{ v.count }}</span></a></li>{% endfor %}</ul></nav>
+</div>
+</main>

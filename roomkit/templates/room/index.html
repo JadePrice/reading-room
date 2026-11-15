@@ -1,0 +1,161 @@
+{#- The content element of the index: the finder (JavaScript only) and the
+    grouped list, which is the way in without JavaScript. -#}
+{% from "room/partials/macros.html" import crumbs, toggle, root %}
+{% from "room/partials/card.html" import card %}
+{{ root("index", theme_key) }}
+<div class="room__shell">
+<div class="room__topline">
+{%- if index.back %}<p class="room__back"><a href="{{ index.back.url }}">{{ index.back.label }}</a></p>
+{%- else %}{{ crumbs(index.crumbs) }}{% endif %}{{ toggle(toggle_on) }}</div>
+<header class="room__head">
+{% if index.eyebrow %}
+<p class="room__eyebrow">{{ index.eyebrow }}</p>
+{% endif %}
+<h1 class="room__title">{{ index.title }}</h1>
+{% if index.lede %}
+<p class="room__lede">{{ index.lede }}</p>
+{% endif %}
+<ul class="room__stats"><li><span class="room__stat">{{ index.count }}</span> {{ index.stats_noun }}</li><li><span class="room__stat">{{ index.group_count }}</span> {{ index.groups_noun }}</li>
+{%- if index.years %}<li><span class="room__stat">{{ index.years[0] }}{% if index.years[1] != index.years[0] %}&ndash;{{ index.years[1] }}{% endif %}</span></li>{% endif %}</ul>
+{% for ln in index.links %}
+<p class="room__head-link"><a href="{{ ln.url }}">{{ ln.label }}</a>{% if ln.text %}: {{ ln.text }}{% endif %}</p>
+{% endfor %}
+</header>
+{% if index.collections_grid and index.lead != "recent" %}
+{% include "room/partials/collections-grid.html" %}
+{% endif %}
+{% if index.server_search %}{% with ss = index.server_search %}
+<noscript><form class="room__search room__search--server" role="search" action="{{ ss.action }}" method="get">
+<div class="room__field room__field--q"><label for="room-nojs-q">{{ ss.label }}</label>
+<input type="search" id="room-nojs-q" name="{{ ss.param }}" placeholder="{{ ss.placeholder }}"></div>
+<div class="room__field room__field--buttons"><button type="submit" class="room__btn">{{ ss.button }}</button></div>
+</form></noscript>
+{% endwith %}{% endif %}
+{# With corpus search (index.search), room-search.js owns the finder: text search
+    over the room's Pagefind index, suggestions as a combobox. Without it, room.js. #}
+<section class="room__finder" aria-label="Find a record"{% if index.search %} data-room-search data-room-pagefind="{{ index.search.pagefind_url }}" data-room-recent-key="{{ index.search.recent_key }}"{% if index.search.terms %} data-room-terms="{{ index.search.terms.min }} {{ index.search.terms.max }}"{% endif %}{% if index.search.ranking %} data-room-ranking="{{ index.search.ranking }}"{% endif %}{% else %} data-room-finder{% endif %}{% if index.finder %} data-room-compact{% endif %} hidden>
+<form class="room__search" role="search" action="{{ at }}" method="get">
+<div class="room__field room__field--q"><label for="room-q">Search records</label>
+{% if index.search %}
+<div class="room__combo"><input type="search" id="room-q" name="q" autocomplete="off" placeholder="{{ index.search.placeholder }}" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="room-suggest" aria-describedby="room-q-hint">
+<div class="room__suggest" id="room-suggest" role="listbox" aria-label="Suggestions" hidden></div></div>
+{%- if index.search.suggest %}
+<script type="application/json" data-room-suggest>{{ index.search.suggest|safe }}</script>
+{%- endif %}
+<p class="room__sr" id="room-q-hint">Searches the text of every record. Suggestions appear as you type: arrow keys move through them, Enter chooses, Escape closes.</p></div>
+{% else %}
+<input type="search" id="room-q" name="q" autocomplete="off" placeholder="{{ index.search_placeholder }}"></div>
+{% endif %}
+{%- macro field(s) %}{% if s.kind == "range" %}
+<div class="room__field"><label for="room-f-{{ s.name }}-from">{{ s.from_label }}</label><select id="room-f-{{ s.name }}-from" name="{{ s.name }}-from" data-room-range="{{ s.name }}" data-room-bound="from"><option value="">Any</option>
+{%- for v in s["values"] %}<option value="{{ v }}">{{ v }}</option>{% endfor %}</select></div>
+<div class="room__field"><label for="room-f-{{ s.name }}-to">{{ s.to_label }}</label><select id="room-f-{{ s.name }}-to" name="{{ s.name }}-to" data-room-range="{{ s.name }}" data-room-bound="to"><option value="">Any</option>
+{%- for v in s["values"] %}<option value="{{ v }}">{{ v }}</option>{% endfor %}</select></div>
+{% else %}
+<div class="room__field"><label for="room-f-{{ s.name }}">{{ s.label }}</label><select id="room-f-{{ s.name }}" name="{{ s.name }}" {% if s.kind == "multi" %}data-room-multi="{{ s.name }}"{% else %}data-room-facet="{{ s.name }}"{% endif %}><option value="">All</option>
+{%- if s.kind == "group" and s.sets %}{% for o in s.sets %}{% if o.label %}<optgroup label="{{ o.label }}">{% endif %}{% for v in o["values"] %}<option value="{{ v }}">{{ v }}</option>{% endfor %}{% if o.label %}</optgroup>{% endif %}{% endfor %}
+{%- else %}{% for v in s["values"] %}<option value="{{ v }}">{{ v }}</option>{% endfor %}{% endif %}</select></div>
+{% endif %}
+{%- endmacro %}
+{% if index.finder %}
+{% for s in index.selects if s.name in index.finder.in_view %}{{ field(s) }}{% endfor %}
+{% if index.sort %}
+<div class="room__field"><label for="room-f-sort">{{ index.sort.label }}</label><select id="room-f-sort" name="sort" data-room-sort>
+{%- for o in index.sort.options %}<option value="{{ o.value }}">{{ o.label }}</option>{% endfor %}</select></div>
+{% endif %}
+{% set rest = index.selects|rejectattr("name", "in", index.finder.in_view)|list %}
+{% if rest %}<details class="room__more-filters" data-room-more-filters><summary>{{ index.finder.more }}<span class="room__more-n" data-room-more-n></span></summary>
+<div class="room__more-body">
+{% for s in rest %}{{ field(s) }}{% endfor %}
+</div></details>
+{% endif %}
+{% else %}
+{% for s in index.selects %}{{ field(s) }}{% endfor %}
+{% if index.sort %}
+<div class="room__field"><label for="room-f-sort">{{ index.sort.label }}</label><select id="room-f-sort" name="sort" data-room-sort>
+{%- for o in index.sort.options %}<option value="{{ o.value }}">{{ o.label }}</option>{% endfor %}</select></div>
+{% endif %}
+{% endif %}
+<div class="room__field room__field--buttons">
+<button type="submit" class="room__btn">Search</button>
+<button type="reset" class="room__btn room__btn--ghost" data-room-clear>Clear</button></div>
+</form>
+{% if index.finder %}
+<ul class="room__chips" data-room-chips aria-label="Filters that are set" hidden></ul>
+{% endif %}
+<p class="room__count" role="status" aria-live="polite" data-room-count{% if index.count_nouns %} data-room-one="{{ index.count_nouns.one }}" data-room-other="{{ index.count_nouns.other }}"{% endif %}>{{ index.count }} {{ index.records_noun }}</p>
+{% if index.finder %}
+<p class="room__undated" aria-live="polite" data-room-undated data-room-undated-one="{{ index.finder.undated_one }}" data-room-undated-other="{{ index.finder.undated_other }}" hidden></p>
+{% endif %}
+</section>
+{% if index.search %}
+<section class="room__results" aria-label="Search results" data-room-results hidden>
+<ol class="room__results-list" data-room-results-list></ol>
+<button type="button" class="room__btn room__btn--ghost room__more" data-room-more hidden>Show more results</button>
+</section>
+{% endif %}
+{% macro lead_list(l, both) -%}
+<section class="room__newest" id="{{ l.id }}" aria-labelledby="{{ l.id }}-h"{% if not both %} data-room-lead{% else %} data-room-tab-panel{% endif %}>
+<h2 id="{{ l.id }}-h" class="room__section-h">{{ l.heading }}</h2>
+<ol class="room__newest-list">
+{%- for it in l["items"] %}<li{% if it.thumb_url %} class="room__newest--thumb"{% endif %}>{% if it.thumb_url %}<img class="room__newest-img" src="{{ it.thumb_url }}" alt="" width="116" height="150" loading="lazy" decoding="async">{% endif %}<a href="{{ it.url }}">{{ it.title }}</a> <span class="room__newest-meta">{{ it.verb }}<time datetime="{{ it.date }}">{{ it.card_date }}</time>{% if it.group %} &middot; {{ it.group }}{% endif %}</span></li>{% endfor %}</ol>
+</section>
+{%- endmacro %}
+{% if index.newest and index.added %}
+<div class="room__lead-tabs" data-room-lead data-room-tabs>
+{{ lead_list(index.newest, true) }}
+{{ lead_list(index.added, true) }}
+</div>
+{% elif index.newest or index.added %}
+{{ lead_list(index.newest or index.added, false) }}
+{% endif %}
+{% if index.collections_grid and index.lead == "recent" %}
+<details class="room__cgrid-fold" data-room-lead><summary>{{ index.grid_fold }}</summary>
+{% include "room/partials/collections-grid.html" %}
+</details>
+{% endif %}
+{% if index.jump %}
+<nav class="room__jump room__jump--groups" aria-label="{{ index.jump.name }}" data-room-jump>
+{# A long list folds away, so the records are not a screen below it. #}
+{% if index.jump.folded %}
+<details><summary>{{ index.jump.name }} ({{ index.jump.groups|length }})</summary><ul>
+{%- else %}
+<p class="room__jump-label">{{ index.jump.label }}</p><ul>
+{%- endif %}
+{%- for g in index.jump.groups %}<li><a href="#{{ g.id }}">{{ g.label }}</a></li>{% endfor %}</ul>
+{%- if index.jump.folded %}</details>{% endif %}</nav>
+{% endif %}
+{% if index.browse %}
+{# The facet pages (pack features.facet-pages): the way to narrow the list without JavaScript. #}
+<nav class="room__jump room__browse" aria-labelledby="room-browse-h" data-room-browse>
+<h2 id="room-browse-h" class="room__jump-label">{{ index.browse.heading }}</h2>
+{% for f in index.browse.facets %}
+<details data-room-browse-facet="{{ f.name }}"><summary>{{ f.label }} ({{ f["values"]|length }})</summary><ul>
+{%- for v in f["values"] %}<li><a href="{{ v.url }}">{{ v.label }} <span class="room__section-n">{{ v.count }}</span></a></li>{% endfor %}</ul></details>
+{% endfor %}
+</nav>
+{% endif %}
+{% if index.gallery %}
+{#- layout.gallery: shown by room.js; without JavaScript the list is all there is. -#}
+<div class="room__view" role="group" aria-label="Show records as" data-room-view hidden>
+<button type="button" class="room__view-btn" data-room-view-as="rows" aria-pressed="true">List</button><button type="button" class="room__view-btn" data-room-view-as="cards" aria-pressed="false">Gallery</button></div>
+{% endif %}
+<div class="room__groups room__groups--{{ layout }}">
+{% for sec in index.sections %}
+<section class="room__section" id="{{ sec.id }}" aria-labelledby="{{ sec.id }}-h" data-room-section>
+<h2 id="{{ sec.id }}-h" class="room__section-h">{{ sec.label }} <span class="room__section-n">{{ sec.cards|length }}</span></h2>
+{% if not sec.cards %}
+<p class="room__section-empty">{{ index.empty_group_text }}</p>
+{% else %}
+<ul class="room__cards room__cards--{{ layout }}">{% for c in sec.cards %}{{ card(c, layout, index.gallery) }}{% endfor %}</ul>
+{% endif %}
+</section>
+{% endfor %}
+</div>
+{% if index.sort %}
+{#- A sort other than the default lists every card here, flat, as the site's own list does (room.js). -#}
+<ul class="room__cards room__cards--{{ layout }} room__cards--flat" data-room-flat hidden></ul>
+{% endif %}
+<p class="room__empty" data-room-empty hidden>No records match. Try fewer words, or clear the filters.</p>
+</div>
+</main>

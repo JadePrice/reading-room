@@ -1,0 +1,114 @@
+{
+  "identity": {
+    "site": "example",
+    "name": "Riverbend Records Office",
+    "base_url": "https://example.org"
+  },
+  "tokens": {
+    "page-bg": "#f5f7f4",
+    "page-ink": "#16241e",
+    "page-ink-soft": "#475850",
+    "page-link": "#1b5c48",
+    "surface": "#ffffff",
+    "surface-sunk": "#ecf1ed",
+    "ink": "#16241e",
+    "ink-soft": "#475850",
+    "rule": "#c9d5cd",
+    "link": "#1b5c48",
+    "accent": "#1b5c48",
+    "on-accent": "#ffffff",
+    "focus": "#9a3f16",
+    "font-body": "Georgia,\"Times New Roman\",serif",
+    "font-display": "inherit"
+  },
+  "tokens_dark": {
+    "page-bg": "#0f1713",
+    "page-ink": "#e1eae4",
+    "page-ink-soft": "#a6b6ad",
+    "page-link": "#8ccfb4",
+    "surface": "#16211b",
+    "surface-sunk": "#1c2922",
+    "ink": "#e1eae4",
+    "ink-soft": "#a6b6ad",
+    "rule": "#33443a",
+    "link": "#8ccfb4",
+    "accent": "#8ccfb4",
+    "on-accent": "#0f1713",
+    "focus": "#f0a277"
+  },
+  "labels": {
+    "room": "Records",
+    "group": "Department",
+    "group_singular": "department",
+    "groups_plural": "departments",
+    "jump": "Go to a department",
+    "record_singular": "record",
+    "record_plural": "records"
+  },
+  "layout": {
+    "style": "cards",
+    "show_empty_groups": true,
+    "toggle": "riverbend-scheme"
+  },
+  "features": {
+    "facet-pages": true,
+    "sitemaps": true,
+    "corpus-search": true
+  },
+  "chrome": {
+    "home": {
+      "label": "Riverbend Records Office",
+      "url": "https://example.org/"
+    },
+    "skip_text": "Skip to the records",
+    "nav_label": "Records office",
+    "menu_label": "Menu",
+    "inline_from": "40em",
+    "nav": [
+      {
+        "label": "Records",
+        "url": "https://example.org/records/"
+      },
+      {
+        "label": "About",
+        "links": [
+          {
+            "label": "The office",
+            "url": "https://example.org/about/"
+          },
+          {
+            "label": "Ask for a record",
+            "url": "https://example.org/requests/"
+          }
+        ]
+      }
+    ],
+    "footer": [
+      {
+        "heading": "Visit",
+        "links": [
+          {
+            "label": "Hours and address",
+            "url": "https://example.org/visit/"
+          }
+        ]
+      },
+      {
+        "heading": "Policies",
+        "links": [
+          {
+            "label": "Privacy",
+            "url": "https://example.org/privacy/"
+          },
+          {
+            "label": "Corrections",
+            "url": "https://example.org/corrections/"
+          }
+        ]
+      }
+    ],
+    "footer_text": [
+      "Riverbend is not a real place. This pack shows what a pack can set."
+    ]
+  }
+}

@@ -1,0 +1,69 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://reading-room.local/reading-room-reader/contract/passage.schema.json",
+  "version": "1.0",
+  "title": "Reading room citable passage response",
+  "description": "Response of site-a/v1/passage (site A class-site-a-rest.php passage; passage shape from SiteA_Citations::resolve_passage). site A only. site B has no passage route and must not claim this contract. Success nests the excerpt under passage. Errors are found=false with an error code; REST-level codes are bad_slug/not_found/incomplete_span, and WP_Error codes from resolve_passage are passage_* and are returned with HTTP 400.",
+  "oneOf": [
+    {
+      "type": "object",
+      "required": ["found", "slug", "permalink", "reference", "passage"],
+      "additionalProperties": false,
+      "properties": {
+        "found": { "const": true },
+        "slug": { "type": "string", "pattern": "^[a-z0-9][a-z0-9-]*$" },
+        "permalink": { "type": "string" },
+        "reference": { "type": "string" },
+        "passage": {
+          "type": "object",
+          "required": ["document_id", "page_number", "offset_start", "offset_end", "stable_key", "provenance_level", "ocr_confidence", "bounding_box", "text", "minted"],
+          "additionalProperties": false,
+          "properties": {
+            "document_id": { "type": "integer", "minimum": 1 },
+            "page_number": { "type": ["integer", "null"], "minimum": 1 },
+            "offset_start": { "type": ["integer", "null"], "minimum": 0 },
+            "offset_end": { "type": ["integer", "null"], "minimum": 0 },
+            "stable_key": { "type": ["string", "null"] },
+            "provenance_level": { "type": "string" },
+            "ocr_confidence": { "type": ["number", "null"] },
+            "bounding_box": {
+              "oneOf": [
+                { "type": "null" },
+                {
+                  "type": "array",
+                  "items": { "type": "number", "minimum": 0, "maximum": 1 },
+                  "minItems": 4,
+                  "maxItems": 4
+                }
+              ]
+            },
+            "text": { "type": "string" },
+            "minted": { "type": "boolean" }
+          }
+        }
+      }
+    },
+    {
+      "type": "object",
+      "required": ["found", "error"],
+      "additionalProperties": false,
+      "properties": {
+        "found": { "const": false },
+        "error": {
+          "type": "string",
+          "enum": [
+            "bad_slug",
+            "not_found",
+            "incomplete_span",
+            "passage_no_document",
+            "passage_page_missing",
+            "passage_bad_range",
+            "passage_out_of_range",
+            "passage_too_long"
+          ]
+        },
+        "message": { "type": "string" }
+      }
+    }
+  ]
+}

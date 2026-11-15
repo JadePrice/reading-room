@@ -1,0 +1,11 @@
+/* The "Reading tools" disclosure (room-tools.js), drawn from the room's tokens so every pack and
+   theme keeps its contrast. It sits after the reader, so it never moves anything above it. */
+#room-content .room-tools{margin:12px 0 0;border:1px solid var(--room-rule);border-radius:var(--room-radius);background:var(--room-surface);color:var(--room-ink)}
+#room-content .room-tools__summary{display:flex;align-items:center;min-height:44px;padding:8px 14px;color:var(--room-ink);font-weight:700;cursor:pointer}
+#room-content .room-tools__summary:focus-visible{outline:3px solid var(--room-focus);outline-offset:2px}
+#room-content .room-tools__list{padding:0 14px 8px}
+#room-content .room-tools__item{margin:0 0 12px;min-width:0;max-width:100%}
+#room-content .room-tools__label{margin:0 0 6px;color:var(--room-ink);font-size:1rem}
+#room-content .room-tools__status{margin:0;padding:0 14px 12px;color:var(--room-ink-soft);font-size:.95rem}
+#room-content .room-tools__status:empty{padding:0}
+@media (prefers-reduced-motion:reduce){#room-content .room-tools *{transition:none;animation:none}}

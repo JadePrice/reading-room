@@ -1,0 +1,53 @@
+/* roomkit: the room's own header, navigation and footer.
+   Every rule is scoped under body.room-plain and every color is a --room-* token (the pack's;
+   css.theme_css puts them on the body too).
+   The wide-screen rules are chrome-wide.css: room.chrome_css() wraps them in a media query at the
+   pack's chrome.inline_from, because a media query cannot read a custom property. */
+body.room-plain{--room-font-body:inherit;--room-font-display:inherit;--room-radius:12px;--room-radius-pill:999px;
+margin:0;background:var(--room-page-bg);color:var(--room-page-ink);font-family:var(--room-font-body);line-height:1.6}
+body.room-plain .room__skip{position:absolute;left:-9999px;top:0;z-index:1000;padding:12px 16px;background:var(--room-accent);color:var(--room-on-accent);border-radius:var(--room-radius);font-weight:700}
+body.room-plain .room__skip:focus{left:16px;top:16px}
+body.room-plain .room__skip:focus,body.room-plain .room-chrome a:focus-visible,body.room-plain .room-chrome summary:focus-visible{outline:3px solid var(--room-focus);outline-offset:2px}
+body.room-plain .room-chrome{background:var(--room-page-bg);color:var(--room-page-ink)}
+body.room-plain .room-chrome *,body.room-plain .room-chrome *::before,body.room-plain .room-chrome *::after{box-sizing:border-box}
+body.room-plain .room-chrome a{color:var(--room-page-link);text-underline-offset:.15em}
+body.room-plain .room-chrome ul{margin:0;padding:0;list-style:none}
+body.room-plain .room-chrome p{margin:0}
+body.room-plain .room-chrome__bar{max-width:1232px;margin:0 auto;padding:12px 16px;display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px 24px}
+body.room-plain .room-chrome--head{border-bottom:1px solid var(--room-rule)}
+/* The site name never wraps (it is one line at every width); the tagline may. The brand cannot shrink
+   below the name, and the nav never shrinks, so its links never wrap into a second row: a nav too wide
+   for the row moves below instead, which pack.chrome.inline_from is measured to prevent. */
+body.room-plain .room-chrome__brand{display:flex;flex-direction:column;flex:1 1 10rem}
+body.room-plain .room-chrome__home{font-family:var(--room-font-display);font-size:1.25rem;font-weight:700;line-height:1.2;text-decoration:none;color:var(--room-page-ink);white-space:nowrap}
+body.room-plain .room-chrome a.room-chrome__home{color:var(--room-page-ink)}
+body.room-plain .room-chrome__home:hover{text-decoration:underline}
+body.room-plain .room-chrome__tagline{font-size:.85rem;color:var(--room-page-ink-soft)}
+body.room-plain .room-chrome summary{cursor:pointer;min-height:44px;display:flex;align-items:center;gap:.5em;list-style:none}
+body.room-plain .room-chrome summary::-webkit-details-marker{display:none}
+/* display:flex drops the disclosure marker, so every summary draws its own caret: it says "opens". */
+body.room-plain .room-chrome summary::after{content:"";flex:none;width:.45em;height:.45em;border-right:2px solid currentColor;border-bottom:2px solid currentColor;transform:translateY(-20%) rotate(45deg)}
+body.room-plain .room-chrome details[open]>summary::after{transform:translateY(20%) rotate(-135deg)}
+body.room-plain .room-chrome__group>details>summary{color:var(--room-page-link);text-decoration:underline;text-underline-offset:.15em}
+body.room-plain .room-chrome__menu-label{padding:8px 16px;border:1px solid var(--room-page-ink-soft);border-radius:var(--room-radius-pill);font-weight:700}
+body.room-plain .room-chrome__menu[open]{flex-basis:100%}
+body.room-plain .room-chrome__links{padding-top:8px}
+body.room-plain .room-chrome__links a{display:flex;align-items:center;min-height:44px;padding:4px 0}
+body.room-plain .room-chrome__group ul{padding-left:16px}
+body.room-plain .room-chrome__nav{flex:0 0 auto}
+body.room-plain .room-chrome__nav:has(.room-chrome__menu[open]){flex-basis:100%}
+body.room-plain .room-chrome__notice{max-width:1232px;margin:0 auto;padding:8px 16px;background:var(--room-surface-sunk);color:var(--room-ink)}
+body.room-plain .room-chrome__notice a{color:var(--room-link)}
+body.room-plain .room-chrome--foot{border-top:1px solid var(--room-rule);font-size:.9rem;color:var(--room-page-ink-soft)}
+body.room-plain .room-chrome--foot .room-chrome__bar{display:block;padding:24px 16px 32px}
+body.room-plain .room-chrome__col{margin-bottom:16px}
+body.room-plain .room-chrome__col ul{display:flex;flex-wrap:wrap;gap:4px 20px}
+body.room-plain .room-chrome__col a{display:inline-flex;align-items:center;min-height:44px}
+body.room-plain .room-chrome__col-h{font-family:var(--room-font-display);font-size:.8rem;letter-spacing:.1em;text-transform:uppercase;margin:0 0 4px;color:var(--room-page-ink)}
+body.room-plain .room-chrome__text+.room-chrome__text{margin-top:8px}
+@media print{body.room-plain .room-chrome__nav{display:none}}
+/* Buttons: hover swaps fill and outline, from tokens, the same for every pack. Both states are
+   pairs pack.py already holds to 4.5:1 (ink on surface, on-accent on accent), and the fill
+   change is accent against surface, which it holds to 3:1. */
+body.room-plain #room-content .room__btn:hover{background:var(--room-surface);border-color:var(--room-accent);color:var(--room-ink)}
+body.room-plain #room-content .room__btn--ghost:hover{background:var(--room-accent);border-color:var(--room-accent);color:var(--room-on-accent)}

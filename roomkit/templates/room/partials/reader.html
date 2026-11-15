@@ -1,0 +1,47 @@
+{#- The reader mount with its no-JS fallback, or the download block for files
+    the engine cannot show. A gated record (display.gate) holds its URL in
+    data-gate-file-url, which the engine does not match, until room.js moves it
+    on "Show document"; without JS only the plain links show, never an inline object. The reader may load a verified viewing copy
+    (view_url); every link stays the original. -#}
+{% macro links(r) %}
+      <p class="rr-reader__fallback-links">
+        <a class="room__btn" href="{{ r.file_url }}" target="_blank" rel="noopener">Open the {{ r.kind }}<span class="room__sr"> in a new tab</span></a>
+        <a class="room__btn room__btn--ghost" href="{{ r.download_url }}">Download</a>
+      </p>
+{% if r.pdf and not r.gate %}
+          <noscript>
+            <object class="rr-reader__object" data="{{ r.file_url }}#page=1" type="application/pdf" aria-label="{{ r.title }} (PDF)">
+              <p>This browser cannot show the PDF here. Use the links above.</p>
+            </object>
+          </noscript>
+{% endif %}
+{% endmacro %}
+{% if not r.has_file %}
+{% if r.no_file %}  <p class="room__empty">{{ r.no_file }}</p>
+{% endif %}
+{% elif not r.mount %}
+  <div class="room__download">
+{{ links(r) }}  </div>
+{% elif r.gate %}
+  <div class="room__gate" data-room-gate>
+      <p class="rr-reader__fallback-links">
+        <a class="room__btn" href="{{ r.file_url }}" target="_blank" rel="noopener">Open the {{ r.kind }}<span class="room__sr"> in a new tab</span></a>
+        <a class="room__btn room__btn--ghost" href="{{ r.download_url }}">Download</a>
+      </p>
+    <button type="button" class="room__btn room__gate-open" data-room-gate-open hidden>Show document</button>
+  </div>
+  <div class="rr-reader" data-gate-file-url="{{ r.reader_url }}" data-ext="{{ r.ext }}" data-mime="{{ r.mime }}" data-slug="{{ r.slug }}" data-title="{{ r.title }}"{% if r.snapshot_kind %} data-archive="{{ r.snapshot_kind }}"{% if r.snapshot_page %} data-archive-page="{{ r.snapshot_page }}"{% endif %}{% if r.snapshot_ts %} data-archive-ts="{{ r.snapshot_ts }}"{% endif %}{% endif %}{% if r.poster_url %} data-poster="{{ r.poster_url }}"{% endif %}{% if r.pages_url %} data-pages-url="{{ r.pages_url }}"{% endif %} data-features="{{ r.features }}" tabindex="-1" hidden>
+    <p class="rr-reader__status" data-reader-status role="status" aria-live="polite"></p>
+    <div class="rr-reader__fallback" data-reader-fallback>
+{{ links(r) }}    </div>
+  </div>
+{% else %}
+  <div class="rr-reader" data-file-url="{{ r.reader_url }}" data-ext="{{ r.ext }}" data-mime="{{ r.mime }}" data-slug="{{ r.slug }}" data-title="{{ r.title }}"{% if r.snapshot_kind %} data-archive="{{ r.snapshot_kind }}"{% if r.snapshot_page %} data-archive-page="{{ r.snapshot_page }}"{% endif %}{% if r.snapshot_ts %} data-archive-ts="{{ r.snapshot_ts }}"{% endif %}{% endif %}{% if r.poster_url %} data-poster="{{ r.poster_url }}"{% endif %}{% if r.pages_url %} data-pages-url="{{ r.pages_url }}"{% endif %}{% if r.read_aloud %} data-read-aloud{% endif %} data-features="{{ r.features }}">
+    <p class="rr-reader__status" data-reader-status role="status" aria-live="polite"></p>
+    <div class="rr-reader__fallback" data-reader-fallback>
+{{ links(r) }}    </div>
+  </div>
+{% if r.view_note %}
+  <p class="room__view-note">The reader shows a copy of this PDF arranged to load faster. Every page is identical. Download and Open give you the original file.</p>
+{% endif %}
+{% endif %}

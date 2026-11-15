@@ -1,0 +1,59 @@
+{#- The content element of the collections page (pack features.collections): the
+    site's categories, groups and collections, in its order, every word the
+    export's. The search, quick filters and sort are hidden until
+    room-collections.js runs; without it every collection is listed. -#}
+{% from "room/partials/macros.html" import root, link, toggle %}
+{{ root("collections", theme_key) }}
+<div class="room__shell" data-room-collections-index>
+<div class="room__topline">
+{%- if collections.back %}<p class="room__back">{{ link(collections.back.label, collections.back.url) }}</p>{% endif %}{{ toggle(toggle_on) }}</div>
+<header class="room__head">
+{% if collections.eyebrow %}
+<p class="room__eyebrow">{{ collections.eyebrow }}</p>
+{% endif %}
+<h1 class="room__title">{{ collections.title }}</h1>
+{% if collections.lede %}
+<p class="room__lede">{{ collections.lede }}</p>
+{% endif %}
+{% if collections.image %}
+<p class="room__banner"><img src="{{ collections.image.url }}" alt="{{ collections.image.alt }}" decoding="async"></p>
+{% endif %}
+</header>
+{% if collections.search or collections.filters or collections.sort %}
+<div class="room__panel room__ccontrols" data-room-ccontrols hidden>
+{% if collections.search %}
+<div class="room__field room__field--q"><label for="room-cq">{{ collections.search.label }}</label><input type="search" id="room-cq" autocomplete="off" placeholder="{{ collections.search.placeholder }}" data-room-cq></div>
+{% endif %}
+{% if collections.filters %}
+<div class="room__cfilters" role="group" aria-label="{{ collections.filters.group_label }}"><span class="room__cfilters-label">{{ collections.filters.label }}</span>
+{%- for o in collections.filters.options %}<button type="button" class="room__btn room__btn--ghost" data-room-cfilter="{{ o.value }}" aria-pressed="{{ 'true' if loop.first else 'false' }}">{{ o.label }}</button>{% endfor %}</div>
+{% endif %}
+{% if collections.sort %}
+<div class="room__field"><label for="room-csort">{{ collections.sort.label }}</label><select id="room-csort" data-room-csort>
+{%- for o in collections.sort.options %}<option value="{{ o.value }}">{{ o.label }}</option>{% endfor %}</select></div>
+{% endif %}
+</div>
+{% endif %}
+{% if not collections.categories %}
+<p class="room__section-empty">{{ collections.empty_text }}</p>
+{% endif %}
+{% for c in collections.categories %}
+<section class="room__ccat" aria-labelledby="room-ccat-{{ c.key }}" data-room-ccat="{{ c.key }}">
+<h2 id="room-ccat-{{ c.key }}" class="room__section-h">{{ c.heading }}{% if c.stamp %} <span class="room__stamp room__stamp--{{ c.key }}">{{ c.stamp }}</span>{% endif %}</h2>
+{% for g in c.groups %}
+<div class="room__cgroup" id="g-{{ g.id }}" data-room-cgroup="{{ g.id }}">
+<h3 id="room-cgroup-{{ g.id }}">{{ g.heading }}</h3>
+<ul class="room__ccards" aria-labelledby="room-cgroup-{{ g.id }}">
+{% for it in g.collections %}
+<li class="room__panel room__ccard" data-room-collection="{{ it.slug }}" data-room-match="{{ it.match }}" data-room-tags="{{ it.tags }}" data-room-year="{{ it.year }}">
+{%- if it.code %}<span class="room__ccode" aria-hidden="true">{{ it.code }}</span>{% endif %}
+<h4><a href="{{ it.url }}">{{ it.title }}</a></h4>
+{%- if it.blurb %}<p class="room__blurb">{{ it.blurb }}</p>{% endif %}
+<p class="room__ccard-foot">{% if it.years %}<span class="room__cyears">{{ it.years }}</span> {% endif %}<span class="room__ccount">{{ it.count }}</span></p></li>
+{% endfor %}
+</ul></div>
+{% endfor %}
+</section>
+{% endfor %}
+</div>
+</main>

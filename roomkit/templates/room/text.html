@@ -1,0 +1,40 @@
+{#- The text page of one record (page_text.py): the page text as HTML, no JavaScript. -#}
+{% from "room/partials/macros.html" import crumbs, toggle, root %}
+{{ root("text", theme_key) }}
+<div class="room__shell room__shell--text">
+<div class="room__topline">{{ crumbs(t.crumbs) }}{{ toggle(toggle_on) }}</div>
+<header class="room__head">
+<h1 class="room__title">{{ t.title }}</h1>
+<p class="room-text__label">{{ t.label }}</p>
+<p class="room-text__links">
+<a class="room__btn room__btn--ghost" href="{{ t.record_url }}">View the record page</a>
+{% if t.file_url %}
+<a class="room__btn room__btn--ghost" href="{{ t.file_url }}" target="_blank" rel="noopener">Open the file<span class="room__sr"> in a new tab</span></a>
+{% endif %}
+<a class="room__btn room__btn--ghost" href="{{ t.download_url }}" download>Download as text</a>
+</p>
+{% if t.sha256 %}
+<p class="room-text__hash">SHA-256 of the file: <code class="room__hash" translate="no">{{ t.sha256 }}</code></p>
+{% endif %}
+</header>
+{% if t.page_links %}
+<nav class="room-text__pages" aria-label="Pages"><details><summary>Jump to a page</summary><ol>
+{% for s in t.page_links %}
+<li><a href="#p{{ s.n }}">{{ s.n }}<span class="room__sr"> (page {{ s.n }})</span></a></li>
+{% endfor %}
+</ol></details></nav>
+{% endif %}
+<div class="room-text" lang="{{ t.lang }}">
+{% for s in t.pages %}
+<section id="p{{ s.n }}" aria-labelledby="p{{ s.n }}-h">
+<h2 id="p{{ s.n }}-h">Page {{ s.n }}</h2>
+{% for p in s.paragraphs %}
+<p>{% for line in p %}{{ line }}{% if not loop.last %}<br>{% endif %}{% endfor %}</p>
+{% else %}
+<p class="room-text__empty">No text was read from this page.</p>
+{% endfor %}
+</section>
+{% endfor %}
+</div>
+</div>
+</main>

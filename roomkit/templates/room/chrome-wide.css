@@ -1,0 +1,13 @@
+/* roomkit: the room's header at and above the pack's chrome.inline_from.
+   room.chrome_css() emits this inside
+     @supports selector(::details-content){@media (min-width:<chrome.inline_from>){ ... }}
+   A media query cannot use var(), so the width comes from pack data when the stylesheet is built.
+   Only where ::details-content exists can a closed <details> show its content; elsewhere the menu
+   stays a disclosure at every width. Dropdowns open toward the start from their summary's end, so a
+   group near the end of the row stays inside the header's content box (the nav sits at the end). */
+body.room-plain .room-chrome summary.room-chrome__menu-label{display:none}
+body.room-plain .room-chrome__menu::details-content{content-visibility:visible}
+body.room-plain .room-chrome__links{display:flex;flex-wrap:wrap;align-items:center;gap:0 16px;padding-top:0}
+body.room-plain .room-chrome__group{position:relative}
+body.room-plain .room-chrome__group ul{position:absolute;z-index:10;top:100%;right:0;left:auto;min-width:16rem;max-width:min(24rem,calc(100vw - 32px));padding:8px 16px;background:var(--room-surface);color:var(--room-ink);border:1px solid var(--room-rule);border-radius:var(--room-radius)}
+body.room-plain .room-chrome__group ul a{color:var(--room-link)}

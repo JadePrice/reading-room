@@ -1,0 +1,129 @@
+{#- The content element of one document page. -#}
+{% from "room/partials/macros.html" import link, crumbs, toggle, root %}
+{{ root("doc", theme_key) }}
+<div class="room__shell room__shell--record">
+<div class="room__topline">{{ crumbs(doc.crumbs) }}{{ toggle(toggle_on) }}</div>
+<header class="room__head">
+{% if doc.eyebrow %}
+<p class="room__eyebrow">{{ link(doc.eyebrow.label, doc.eyebrow.url) }}</p>
+{% endif %}
+<div class="room__titlerow"><h1 class="room__title">{{ doc.title }}</h1>{% if doc.badge %}<span class="room__badge{% if doc.badge_kind %} room__badge--{{ doc.badge_kind }}{% endif %}">{% if doc.badge_sr %}<span class="room__sr">{{ doc.badge_sr }}</span>{% endif %}{{ doc.badge }}</span>{% endif %}</div>
+{% if doc.released %}
+<p class="room__released">{{ doc.released_label }} {{ doc.released }}</p>
+{% endif %}
+{% if doc.summary %}
+<p class="room__lede">{{ doc.summary }}</p>
+{% if doc.summary|length > 180 %}
+<details class="room__more"><summary><span class="room__more-closed">Full summary</span><span class="room__more-open">Shorter summary</span></summary></details>
+{% endif %}
+{% endif %}
+</header>
+{% if doc.notice %}
+<aside class="room__notice" aria-labelledby="room-notice-h">
+<h2 id="room-notice-h">{{ doc.notice.heading }}</h2>
+<p>{{ doc.notice.body }}</p>
+{% if doc.notice.report %}
+<p class="room__notice-report">{{ doc.notice.report }}</p>
+{% endif %}
+</aside>
+{% endif %}
+<nav class="room__jump" aria-label="On this page"><ul>
+<li><a href="#room-reader">{{ doc.reader_label }}</a></li>
+<li><a href="#room-details">Details</a></li>
+<li><a href="#room-cite">Cite</a></li>
+</ul></nav>
+<div class="room__body">
+<section class="room__reader" id="room-reader" aria-labelledby="room-reader-h">
+<h2 id="room-reader-h" class="room__reader-h">{{ doc.reader_label }}</h2>
+{% with r = doc.reader %}{% include "room/partials/reader.html" %}{% endwith %}
+</section>
+<div class="room__rail">
+<section class="room__panel" id="room-details" aria-labelledby="room-details-h">
+<h2 id="room-details-h">Details</h2>
+<dl class="room__dl">
+{% for row in doc.details %}
+<div><dt>{{ row.label }}</dt><dd>
+{%- if row.code %}<code class="room__hash">{{ row.value }}</code>
+{%- elif row.url %}{{ link(row.value, row.url, external=row.external) }}
+{%- else %}{{ row.value }}{% endif %}
+{%- if row.note %}<span class="room__note">{{ row.note }}</span>{% endif %}</dd></div>
+{% endfor %}
+{% for row in doc.provenance %}
+<div><dt>{{ row.label }}</dt><dd>{{ link(row.value, row.url, external=row.external) }}</dd></div>
+{% endfor %}
+</dl>
+{% if doc.has_file and not doc.reader.snapshot_kind %}
+<p class="room__actions">
+<a class="room__btn" href="{{ doc.file_url }}" target="_blank" rel="noopener">Open the {{ doc.file_kind }}<span class="room__sr"> in a new tab</span></a>
+<a class="room__btn room__btn--ghost" href="{{ doc.download_url }}">Download</a>
+</p>
+{% endif %}
+{% if doc.text %}
+<p class="room__actions room__actions--text">
+<a class="room__btn room__btn--ghost" href="{{ doc.text.url }}">Read as text</a>
+<a class="room__btn room__btn--ghost" href="{{ doc.text.download_url }}" download>Download as text</a>
+</p>
+{% endif %}
+{% if doc.archive_url %}
+<p class="room__archive"><a href="{{ doc.archive_url }}">Permanent copy at the Internet Archive</a></p>
+{% endif %}
+</section>
+<section class="room__panel" id="room-cite" aria-labelledby="room-cite-h">
+<h2 id="room-cite-h">Cite this document</h2>
+<p class="room__cite-text">{{ doc.citation }}</p>
+<button type="button" class="room__btn room__btn--ghost room__cite-copy" data-rr-cite-copy data-cite="{{ doc.citation }}" data-cite-copied-label="Copied" hidden>Copy citation</button>
+</section>
+{% for g in doc.groups %}
+<section class="room__panel room__group" aria-labelledby="room-group-{{ loop.index }}">
+<h2 id="room-group-{{ loop.index }}">{{ g.heading }}</h2>
+{% if g.blurb %}
+<p class="room__blurb">{{ g.blurb }}</p>
+{% endif %}
+<ul class="room__{{ g.list }}">
+{% for it in g["items"] %}
+<li>{% if it.url %}<a class="room__item" href="{{ it.url }}"{% if it.external %} target="_blank" rel="noopener"{% endif %}>{% else %}<span class="room__item">{% endif %}<span class="room__item-label">{{ it.label }}</span>
+{%- if it.kind %}<span class="room__item-kind">{{ it.kind }}</span>{% endif %}
+{%- if it.quote %}<span class="room__item-quote">&ldquo;{{ it.quote }}&rdquo;</span>{% endif %}
+{%- if it.meta %}<span class="room__item-meta">{{ it.meta }}</span>{% endif %}
+{%- if it.url %}{% if it.external %}<span class="room__sr"> (opens in a new tab)</span>{% endif %}</a>{% else %}</span>{% endif %}</li>
+{% endfor %}
+</ul></section>
+{% endfor %}
+{% if doc.notes_lines %}
+<section class="room__panel" aria-labelledby="room-notes-h">
+<h2 id="room-notes-h">Notes</h2>
+<p class="room__notes">{% for line in doc.notes_lines %}{{ line }}{% if not loop.last %}<br>
+{% endif %}{% endfor %}</p>
+</section>
+{% endif %}
+</div>
+</div>
+{% if doc.header %}
+<div class="room__header-meta{% if doc.header.category %} room__header-meta--{{ doc.header.category }}{% endif %}">
+<p class="room__file-meta">
+{% for item in doc.header.meta %}<span>{{ item }}</span>{% endfor %}
+</p>
+<p class="room__header-actions" role="status">
+{%- if doc.header.original_url %}
+<a class="room__header-original" href="{{ doc.header.original_url }}" target="_blank" rel="noopener">Open original file</a>
+{%- endif %}
+{%- if doc.header.ia_url %}
+<a class="room__ia-stamp" href="{{ doc.header.ia_url }}" target="_blank" rel="noopener">Internet Archive</a>
+{%- elif doc.header.ia_pending %}
+<span class="room__ia-badge room__ia-badge--pending" aria-label="Internet Archive backup pending"><span class="room__sr">Internet Archive upload status: </span>backup pending</span>
+{%- endif %}
+</p>
+</div>
+<style>
+.room__header-meta{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:0.5rem;padding:0.5rem 0.75rem;border:1px solid var(--room-rule);border-radius:var(--room-radius,3px);margin-block:0.75rem}
+.room__file-meta{display:flex;align-items:center;flex-wrap:wrap;gap:0.75rem;margin:0;color:var(--room-ink-soft);font-size:0.85rem}
+.room__header-actions{display:flex;align-items:center;gap:0.75rem;margin:0}
+.room__header-original{font-family:var(--room-font-mono);font-size:0.8rem;color:var(--room-link);text-decoration:underline}
+.room__header-original:hover{text-decoration:none}
+.room__ia-stamp{font-family:var(--room-font-mono);font-size:0.75rem;padding:0.15rem 0.4rem;border:1px solid var(--room-rule);border-radius:var(--room-radius-pill,3px);color:var(--room-ink-soft);text-decoration:none}
+.room__ia-stamp:hover{color:var(--room-ink);border-color:var(--room-ink)}
+.room__ia-badge--pending{font-size:0.75rem;color:var(--room-ink-soft);font-style:italic}
+</style>
+{% endif %}
+</div>
+</main>
